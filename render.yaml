@@ -1,0 +1,31 @@
+services:
+  # Web estática - la app React
+  - type: web
+    name: porra-mundial-2026
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # Cron job para actualizar resultados cada 5 minutos durante el Mundial
+  - type: cron
+    name: actualizar-resultados-mundial
+    runtime: node
+    schedule: "*/5 * * * *"
+    buildCommand: npm install
+    startCommand: node scripts/update-results.js
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FOOTBALL_API_KEY
+        sync: false
