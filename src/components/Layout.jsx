@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import LeagueSwitcher from './LeagueSwitcher'
@@ -41,15 +41,15 @@ export default function Layout() {
           {/* Derecha: perfil + salir */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {profile && (
-              <div className="hidden sm:flex items-center gap-2">
+              <Link to="/perfil" className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-stone-800 transition-colors">
                 <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-semibold text-xs">
                   {profile.username?.[0]?.toUpperCase()}
                 </div>
-                <span className="text-stone-400 text-sm">{profile.username}</span>
+                <span className="text-stone-300 text-sm">{profile.username}</span>
                 <span className="bg-amber-500/10 text-amber-400 text-xs font-bold px-2 py-0.5 rounded-full border border-amber-500/20">
                   {profile.total_points ?? 0} pts
                 </span>
-              </div>
+              </Link>
             )}
             <button
               onClick={handleSignOut}

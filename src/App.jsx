@@ -4,6 +4,7 @@ import { LeagueProvider } from './contexts/LeagueContext'
 import Layout from './components/Layout'
 import Auth from './pages/Auth'
 import ResetPassword from './pages/ResetPassword'
+import Perfil from './pages/Perfil'
 import Pronosticos from './pages/Pronosticos'
 import Clasificacion from './pages/Clasificacion'
 import Resultados from './pages/Resultados'
@@ -41,9 +42,10 @@ export default function App() {
           }
         >
           <Route index element={<Navigate to="/pronosticos" replace />} />
-          <Route path="pronosticos"  element={<Pronosticos />} />
+          <Route path="pronosticos"   element={<Pronosticos />} />
           <Route path="clasificacion" element={<Clasificacion />} />
-          <Route path="resultados"   element={<Resultados />} />
+          <Route path="resultados"    element={<Resultados />} />
+          <Route path="perfil"        element={<Perfil />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
