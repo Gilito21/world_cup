@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { Flag, teamName } from '../utils/teams'
 
 const WINDOW_HOURS = 24
 
@@ -23,7 +24,7 @@ export default function UpcomingAlert({ predictionMode }) {
   useEffect(() => {
     setDismissed(false)
     fetchMissing()
-  }, [user, activeLeague?.id, predictionMode])
+  }, [user?.id, activeLeague?.id, predictionMode])
 
   async function fetchMissing() {
     const now      = new Date()
@@ -80,9 +81,9 @@ export default function UpcomingAlert({ predictionMode }) {
             const t = timeLeft(m.match_date)
             return (
               <li key={m.id} className="flex items-center gap-2 text-sm">
-                <span>{m.home_flag}</span>
+                <Flag team={m.home_team} />
                 <span className="text-stone-700 truncate">
-                  {m.home_team} vs {m.away_team}
+                  {teamName(m.home_team)} vs {teamName(m.away_team)}
                 </span>
                 {t && (
                   <span className={`ml-auto flex-shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded-full ${

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
 import UpcomingAlert from '../components/UpcomingAlert'
+import { Flag, teamName } from '../utils/teams'
 
 const STAGE_ORDER = ['group', 'round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
 
@@ -25,28 +26,6 @@ const STATUS_BADGE = {
 
 const LOCK_MS = 30 * 60 * 1000
 
-const TEAM_CODES = {
-  Algeria: 'dz', Argentina: 'ar', Australia: 'au', Austria: 'at',
-  Belgium: 'be', Bolivia: 'bo', 'Bosnia and Herzegovina': 'ba', Brazil: 'br',
-  Cameroon: 'cm', Canada: 'ca', Chile: 'cl', Colombia: 'co',
-  'Costa Rica': 'cr', Croatia: 'hr', 'Curaçao': 'cw', Czechia: 'cz',
-  Denmark: 'dk', 'DR Congo': 'cd', Ecuador: 'ec', Egypt: 'eg',
-  England: 'gb-eng', Spain: 'es', France: 'fr', Georgia: 'ge',
-  Germany: 'de', Ghana: 'gh', Haiti: 'ht', Honduras: 'hn',
-  Hungary: 'hu', 'IR Iran': 'ir', Iraq: 'iq', Italy: 'it',
-  Jamaica: 'jm', Japan: 'jp', Jordan: 'jo', 'South Korea': 'kr',
-  'Saudi Arabia': 'sa', Mali: 'ml', Morocco: 'ma', Mexico: 'mx',
-  Montenegro: 'me', Netherlands: 'nl', 'New Zealand': 'nz', Nigeria: 'ng',
-  Norway: 'no', Panama: 'pa', Paraguay: 'py', Peru: 'pe',
-  Poland: 'pl', Portugal: 'pt', Qatar: 'qa', Romania: 'ro',
-  Senegal: 'sn', Serbia: 'rs', 'Sierra Leone': 'sl', Slovakia: 'sk',
-  Slovenia: 'si', 'South Africa': 'za', Sweden: 'se', Switzerland: 'ch',
-  Tanzania: 'tz', Tunisia: 'tn', 'Türkiye': 'tr', Turkey: 'tr',
-  Ukraine: 'ua', Uruguay: 'uy', USA: 'us', 'United States': 'us',
-  Uzbekistan: 'uz', Venezuela: 've', Wales: 'gb-wls', Scotland: 'gb-sct',
-  'Ivory Coast': 'ci', "Côte d'Ivoire": 'ci', 'Cabo Verde': 'cv', 'Cape Verde': 'cv',
-}
-
 function getTimeLeft(dateStr) {
   const diff = new Date(dateStr) - Date.now()
   if (diff <= 0) return null
@@ -56,18 +35,6 @@ function getTimeLeft(dateStr) {
     minutes: Math.floor((diff % 3600000)  / 60000),
     seconds: Math.floor((diff % 60000)    / 1000),
   }
-}
-
-function Flag({ team }) {
-  const code = TEAM_CODES[team]
-  if (!code) return <span className="text-xl leading-none flex-shrink-0">🏳️</span>
-  return (
-    <img
-      src={`https://flagcdn.com/w40/${code}.png`}
-      alt={team}
-      className="w-7 h-5 object-cover rounded-sm shadow-sm flex-shrink-0"
-    />
-  )
 }
 
 function Countdown({ matchDate }) {
@@ -178,7 +145,7 @@ function MatchCard({ match, prediction, onSave }) {
 
       <div className="flex items-center gap-3">
         <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
-          <span className="text-sm font-semibold text-stone-900 truncate text-right">{match.home_team}</span>
+          <span className="text-sm font-semibold text-stone-900 truncate text-right">{teamName(match.home_team)}</span>
           <Flag team={match.home_team} />
         </div>
 
@@ -206,7 +173,7 @@ function MatchCard({ match, prediction, onSave }) {
 
         <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
           <Flag team={match.away_team} />
-          <span className="text-sm font-semibold text-stone-900 truncate">{match.away_team}</span>
+          <span className="text-sm font-semibold text-stone-900 truncate">{teamName(match.away_team)}</span>
         </div>
       </div>
 
@@ -214,7 +181,7 @@ function MatchCard({ match, prediction, onSave }) {
         <div className="mt-3 pt-3 border-t border-stone-200 text-center text-xs text-stone-500">
           Tu pronóstico:{' '}
           <span className="text-stone-700 font-medium">
-            {match.home_team.split(' ').pop()} {prediction.home_score} - {prediction.away_score} {match.away_team.split(' ').pop()}
+            {teamName(match.home_team)} {prediction.home_score} - {prediction.away_score} {teamName(match.away_team)}
           </span>
         </div>
       )}
