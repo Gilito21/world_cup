@@ -25,6 +25,69 @@ const STATUS_BADGE = {
 
 const LOCK_MS = 30 * 60 * 1000
 
+const TEAM_CODES = {
+  Algeria: 'dz', Argentina: 'ar', Australia: 'au', Austria: 'at',
+  Belgium: 'be', Bolivia: 'bo', 'Bosnia and Herzegovina': 'ba', Brazil: 'br',
+  Cameroon: 'cm', Canada: 'ca', Chile: 'cl', Colombia: 'co',
+  'Costa Rica': 'cr', Croatia: 'hr', 'Curaçao': 'cw', Czechia: 'cz',
+  Denmark: 'dk', 'DR Congo': 'cd', Ecuador: 'ec', Egypt: 'eg',
+  England: 'gb-eng', Spain: 'es', France: 'fr', Georgia: 'ge',
+  Germany: 'de', Ghana: 'gh', Haiti: 'ht', Honduras: 'hn',
+  Hungary: 'hu', 'IR Iran': 'ir', Iraq: 'iq', Italy: 'it',
+  Jamaica: 'jm', Japan: 'jp', Jordan: 'jo', 'South Korea': 'kr',
+  'Saudi Arabia': 'sa', Mali: 'ml', Morocco: 'ma', Mexico: 'mx',
+  Montenegro: 'me', Netherlands: 'nl', 'New Zealand': 'nz', Nigeria: 'ng',
+  Norway: 'no', Panama: 'pa', Paraguay: 'py', Peru: 'pe',
+  Poland: 'pl', Portugal: 'pt', Qatar: 'qa', Romania: 'ro',
+  Senegal: 'sn', Serbia: 'rs', 'Sierra Leone': 'sl', Slovakia: 'sk',
+  Slovenia: 'si', 'South Africa': 'za', Sweden: 'se', Switzerland: 'ch',
+  Tanzania: 'tz', Tunisia: 'tn', 'Türkiye': 'tr', Turkey: 'tr',
+  Ukraine: 'ua', Uruguay: 'uy', USA: 'us', 'United States': 'us',
+  Uzbekistan: 'uz', Venezuela: 've', Wales: 'gb-wls', Scotland: 'gb-sct',
+  'Ivory Coast': 'ci', "Côte d'Ivoire": 'ci', 'Cabo Verde': 'cv', 'Cape Verde': 'cv',
+}
+
+function getTimeLeft(dateStr) {
+  const diff = new Date(dateStr) - Date.now()
+  if (diff <= 0) return null
+  return {
+    days:    Math.floor(diff / 86400000),
+    hours:   Math.floor((diff % 86400000) / 3600000),
+    minutes: Math.floor((diff % 3600000)  / 60000),
+    seconds: Math.floor((diff % 60000)    / 1000),
+  }
+}
+
+function Flag({ team }) {
+  const code = TEAM_CODES[team]
+  if (!code) return <span className="text-xl leading-none flex-shrink-0">🏳️</span>
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${code}.png`}
+      alt={team}
+      className="w-7 h-5 object-cover rounded-sm shadow-sm flex-shrink-0"
+    />
+  )
+}
+
+function Countdown({ matchDate }) {
+  const [left, setLeft] = useState(() => getTimeLeft(matchDate))
+  useEffect(() => {
+    const t = setInterval(() => setLeft(getTimeLeft(matchDate)), 1000)
+    return () => clearInterval(t)
+  }, [matchDate])
+  if (!left) return null
+  const { days, hours, minutes, seconds } = left
+  return (
+    <span className="text-xs font-mono text-stone-400">
+      {days > 0 && <><b className="text-stone-600">{days}</b>d </>}
+      <b className="text-stone-600">{String(hours).padStart(2, '0')}</b>h{' '}
+      <b className="text-stone-600">{String(minutes).padStart(2, '0')}</b>m{' '}
+      <b className="text-stone-600">{String(seconds).padStart(2, '0')}</b>s
+    </span>
+  )
+}
+
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-ES', {
     weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
@@ -103,6 +166,7 @@ function MatchCard({ match, prediction, onSave }) {
               Grupo {match.group_name}
             </span>
           )}
+          {match.status === 'scheduled' && <Countdown matchDate={match.match_date} />}
         </div>
         <div className="flex items-center gap-2">
           {badge && (
@@ -115,7 +179,7 @@ function MatchCard({ match, prediction, onSave }) {
       <div className="flex items-center gap-3">
         <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
           <span className="text-sm font-semibold text-stone-900 truncate text-right">{match.home_team}</span>
-          <span className="text-xl flex-shrink-0">{match.home_flag}</span>
+          <Flag team={match.home_team} />
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -141,7 +205,7 @@ function MatchCard({ match, prediction, onSave }) {
         </div>
 
         <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
-          <span className="text-xl flex-shrink-0">{match.away_flag}</span>
+          <Flag team={match.away_team} />
           <span className="text-sm font-semibold text-stone-900 truncate">{match.away_team}</span>
         </div>
       </div>
@@ -286,7 +350,7 @@ export default function Pronosticos() {
 
   useEffect(() => {
     loadData()
-  }, [user, activeLeague?.id, predictionMode])
+  }, [user?.id, activeLeague?.id, predictionMode])
 
   async function loadData() {
     setLoading(true)
