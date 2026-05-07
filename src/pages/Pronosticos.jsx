@@ -290,28 +290,29 @@ export default function Pronosticos() {
 
   async function loadData() {
     setLoading(true)
+    try {
+      const matchQuery = supabase.from('matches').select('*').order('match_date')
+      const predQuery = predictionMode === 'per_league' && activeLeague
+        ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
+        : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
 
-    const matchQuery = supabase.from('matches').select('*').order('match_date')
-    const predQuery = predictionMode === 'per_league' && activeLeague
-      ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
-      : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
+      const [{ data: matchData }, { data: predData }] = await Promise.all([matchQuery, predQuery])
 
-    const [{ data: matchData }, { data: predData }] = await Promise.all([matchQuery, predQuery])
-
-    if (matchData) {
-      setMatches(matchData)
-      // Si el stage activo no tiene datos, ir al primero que los tenga
-      const availableStages = [...new Set(matchData.map(m => m.stage))]
-      if (availableStages.length > 0 && !availableStages.includes(activeStage)) {
-        setActiveStage(STAGE_ORDER.find(s => availableStages.includes(s)) ?? availableStages[0])
+      if (matchData) {
+        setMatches(matchData)
+        const availableStages = [...new Set(matchData.map(m => m.stage))]
+        if (availableStages.length > 0 && !availableStages.includes(activeStage)) {
+          setActiveStage(STAGE_ORDER.find(s => availableStages.includes(s)) ?? availableStages[0])
+        }
       }
+      if (predData) {
+        const map = {}
+        predData.forEach(p => { map[p.match_id] = p })
+        setPredictions(map)
+      }
+    } finally {
+      setLoading(false)
     }
-    if (predData) {
-      const map = {}
-      predData.forEach(p => { map[p.match_id] = p })
-      setPredictions(map)
-    }
-    setLoading(false)
   }
 
   const handleSave = useCallback(async (matchId, home, away) => {
