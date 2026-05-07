@@ -25,7 +25,10 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) {
-        await fetchProfile(session.user.id)
+        // TOKEN_REFRESHED solo renueva el JWT, no hace falta recargar el perfil
+        if (event !== 'TOKEN_REFRESHED') {
+          await fetchProfile(session.user.id)
+        }
       } else {
         setProfile(null)
         setLoading(false)

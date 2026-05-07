@@ -36,7 +36,7 @@ export function LeagueProvider({ children }) {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [user?.id])
 
   useEffect(() => {
     setLoading(true)
