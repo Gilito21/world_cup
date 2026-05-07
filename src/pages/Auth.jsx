@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import Spinner from '../components/Spinner'
 
-// Genera código de invitación (8 chars sin ambigüedades)
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
+
+// Solo letras, números, guiones y guiones bajos
+const USERNAME_RE = /^[a-zA-Z0-9_-]+$/
 
 export default function Auth() {
   const { signIn, signUp } = useAuth()
@@ -16,8 +18,11 @@ export default function Auth() {
   const [error, setError]     = useState('')
   const [success, setSuccess] = useState('')
 
-  // Datos base
   const [form, setForm] = useState({ email: '', password: '', username: '' })
+
+  // Estado de disponibilidad del username
+  const [usernameStatus, setUsernameStatus] = useState('idle') // 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
+  const debounceRef = useRef(null)
 
   // Opciones de liga en el registro
   const [leagueMode, setLeagueMode] = useState('none') // 'none' | 'create' | 'join'
@@ -26,6 +31,29 @@ export default function Auth() {
 
   // Código de la liga recién creada (para mostrarlo al usuario)
   const [createdCode, setCreatedCode] = useState('')
+
+  // Comprobar disponibilidad del username con debounce
+  useEffect(() => {
+    if (mode !== 'register') return
+    const name = form.username.trim()
+
+    if (!name) { setUsernameStatus('idle'); return }
+    if (name.length < 3) { setUsernameStatus('invalid'); return }
+    if (!USERNAME_RE.test(name)) { setUsernameStatus('invalid'); return }
+
+    setUsernameStatus('checking')
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('username', name)
+        .maybeSingle()
+      setUsernameStatus(data ? 'taken' : 'available')
+    }, 400)
+
+    return () => clearTimeout(debounceRef.current)
+  }, [form.username, mode])
 
   function update(field) {
     return (e) => setForm(f => ({ ...f, [field]: e.target.value }))
@@ -43,7 +71,10 @@ export default function Auth() {
         // AuthContext redirige automáticamente via App.jsx
       } else {
         // Validaciones
-        if (form.username.trim().length < 3) throw new Error('El nombre debe tener al menos 3 caracteres.')
+        if (form.username.trim().length < 3) throw new Error('El nombre de usuario debe tener al menos 3 caracteres.')
+        if (!USERNAME_RE.test(form.username.trim())) throw new Error('Solo letras, números, - y _ en el nombre de usuario.')
+        if (usernameStatus === 'taken') throw new Error('Ese nombre de usuario ya está en uso.')
+        if (usernameStatus === 'checking') throw new Error('Espera, comprobando disponibilidad del nombre...')
         if (leagueMode === 'create' && leagueName.trim().length < 2) throw new Error('El nombre de liga debe tener al menos 2 caracteres.')
         if (leagueMode === 'join' && joinCode.trim().length !== 8) throw new Error('El código de liga debe tener 8 caracteres.')
 
@@ -113,6 +144,8 @@ export default function Auth() {
     setSuccess('')
     setCreatedCode('')
     setLeagueMode('none')
+    setUsernameStatus('idle')
+    setForm(f => ({ ...f, username: '' }))
   }
 
   // Si el registro se completó con liga creada, mostrar el código
@@ -173,22 +206,51 @@ export default function Auth() {
           </div>
 
           <form onSubmit={handleSubmit} className="px-5 pb-6 space-y-4">
-            {/* Registro: nombre */}
+            {/* Registro: username */}
             {mode === 'register' && (
               <div>
                 <label className="block text-sm font-medium text-stone-300 mb-1.5">
-                  Nombre en la porra
+                  Nombre de usuario <span className="text-red-400">*</span>
                 </label>
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="ej. ElCrack7"
-                  value={form.username}
-                  onChange={update('username')}
-                  required
-                  minLength={3}
-                  maxLength={20}
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    className={`input pr-9 transition-colors ${
+                      usernameStatus === 'available' ? 'border-green-500 focus:border-green-500 focus:ring-green-500' :
+                      usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'border-red-500 focus:border-red-500 focus:ring-red-500' :
+                      ''
+                    }`}
+                    placeholder="ej. ElCrack7"
+                    value={form.username}
+                    onChange={update('username')}
+                    required
+                    minLength={3}
+                    maxLength={20}
+                    autoComplete="username"
+                    autoFocus
+                  />
+                  {/* Icono de estado */}
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {usernameStatus === 'checking'  && <Spinner size="sm" />}
+                    {usernameStatus === 'available' && <span className="text-green-400 text-base">✓</span>}
+                    {usernameStatus === 'taken'     && <span className="text-red-400 text-base">✗</span>}
+                    {usernameStatus === 'invalid'   && <span className="text-red-400 text-base">!</span>}
+                  </div>
+                </div>
+                {/* Mensaje de estado */}
+                <p className={`text-xs mt-1.5 ${
+                  usernameStatus === 'available' ? 'text-green-400' :
+                  usernameStatus === 'taken'     ? 'text-red-400' :
+                  usernameStatus === 'invalid'   ? 'text-red-400' :
+                  'text-stone-500'
+                }`}>
+                  {usernameStatus === 'available' && '✓ Nombre disponible'}
+                  {usernameStatus === 'taken'     && 'Este nombre ya está en uso, elige otro'}
+                  {usernameStatus === 'invalid'   && (form.username.length > 0 && form.username.length < 3
+                    ? 'Mínimo 3 caracteres'
+                    : 'Solo letras, números, guiones y guiones bajos')}
+                  {(usernameStatus === 'idle' || usernameStatus === 'checking') && 'Con este nombre te verán el resto de jugadores'}
+                </p>
               </div>
             )}
 
@@ -301,7 +363,10 @@ export default function Auth() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={
+                loading ||
+                (mode === 'register' && (usernameStatus === 'taken' || usernameStatus === 'checking' || usernameStatus === 'invalid'))
+              }
               className="btn-primary w-full flex items-center justify-center gap-2 mt-2"
             >
               {loading && <Spinner size="sm" />}
