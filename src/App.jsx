@@ -9,6 +9,7 @@ import Pronosticos from './pages/Pronosticos'
 import Clasificacion from './pages/Clasificacion'
 import Resultados from './pages/Resultados'
 import Spinner from './components/Spinner'
+import NotFound from './pages/NotFound'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -22,7 +23,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-stone-950">
+      <div className="flex items-center justify-center h-screen bg-stone-50">
         <Spinner size="lg" />
       </div>
     )
@@ -47,7 +48,7 @@ export default function App() {
           <Route path="resultados"    element={<Resultados />} />
           <Route path="perfil"        element={<Perfil />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </LeagueProvider>
   )
