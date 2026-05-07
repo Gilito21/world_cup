@@ -210,51 +210,6 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
   )
 }
 
-// ─── Banner de modo de pronósticos ────────────────────────────────────────────
-function ModeBanner({ activeLeague, predictionMode, onToggle, toggling }) {
-  if (!activeLeague) return null
-
-  return (
-    <div className="card p-3 flex flex-col sm:flex-row sm:items-center gap-3 border-stone-300">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-stone-800">Modo de pronósticos</p>
-        <p className="text-xs text-stone-500 mt-0.5">
-          {predictionMode === 'global'
-            ? 'Usas los mismos pronósticos en todas tus ligas.'
-            : `Pronósticos independientes para "${activeLeague.name}".`}
-        </p>
-      </div>
-
-      <div className="flex items-center gap-1 bg-stone-100 rounded-xl p-1 flex-shrink-0">
-        <button
-          onClick={() => predictionMode !== 'global' && onToggle('global')}
-          disabled={toggling}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-            predictionMode === 'global'
-              ? 'bg-stone-300 text-stone-900 shadow-sm'
-              : 'text-stone-400 hover:text-stone-800'
-          }`}
-        >
-          <span>🌐</span>
-          <span>Global</span>
-        </button>
-        <button
-          onClick={() => predictionMode !== 'per_league' && onToggle('per_league')}
-          disabled={toggling}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-            predictionMode === 'per_league'
-              ? 'bg-amber-500 text-stone-950 shadow-sm'
-              : 'text-stone-400 hover:text-stone-800'
-          }`}
-        >
-          {toggling && predictionMode === 'global' ? <Spinner size="sm" /> : <span>🏆</span>}
-          <span className="truncate max-w-[120px]">{activeLeague.name}</span>
-        </button>
-      </div>
-    </div>
-  )
-}
-
 // ─── Sidebar de fases ─────────────────────────────────────────────────────────
 function StageSidebar({ stages, activeStage, onSelect, pendingCount }) {
   return (
@@ -303,16 +258,15 @@ function StageSidebar({ stages, activeStage, onSelect, pendingCount }) {
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function Pronosticos() {
-  const { user }                                        = useAuth()
-  const { activeLeague, setPredictionMode }            = useLeague()
-  const predictionMode = activeLeague?.prediction_mode ?? 'global'
+  const { user }                          = useAuth()
+  const { activeLeague, leagues }         = useLeague()
 
   const [matches, setMatches]         = useState([])
   const [predictions, setPredictions] = useState({})
   const [drafts, setDrafts]           = useState({})
   const [loading, setLoading]         = useState(true)
   const [savingAll, setSavingAll]     = useState(false)
-  const [toggling, setToggling]       = useState(false)
+  const [copying, setCopying]         = useState(false)
   const [activeStage, setActiveStage] = useState('group')
   const [error, setError]             = useState('')
 
@@ -323,9 +277,9 @@ export default function Pronosticos() {
       setLoading(true)
       try {
         const matchQuery = supabase.from('matches').select('*').order('match_date')
-        const predQuery = predictionMode === 'per_league' && activeLeague
+        const predQuery = activeLeague
           ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
-          : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
+          : supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', 'none')
 
         const [{ data: matchData }, { data: predData }] = await Promise.all([matchQuery, predQuery])
 
@@ -353,12 +307,12 @@ export default function Pronosticos() {
 
     load()
     return () => { cancelled = true }
-  }, [user?.id, activeLeague?.id, predictionMode])
+  }, [user?.id, activeLeague?.id])
 
   const handleSave = useCallback(async (matchId, home, away) => {
     setError('')
     const existing = predictions[matchId]
-    const leagueId = predictionMode === 'per_league' && activeLeague ? activeLeague.id : null
+    const leagueId = activeLeague?.id ?? null
     const payload  = { user_id: user.id, match_id: matchId, home_score: home, away_score: away, league_id: leagueId }
 
     const { data, error: err } = existing
@@ -375,7 +329,7 @@ export default function Pronosticos() {
     setPredictions(p => ({ ...p, [matchId]: data }))
     setDrafts(d => ({ ...d, [matchId]: { home: String(data.home_score), away: String(data.away_score) } }))
     return true
-  }, [predictions, user.id, predictionMode, activeLeague])
+  }, [predictions, user.id, activeLeague])
 
   const handleDraftChange = useCallback((matchId, home, away) => {
     setDrafts(d => ({ ...d, [matchId]: { home, away } }))
@@ -397,16 +351,53 @@ export default function Pronosticos() {
     setSavingAll(false)
   }, [matches, drafts, predictions, handleSave])
 
-  async function handleToggleMode(newMode) {
-    setToggling(true)
+  const copyFromLeague = useCallback(async (sourceLeagueId) => {
+    setCopying(true)
+    setError('')
     try {
-      await setPredictionMode(newMode)
+      const { data: sourcePreds } = await supabase
+        .from('predictions')
+        .select('match_id, home_score, away_score')
+        .eq('user_id', user.id)
+        .eq('league_id', sourceLeagueId)
+
+      if (!sourcePreds?.length) {
+        setError('Esa liga no tiene pronósticos guardados todavía.')
+        return
+      }
+
+      const rows = sourcePreds.map(p => ({
+        user_id:    user.id,
+        match_id:   p.match_id,
+        home_score: p.home_score,
+        away_score: p.away_score,
+        league_id:  activeLeague.id,
+      }))
+
+      const { data, error: err } = await supabase
+        .from('predictions')
+        .upsert(rows, { onConflict: 'user_id,match_id,league_id' })
+        .select()
+
+      if (err) throw err
+
+      const map = {}
+      const newDrafts = {}
+      data.forEach(p => {
+        map[p.match_id] = p
+        newDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? '') }
+      })
+      setPredictions(map)
+      setDrafts(newDrafts)
     } catch {
-      setError('Error al cambiar el modo.')
+      setError('Error al copiar los pronósticos.')
     } finally {
-      setToggling(false)
+      setCopying(false)
     }
-  }
+  }, [user.id, activeLeague])
+
+  const otherLeagues = leagues.filter(l => l.id !== activeLeague?.id)
+  const hasPredictions = Object.keys(predictions).length > 0
 
   const stages = [...new Set(matches.map(m => m.stage))]
 
@@ -450,14 +441,32 @@ export default function Pronosticos() {
         </p>
       </div>
 
-      <ModeBanner
-        activeLeague={activeLeague}
-        predictionMode={predictionMode}
-        onToggle={handleToggleMode}
-        toggling={toggling}
-      />
+      {activeLeague && !hasPredictions && otherLeagues.length > 0 && (
+        <div className="card p-4 border-amber-500/20 bg-amber-500/5 space-y-3">
+          <div>
+            <p className="text-sm font-semibold text-stone-800">¿Reutilizar pronósticos de otra liga?</p>
+            <p className="text-xs text-stone-500 mt-0.5">
+              Aún no tienes pronósticos en <span className="font-medium text-amber-600">{activeLeague.name}</span>.
+              Puedes copiar los de otra liga como punto de partida.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {otherLeagues.map(l => (
+              <button
+                key={l.id}
+                onClick={() => copyFromLeague(l.id)}
+                disabled={copying}
+                className="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5"
+              >
+                {copying ? <Spinner size="sm" /> : '📋'}
+                Copiar de "{l.name}"
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-      <UpcomingAlert predictionMode={predictionMode} />
+      <UpcomingAlert />
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
@@ -539,7 +548,7 @@ export default function Pronosticos() {
                 <div className="space-y-3">
                   {dayMatches.map(m => (
                     <MatchCard
-                      key={`${m.id}-${predictionMode}-${activeLeague?.id ?? 'global'}`}
+                      key={`${m.id}-${activeLeague?.id ?? 'none'}`}
                       match={m}
                       prediction={predictions[m.id]}
                       onSave={handleSave}
