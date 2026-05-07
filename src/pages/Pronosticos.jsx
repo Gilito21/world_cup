@@ -271,7 +271,13 @@ export default function Pronosticos() {
       ? await supabase.from('predictions').update(payload).eq('id', existing.id).select().single()
       : await supabase.from('predictions').insert(payload).select().single()
 
-    if (err) { setError('Error al guardar el pronóstico.'); return false }
+    if (err) {
+      const msg = err.message?.includes('partido ya ha comenzado') || err.message?.includes('comenzado o finalizado')
+        ? '🔒 El partido ya ha empezado. No se pueden cambiar los pronósticos.'
+        : 'Error al guardar el pronóstico.'
+      setError(msg)
+      return false
+    }
     setPredictions(p => ({ ...p, [matchId]: data }))
     return true
   }, [predictions, user.id, predictionMode, activeLeague])
