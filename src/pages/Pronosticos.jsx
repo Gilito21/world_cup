@@ -362,7 +362,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, predictedH
           <span>
             Pronóstico enviado:{' '}
             <span className="font-medium text-stone-600">
-              {home || prediction?.home_score ?? '?'} – {away || prediction?.away_score ?? '?'}
+              {(home || prediction?.home_score) ?? '?'} – {(away || prediction?.away_score) ?? '?'}
             </span>
           </span>
         </div>
