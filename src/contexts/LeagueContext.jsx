@@ -20,10 +20,10 @@ export function LeagueProvider({ children }) {
 
     const { data } = await supabase
       .from('league_members')
-      .select('role, leagues(id, name, invite_code, created_by)')
+      .select('role, prediction_mode, leagues(id, name, invite_code, created_by)')
       .eq('user_id', user.id)
 
-    const list = (data ?? []).map(m => ({ ...m.leagues, role: m.role }))
+    const list = (data ?? []).map(m => ({ ...m.leagues, role: m.role, prediction_mode: m.prediction_mode ?? 'global' }))
     setLeagues(list)
 
     // Restaurar liga activa desde localStorage
@@ -69,6 +69,20 @@ export function LeagueProvider({ children }) {
     return newLeague
   }
 
+  async function setPredictionMode(mode) {
+    if (!activeLeague || !user) return
+    const { error } = await supabase
+      .from('league_members')
+      .update({ prediction_mode: mode })
+      .eq('league_id', activeLeague.id)
+      .eq('user_id', user.id)
+    if (error) throw error
+
+    const updated = { ...activeLeague, prediction_mode: mode }
+    setLeagues(prev => prev.map(l => l.id === activeLeague.id ? updated : l))
+    setActiveLeagueState(updated)
+  }
+
   async function joinLeague(code) {
     const { data: league, error } = await supabase
       .from('leagues')
@@ -105,6 +119,7 @@ export function LeagueProvider({ children }) {
       setActiveLeague,
       createLeague,
       joinLeague,
+      setPredictionMode,
       reloadLeagues: loadLeagues,
     }}>
       {children}
