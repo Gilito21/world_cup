@@ -18,7 +18,7 @@ const STAGES = {
 const STATUS_BADGE = {
   scheduled: null,
   live:     { label: 'EN VIVO',    cls: 'bg-red-500/20 text-red-400 border-red-500/30 animate-pulse' },
-  finished: { label: 'Finalizado', cls: 'bg-stone-700/50 text-stone-400 border-stone-600' },
+  finished: { label: 'Finalizado', cls: 'bg-stone-200 text-stone-500 border-stone-300' },
 }
 
 function formatDate(dateStr) {
@@ -36,7 +36,7 @@ function ScoreInput({ value, onChange, disabled }) {
       value={value}
       onChange={e => onChange(Math.max(0, Math.min(99, parseInt(e.target.value) || 0)))}
       disabled={disabled}
-      className="w-12 h-12 text-center text-xl font-bold bg-stone-800 border border-stone-600 rounded-xl text-stone-100
+      className="w-12 h-12 text-center text-xl font-bold bg-stone-100 border border-stone-400 rounded-xl text-stone-900
                  focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500
                  disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
     />
@@ -79,7 +79,7 @@ function MatchCard({ match, prediction, onSave }) {
       ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
       : pts === 1
       ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-      : 'bg-stone-700/50 text-stone-500 border-stone-600'
+      : 'bg-stone-200 text-stone-500 border-stone-300'
     return (
       <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${cfg}`}>
         {pts === 3 ? '🎯 +3' : pts === 1 ? '✓ +1' : '✗ 0'} pts
@@ -90,12 +90,12 @@ function MatchCard({ match, prediction, onSave }) {
   const badge = STATUS_BADGE[match.status]
 
   return (
-    <div className={`card p-4 transition-all duration-200 ${isFinished ? 'opacity-80' : 'hover:border-stone-700'}`}>
+    <div className={`card p-4 transition-all duration-200 ${isFinished ? 'opacity-80' : 'hover:border-stone-300'}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-stone-500">{formatDate(match.match_date)}</span>
           {match.group_name && (
-            <span className="text-xs text-stone-600 bg-stone-800 px-1.5 py-0.5 rounded">
+            <span className="text-xs text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
               Grupo {match.group_name}
             </span>
           )}
@@ -110,16 +110,16 @@ function MatchCard({ match, prediction, onSave }) {
 
       <div className="flex items-center gap-3">
         <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
-          <span className="text-sm font-semibold text-stone-100 truncate text-right">{match.home_team}</span>
+          <span className="text-sm font-semibold text-stone-900 truncate text-right">{match.home_team}</span>
           <span className="text-xl flex-shrink-0">{match.home_flag}</span>
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
           {isFinished ? (
-            <div className="flex items-center gap-2 bg-stone-800 rounded-xl px-3 py-1.5">
-              <span className="text-xl font-bold text-stone-100">{match.home_score}</span>
+            <div className="flex items-center gap-2 bg-stone-100 rounded-xl px-3 py-1.5">
+              <span className="text-xl font-bold text-stone-900">{match.home_score}</span>
               <span className="text-stone-500">-</span>
-              <span className="text-xl font-bold text-stone-100">{match.away_score}</span>
+              <span className="text-xl font-bold text-stone-900">{match.away_score}</span>
             </div>
           ) : match.status === 'live' ? (
             <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-1.5">
@@ -138,21 +138,21 @@ function MatchCard({ match, prediction, onSave }) {
 
         <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
           <span className="text-xl flex-shrink-0">{match.away_flag}</span>
-          <span className="text-sm font-semibold text-stone-100 truncate">{match.away_team}</span>
+          <span className="text-sm font-semibold text-stone-900 truncate">{match.away_team}</span>
         </div>
       </div>
 
       {isFinished && prediction && (
-        <div className="mt-3 pt-3 border-t border-stone-800 text-center text-xs text-stone-500">
+        <div className="mt-3 pt-3 border-t border-stone-200 text-center text-xs text-stone-500">
           Tu pronóstico:{' '}
-          <span className="text-stone-300 font-medium">
+          <span className="text-stone-700 font-medium">
             {match.home_team.split(' ').pop()} {prediction.home_score} - {prediction.away_score} {match.away_team.split(' ').pop()}
           </span>
         </div>
       )}
 
       {!isLocked && !isFinished && (
-        <div className="mt-3 pt-3 border-t border-stone-800 flex items-center justify-between">
+        <div className="mt-3 pt-3 border-t border-stone-200 flex items-center justify-between">
           <span className="text-xs text-stone-500">
             {!prediction ? 'Sin pronóstico' : changed ? 'Cambios sin guardar' : 'Guardado'}
           </span>
@@ -168,7 +168,7 @@ function MatchCard({ match, prediction, onSave }) {
       )}
 
       {isLocked && !isFinished && (
-        <div className="mt-3 pt-3 border-t border-stone-800 text-center text-xs text-stone-500">
+        <div className="mt-3 pt-3 border-t border-stone-200 text-center text-xs text-stone-500">
           🔒 Pronósticos cerrados
         </div>
       )}
@@ -181,9 +181,9 @@ function ModeBanner({ activeLeague, predictionMode, onToggle, toggling }) {
   if (!activeLeague) return null
 
   return (
-    <div className="card p-3 flex flex-col sm:flex-row sm:items-center gap-3 border-stone-700">
+    <div className="card p-3 flex flex-col sm:flex-row sm:items-center gap-3 border-stone-300">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-stone-200">Modo de pronósticos</p>
+        <p className="text-sm font-medium text-stone-800">Modo de pronósticos</p>
         <p className="text-xs text-stone-500 mt-0.5">
           {predictionMode === 'global'
             ? 'Usas los mismos pronósticos en todas tus ligas.'
@@ -191,14 +191,14 @@ function ModeBanner({ activeLeague, predictionMode, onToggle, toggling }) {
         </p>
       </div>
 
-      <div className="flex items-center gap-1 bg-stone-800 rounded-xl p-1 flex-shrink-0">
+      <div className="flex items-center gap-1 bg-stone-100 rounded-xl p-1 flex-shrink-0">
         <button
           onClick={() => predictionMode !== 'global' && onToggle('global')}
           disabled={toggling}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
             predictionMode === 'global'
-              ? 'bg-stone-600 text-stone-100 shadow-sm'
-              : 'text-stone-400 hover:text-stone-200'
+              ? 'bg-stone-300 text-stone-900 shadow-sm'
+              : 'text-stone-400 hover:text-stone-800'
           }`}
         >
           <span>🌐</span>
@@ -210,7 +210,7 @@ function ModeBanner({ activeLeague, predictionMode, onToggle, toggling }) {
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
             predictionMode === 'per_league'
               ? 'bg-amber-500 text-stone-950 shadow-sm'
-              : 'text-stone-400 hover:text-stone-200'
+              : 'text-stone-400 hover:text-stone-800'
           }`}
         >
           {toggling && predictionMode === 'global' ? <Spinner size="sm" /> : <span>🏆</span>}
@@ -320,7 +320,7 @@ export default function Pronosticos() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-2xl font-bold text-stone-100">Mis pronósticos</h2>
+        <h2 className="text-2xl font-bold text-stone-900">Mis pronósticos</h2>
         <p className="text-stone-400 text-sm mt-1">
           Predice el marcador antes de que empiece cada partido · Exacto = 3 pts · Resultado = 1 pt
         </p>
@@ -348,7 +348,7 @@ export default function Pronosticos() {
           <div className="text-4xl mb-3">📅</div>
           <p className="text-stone-400">Los partidos se cargarán próximamente.</p>
           <p className="text-stone-600 text-sm mt-1">
-            Ejecuta <code className="bg-stone-800 px-1 rounded">npm run seed-matches</code> para importarlos.
+            Ejecuta <code className="bg-stone-100 px-1 rounded">npm run seed-matches</code> para importarlos.
           </p>
         </div>
       ) : (
@@ -364,7 +364,7 @@ export default function Pronosticos() {
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${
                     activeStage === stage
                       ? 'bg-amber-500 text-stone-950'
-                      : 'bg-stone-800 text-stone-400 hover:text-stone-100 hover:bg-stone-700'
+                      : 'bg-stone-100 text-stone-400 hover:text-stone-900 hover:bg-stone-200'
                   }`}
                 >
                   {STAGES[stage] ?? stage}

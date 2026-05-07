@@ -21,14 +21,14 @@ function ForgotPassword({ onBack }) {
   }
 
   return (
-    <div className="min-h-screen bg-stone-950 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
       </div>
       <div className="relative w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">⚽</div>
-          <h1 className="text-2xl font-bold text-stone-100">
+          <h1 className="text-2xl font-bold text-stone-900">
             Porra <span className="text-amber-500">Mundial 2026</span>
           </h1>
         </div>
@@ -36,7 +36,7 @@ function ForgotPassword({ onBack }) {
           {sent ? (
             <div className="text-center space-y-3 py-4">
               <div className="text-4xl">📧</div>
-              <p className="text-stone-100 font-semibold">Email enviado</p>
+              <p className="text-stone-900 font-semibold">Email enviado</p>
               <p className="text-stone-400 text-sm">
                 Revisa tu bandeja de entrada. El enlace caduca en 1 hora.
               </p>
@@ -46,13 +46,13 @@ function ForgotPassword({ onBack }) {
             </div>
           ) : (
             <>
-              <h2 className="text-lg font-semibold text-stone-100 mb-1">Recuperar contraseña</h2>
+              <h2 className="text-lg font-semibold text-stone-900 mb-1">Recuperar contraseña</h2>
               <p className="text-stone-400 text-sm mb-5">
                 Te enviamos un enlace para crear una nueva contraseña.
               </p>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-300 mb-1.5">Tu email</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Tu email</label>
                   <input
                     type="email"
                     className="input"
@@ -74,7 +74,7 @@ function ForgotPassword({ onBack }) {
                   Enviar enlace
                 </button>
               </form>
-              <button onClick={onBack} className="w-full text-center text-stone-500 text-sm mt-4 hover:text-stone-300 transition-colors">
+              <button onClick={onBack} className="w-full text-center text-stone-500 text-sm mt-4 hover:text-stone-700 transition-colors">
                 ← Volver
               </button>
             </>
@@ -236,10 +236,10 @@ export default function Auth() {
   // Si el registro se completó con liga creada, mostrar el código
   if (createdCode) {
     return (
-      <div className="min-h-screen bg-stone-950 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center space-y-5 animate-slide-up">
           <div className="text-5xl">🎉</div>
-          <h2 className="text-xl font-bold text-stone-100">¡Liga creada!</h2>
+          <h2 className="text-xl font-bold text-stone-900">¡Liga creada!</h2>
           <p className="text-stone-400">Comparte este código con tus amigos para que se unan:</p>
           <div className="card p-6">
             <p className="text-4xl font-bold tracking-[0.35em] text-amber-400 font-mono">{createdCode}</p>
@@ -257,7 +257,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-950 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4 py-8">
       {/* Fondo decorativo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
@@ -268,7 +268,7 @@ export default function Auth() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">⚽</div>
-          <h1 className="text-2xl font-bold text-stone-100">
+          <h1 className="text-2xl font-bold text-stone-900">
             Porra <span className="text-amber-500">Mundial 2026</span>
           </h1>
           <p className="text-stone-400 text-sm mt-1">USA · México · Canadá</p>
@@ -276,13 +276,13 @@ export default function Auth() {
 
         <div className="card p-1">
           {/* Tabs login/register */}
-          <div className="flex rounded-xl overflow-hidden bg-stone-800 p-1 mb-5">
+          <div className="flex rounded-xl overflow-hidden bg-stone-100 p-1 mb-5">
             {[['login', 'Iniciar sesión'], ['register', 'Registrarse']].map(([m, label]) => (
               <button
                 key={m}
                 onClick={() => switchMode(m)}
                 className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
-                  mode === m ? 'bg-amber-500 text-stone-950 shadow-sm' : 'text-stone-400 hover:text-stone-200'
+                  mode === m ? 'bg-amber-500 text-stone-950 shadow-sm' : 'text-stone-400 hover:text-stone-800'
                 }`}
               >
                 {label}
@@ -294,7 +294,7 @@ export default function Auth() {
             {/* Registro: username */}
             {mode === 'register' && (
               <div>
-                <label className="block text-sm font-medium text-stone-300 mb-1.5">
+                <label className="block text-sm font-medium text-stone-700 mb-1.5">
                   Nombre de usuario <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
@@ -340,7 +340,7 @@ export default function Auth() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-stone-300 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">Email</label>
               <input
                 type="email"
                 className="input"
@@ -354,7 +354,7 @@ export default function Auth() {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-medium text-stone-300">Contraseña</label>
+                <label className="text-sm font-medium text-stone-700">Contraseña</label>
                 {mode === 'login' && (
                   <button
                     type="button"
@@ -380,7 +380,7 @@ export default function Auth() {
             {/* Registro: opciones de liga */}
             {mode === 'register' && (
               <div className="space-y-3 pt-1">
-                <p className="text-sm font-medium text-stone-300">Liga (opcional)</p>
+                <p className="text-sm font-medium text-stone-700">Liga (opcional)</p>
 
                 {/* Botones de selección de modo */}
                 <div className="grid grid-cols-3 gap-2">
@@ -396,7 +396,7 @@ export default function Auth() {
                       className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                         leagueMode === val
                           ? 'bg-amber-500/10 border-amber-500/50 text-amber-400'
-                          : 'bg-stone-800 border-stone-700 text-stone-400 hover:border-stone-600 hover:text-stone-300'
+                          : 'bg-stone-100 border-stone-300 text-stone-400 hover:border-stone-400 hover:text-stone-700'
                       }`}
                     >
                       <span className="text-base">{icon}</span>
@@ -418,7 +418,7 @@ export default function Auth() {
                       maxLength={40}
                       required
                     />
-                    <p className="text-xs text-stone-600 mt-1">Recibirás un código para invitar a tus amigos.</p>
+                    <p className="text-xs text-stone-400 mt-1">Recibirás un código para invitar a tus amigos.</p>
                   </div>
                 )}
 

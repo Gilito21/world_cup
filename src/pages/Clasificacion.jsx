@@ -9,7 +9,7 @@ const MEDALS = ['🥇', '🥈', '🥉']
 
 function StatBadge({ label, value, color }) {
   return (
-    <div className="text-center px-3 py-1.5 rounded-lg bg-stone-800 border border-stone-700">
+    <div className="text-center px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-300">
       <div className={`text-sm font-bold ${color}`}>{value}</div>
       <div className="text-xs text-stone-500">{label}</div>
     </div>
@@ -19,7 +19,7 @@ function StatBadge({ label, value, color }) {
 function ModeBadge({ mode }) {
   return mode === 'per_league'
     ? <span className="text-xs text-amber-600/80 bg-amber-600/10 border border-amber-600/20 px-1.5 py-0.5 rounded-full">🏆 propia</span>
-    : <span className="text-xs text-stone-500 bg-stone-800 border border-stone-700 px-1.5 py-0.5 rounded-full">🌐 global</span>
+    : <span className="text-xs text-stone-500 bg-stone-100 border border-stone-300 px-1.5 py-0.5 rounded-full">🌐 global</span>
 }
 
 export default function Clasificacion() {
@@ -158,10 +158,10 @@ export default function Clasificacion() {
   if (!loading && leagues.length === 0) {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-stone-100">Clasificación</h2>
+        <h2 className="text-2xl font-bold text-stone-900">Clasificación</h2>
         <div className="card p-10 text-center space-y-4">
           <div className="text-4xl">🏆</div>
-          <p className="text-stone-300 font-medium">Únete a una liga para competir</p>
+          <p className="text-stone-700 font-medium">Únete a una liga para competir</p>
           <p className="text-stone-500 text-sm">La clasificación muestra el ranking dentro de tu liga.</p>
           <button onClick={() => setShowModal(true)} className="btn-primary">Crear o unirme a una liga</button>
         </div>
@@ -178,7 +178,7 @@ export default function Clasificacion() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-stone-100">Clasificación</h2>
+          <h2 className="text-2xl font-bold text-stone-900">Clasificación</h2>
           <p className="text-stone-400 text-sm mt-1">
             {activeLeague
               ? `${activeLeague.name} · ${standings.length} participante${standings.length !== 1 ? 's' : ''}`
@@ -205,7 +205,7 @@ export default function Clasificacion() {
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-stone-100">{myEntry.username}</span>
+                  <span className="font-semibold text-stone-900">{myEntry.username}</span>
                   <span className="text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded">Tú</span>
                   {myEntry.role === 'admin' && (
                     <span className="text-xs text-amber-600/80 bg-amber-600/10 px-1.5 rounded">👑 Admin</span>
@@ -223,7 +223,7 @@ export default function Clasificacion() {
           <div className="flex gap-2 mt-3">
             <StatBadge label="Exactos"     value={myStats.exact}   color="text-amber-400" />
             <StatBadge label="Correctos"   value={myStats.correct} color="text-blue-400" />
-            <StatBadge label="Pronósticos" value={myStats.total}   color="text-stone-300" />
+            <StatBadge label="Pronósticos" value={myStats.total}   color="text-stone-700" />
           </div>
         </div>
       )}
@@ -235,7 +235,7 @@ export default function Clasificacion() {
         </div>
       ) : (
         <div className="card overflow-hidden">
-          <div className="grid grid-cols-[3rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-4 py-3 border-b border-stone-800 text-xs font-semibold text-stone-500 uppercase tracking-wider">
+          <div className="grid grid-cols-[3rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-4 py-3 border-b border-stone-200 text-xs font-semibold text-stone-500 uppercase tracking-wider">
             <div>#</div>
             <div>Jugador</div>
             <div className="hidden sm:block text-center">Exactos</div>
@@ -244,7 +244,7 @@ export default function Clasificacion() {
             <div className="text-right">Puntos</div>
           </div>
 
-          <div className="divide-y divide-stone-800/50">
+          <div className="divide-y divide-stone-200">
             {standings.map((entry) => {
               const isMe  = entry.id === user.id
               const isTop = entry.position <= 3
@@ -253,7 +253,7 @@ export default function Clasificacion() {
                 <div
                   key={entry.id}
                   className={`grid grid-cols-[3rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-4 py-3.5 items-center transition-colors ${
-                    isMe ? 'bg-amber-500/5 hover:bg-amber-500/8' : 'hover:bg-stone-800/30'
+                    isMe ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-stone-100/60'
                   }`}
                 >
                   <div className="font-bold text-base">
@@ -267,14 +267,14 @@ export default function Clasificacion() {
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
                       isMe
                         ? 'bg-amber-500/20 border border-amber-500/40 text-amber-400'
-                        : 'bg-stone-800 border border-stone-700 text-stone-300'
+                        : 'bg-stone-100 border border-stone-300 text-stone-700'
                     }`}>
                       {entry.username?.[0]?.toUpperCase()}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {entry.role === 'admin' && <span className="text-xs flex-shrink-0">👑</span>}
-                        <span className={`font-medium truncate ${isMe ? 'text-amber-300' : 'text-stone-100'}`}>
+                        <span className={`font-medium truncate ${isMe ? 'text-amber-500' : 'text-stone-900'}`}>
                           {entry.username}
                         </span>
                         {isMe && <span className="text-xs text-amber-500/60 flex-shrink-0">Tú</span>}
@@ -298,10 +298,10 @@ export default function Clasificacion() {
                   </div>
 
                   <div className="text-right">
-                    <span className={`text-lg font-bold ${isTop ? 'text-amber-400' : 'text-stone-100'}`}>
+                    <span className={`text-lg font-bold ${isTop ? 'text-amber-400' : 'text-stone-900'}`}>
                       {entry.league_points}
                     </span>
-                    <span className="text-stone-600 text-xs ml-0.5">pts</span>
+                    <span className="text-stone-400 text-xs ml-0.5">pts</span>
                   </div>
                 </div>
               )
@@ -311,7 +311,7 @@ export default function Clasificacion() {
       )}
 
       {activeLeague && (
-        <p className="text-center text-stone-600 text-xs">
+        <p className="text-center text-stone-400 text-xs">
           Los puntos se calculan de los pronósticos activos de cada jugador en esta liga
         </p>
       )}
