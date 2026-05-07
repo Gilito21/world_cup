@@ -43,6 +43,25 @@ export function LeagueProvider({ children }) {
     loadLeagues()
   }, [loadLeagues])
 
+  // Join pending league from invite link after login/register
+  useEffect(() => {
+    if (!user) return
+    const pendingCode = sessionStorage.getItem('porra-invite-code')
+    if (!pendingCode) return
+    sessionStorage.removeItem('porra-invite-code')
+    async function joinPending() {
+      try {
+        const { data: league } = await supabase
+          .from('leagues').select('*').eq('invite_code', pendingCode).single()
+        if (!league) return
+        await supabase.from('league_members')
+          .insert({ league_id: league.id, user_id: user.id, role: 'member' })
+        await loadLeagues()
+      } catch { /* already member or invalid code — silently ignore */ }
+    }
+    joinPending()
+  }, [user?.id])
+
   function setActiveLeague(league) {
     setActiveLeagueState(league)
     if (league && user) {
