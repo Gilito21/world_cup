@@ -21,20 +21,23 @@ const SUPABASE_KEY     = process.env.SUPABASE_SERVICE_ROLE_KEY
 const WC_2026_ID = 'WC'
 
 // Emojis de bandera por código de país (ISO 3166-1 alpha-2)
+// Códigos TLA de 3 letras tal como los devuelve football-data.org
 const FLAGS = {
-  AR: '🇦🇷', AU: '🇦🇺', BE: '🇧🇪', BR: '🇧🇷', CA: '🇨🇦',
-  CL: '🇨🇱', CO: '🇨🇴', CR: '🇨🇷', DE: '🇩🇪', DK: '🇩🇰',
-  EC: '🇪🇨', EG: '🇪🇬', ES: '🇪🇸', FR: '🇫🇷', GB: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-  GH: '🇬🇭', HR: '🇭🇷', HU: '🇭🇺', IR: '🇮🇷', IT: '🇮🇹',
-  JM: '🇯🇲', JP: '🇯🇵', KR: '🇰🇷', MA: '🇲🇦', MX: '🇲🇽',
-  NG: '🇳🇬', NL: '🇳🇱', PA: '🇵🇦', PE: '🇵🇪', PL: '🇵🇱',
-  PT: '🇵🇹', QA: '🇶🇦', RS: '🇷🇸', SA: '🇸🇦', SN: '🇸🇳',
-  TN: '🇹🇳', TR: '🇹🇷', US: '🇺🇸', UY: '🇺🇾', VE: '🇻🇪',
-  HN: '🇭🇳', BO: '🇧🇴', PY: '🇵🇾', CM: '🇨🇲', CI: '🇨🇮',
-  ML: '🇲🇱', SL: '🇸🇱', TZ: '🇹🇿', UZ: '🇺🇿', NZ: '🇳🇿',
-  AT: '🇦🇹', PT: '🇵🇹', RO: '🇷🇴', SK: '🇸🇰', SI: '🇸🇮',
-  UA: '🇺🇦', GE: '🇬🇪', AL: '🇦🇱', BA: '🇧🇦', ME: '🇲🇪',
-  MK: '🇲🇰', DEFAULT: '🏳️',
+  ALG: '🇩🇿', ARG: '🇦🇷', AUS: '🇦🇺', AUT: '🇦🇹', BEL: '🇧🇪',
+  BIH: '🇧🇦', BOL: '🇧🇴', BRA: '🇧🇷', CAN: '🇨🇦', CHI: '🇨🇱',
+  CIV: '🇨🇮', CMR: '🇨🇲', COD: '🇨🇩', COL: '🇨🇴', CPV: '🇨🇻',
+  CRC: '🇨🇷', CRO: '🇭🇷', CUW: '🇨🇼', CZE: '🇨🇿', DEN: '🇩🇰',
+  ECU: '🇪🇨', EGY: '🇪🇬', ENG: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', ESP: '🇪🇸', FRA: '🇫🇷',
+  GEO: '🇬🇪', GER: '🇩🇪', GHA: '🇬🇭', HAI: '🇭🇹', HON: '🇭🇳',
+  HUN: '🇭🇺', IRN: '🇮🇷', IRQ: '🇮🇶', ITA: '🇮🇹', JAM: '🇯🇲',
+  JOR: '🇯🇴', JPN: '🇯🇵', KOR: '🇰🇷', KSA: '🇸🇦', MAR: '🇲🇦',
+  MEX: '🇲🇽', MLI: '🇲🇱', MNE: '🇲🇪', NED: '🇳🇱', NGA: '🇳🇬',
+  NOR: '🇳🇴', NZL: '🇳🇿', PAN: '🇵🇦', PAR: '🇵🇾', PER: '🇵🇪',
+  POL: '🇵🇱', POR: '🇵🇹', QAT: '🇶🇦', ROU: '🇷🇴', RSA: '🇿🇦',
+  SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', SEN: '🇸🇳', SLE: '🇸🇱', SRB: '🇷🇸', SUI: '🇨🇭',
+  SVK: '🇸🇰', SVN: '🇸🇮', SWE: '🇸🇪', TAN: '🇹🇿', TUN: '🇹🇳',
+  TUR: '🇹🇷', UKR: '🇺🇦', URU: '🇺🇾', USA: '🇺🇸', UZB: '🇺🇿',
+  VEN: '🇻🇪', WAL: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', DEFAULT: '🏳️',
 }
 
 function getFlag(countryCode) {
