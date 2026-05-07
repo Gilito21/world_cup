@@ -77,33 +77,32 @@ function ScoreInput({ value, onChange, disabled }) {
   )
 }
 
-function MatchCard({ match, prediction, onSave }) {
+function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
   const isLocked   = match.status !== 'scheduled' || Date.now() >= new Date(match.match_date).getTime() - LOCK_MS
   const isFinished = match.status === 'finished'
 
-  const [home, setHome]       = useState(prediction?.home_score ?? '')
-  const [away, setAway]       = useState(prediction?.away_score ?? '')
-  const [saving, setSaving]   = useState(false)
-  const [saved, setSaved]     = useState(false)
-  const [changed, setChanged] = useState(false)
+  const home = draft?.home ?? ''
+  const away = draft?.away ?? ''
+  const setHome = (val) => onDraftChange(match.id, val, away)
+  const setAway = (val) => onDraftChange(match.id, home, val)
 
-  useEffect(() => {
-    setHome(prediction?.home_score ?? '')
-    setAway(prediction?.away_score ?? '')
-    setChanged(false)
-    setSaved(false)
-  }, [prediction])
+  const changed = home !== '' && away !== '' && (
+    !prediction ||
+    Number(home) !== prediction.home_score ||
+    Number(away) !== prediction.away_score
+  )
 
-  function handleChange(setter) {
-    return (val) => { setter(val); setChanged(true); setSaved(false) }
-  }
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved]   = useState(false)
+
+  useEffect(() => { setSaved(false) }, [prediction])
 
   async function handleSave() {
     if (home === '' || away === '') return
     setSaving(true)
     const ok = await onSave(match.id, Number(home), Number(away))
     setSaving(false)
-    if (ok) { setSaved(true); setChanged(false) }
+    if (ok) setSaved(true)
   }
 
   function PointsBadge() {
@@ -310,7 +309,9 @@ export default function Pronosticos() {
 
   const [matches, setMatches]         = useState([])
   const [predictions, setPredictions] = useState({})
+  const [drafts, setDrafts]           = useState({})
   const [loading, setLoading]         = useState(true)
+  const [savingAll, setSavingAll]     = useState(false)
   const [toggling, setToggling]       = useState(false)
   const [activeStage, setActiveStage] = useState('group')
   const [error, setError]             = useState('')
@@ -337,8 +338,13 @@ export default function Pronosticos() {
         }
         if (predData) {
           const map = {}
-          predData.forEach(p => { map[p.match_id] = p })
+          const initialDrafts = {}
+          predData.forEach(p => {
+            map[p.match_id] = p
+            initialDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? '') }
+          })
           setPredictions(map)
+          setDrafts(initialDrafts)
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -367,8 +373,29 @@ export default function Pronosticos() {
       return false
     }
     setPredictions(p => ({ ...p, [matchId]: data }))
+    setDrafts(d => ({ ...d, [matchId]: { home: String(data.home_score), away: String(data.away_score) } }))
     return true
   }, [predictions, user.id, predictionMode, activeLeague])
+
+  const handleDraftChange = useCallback((matchId, home, away) => {
+    setDrafts(d => ({ ...d, [matchId]: { home, away } }))
+  }, [])
+
+  const handleSaveAll = useCallback(async () => {
+    setSavingAll(true)
+    setError('')
+    const toSave = matches.filter(m => {
+      if (m.status !== 'scheduled') return false
+      if (Date.now() >= new Date(m.match_date).getTime() - LOCK_MS) return false
+      const d = drafts[m.id]
+      if (!d || d.home === '' || d.away === '') return false
+      const pred = predictions[m.id]
+      if (!pred) return true
+      return Number(d.home) !== pred.home_score || Number(d.away) !== pred.away_score
+    })
+    await Promise.all(toSave.map(m => handleSave(m.id, Number(drafts[m.id].home), Number(drafts[m.id].away))))
+    setSavingAll(false)
+  }, [matches, drafts, predictions, handleSave])
 
   async function handleToggleMode(newMode) {
     setToggling(true)
@@ -390,6 +417,16 @@ export default function Pronosticos() {
            m.status === 'scheduled' &&
            Date.now() < new Date(m.match_date).getTime() - LOCK_MS
     ).length
+
+  const saveableCount = matches.filter(m => {
+    if (m.status !== 'scheduled') return false
+    if (Date.now() >= new Date(m.match_date).getTime() - LOCK_MS) return false
+    const d = drafts[m.id]
+    if (!d || d.home === '' || d.away === '') return false
+    const pred = predictions[m.id]
+    if (!pred) return true
+    return Number(d.home) !== pred.home_score || Number(d.away) !== pred.away_score
+  }).length
 
   const filtered = matches.filter(m => m.stage === activeStage)
   const grouped  = filtered.reduce((acc, m) => {
@@ -477,10 +514,22 @@ export default function Pronosticos() {
             </div>
 
             {/* Cabecera de fase activa */}
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{STAGE_INFO[activeStage]?.icon}</span>
-              <h3 className="text-lg font-bold text-stone-800">{STAGE_INFO[activeStage]?.full}</h3>
-              <span className="text-sm text-stone-400">· {filtered.length} partido{filtered.length !== 1 ? 's' : ''}</span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{STAGE_INFO[activeStage]?.icon}</span>
+                <h3 className="text-lg font-bold text-stone-800">{STAGE_INFO[activeStage]?.full}</h3>
+                <span className="text-sm text-stone-400">· {filtered.length} partido{filtered.length !== 1 ? 's' : ''}</span>
+              </div>
+              {saveableCount > 0 && (
+                <button
+                  onClick={handleSaveAll}
+                  disabled={savingAll}
+                  className="btn-primary text-sm px-4 py-2 flex items-center gap-2 flex-shrink-0"
+                >
+                  {savingAll ? <Spinner size="sm" /> : '💾'}
+                  Guardar todo ({saveableCount})
+                </button>
+              )}
             </div>
 
             {/* Partidos por fecha */}
@@ -494,6 +543,8 @@ export default function Pronosticos() {
                       match={m}
                       prediction={predictions[m.id]}
                       onSave={handleSave}
+                      draft={drafts[m.id]}
+                      onDraftChange={handleDraftChange}
                     />
                   ))}
                 </div>
