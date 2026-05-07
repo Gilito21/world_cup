@@ -104,7 +104,7 @@ export default function UpcomingAlert({ predictionMode }) {
 
       <button
         onClick={() => setDismissed(true)}
-        className="text-stone-500 hover:text-stone-300 transition-colors flex-shrink-0 self-start text-lg leading-none"
+        className="text-stone-500 hover:text-stone-700 transition-colors flex-shrink-0 self-start text-lg leading-none"
         aria-label="Cerrar aviso"
       >
         ✕

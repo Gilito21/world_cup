@@ -44,5 +44,4 @@
   .tab-inactive {
     @apply text-stone-500 hover:text-stone-700 hover:bg-stone-100 border-b-2 border-transparent;
   }
-
 }
