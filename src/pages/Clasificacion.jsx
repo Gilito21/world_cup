@@ -16,11 +16,6 @@ function StatBadge({ label, value, color }) {
   )
 }
 
-function ModeBadge({ mode }) {
-  return mode === 'per_league'
-    ? <span className="text-xs text-amber-600/80 bg-amber-600/10 border border-amber-600/20 px-1.5 py-0.5 rounded-full">🏆 propia</span>
-    : <span className="text-xs text-stone-500 bg-stone-100 border border-stone-300 px-1.5 py-0.5 rounded-full">🌐 global</span>
-}
 
 export default function Clasificacion() {
   const { user }                                      = useAuth()
@@ -33,8 +28,8 @@ export default function Clasificacion() {
   const [loading, setLoading]           = useState(true)
   const [showModal, setShowModal]       = useState(false)
 
-  useEffect(() => { loadGlobal() }, [])
-  useEffect(() => { if (tab === 'league') loadLeague() }, [tab, activeLeague])
+  useEffect(() => { if (tab === 'global')    loadGlobal()    }, [tab])
+  useEffect(() => { if (tab === 'league')    loadLeague()    }, [tab, activeLeague?.id])
   useEffect(() => { if (tab === 'companies') loadCompanies() }, [tab])
 
   // ── Global ───────────────────────────────────────────────────────────────
@@ -66,86 +61,53 @@ export default function Clasificacion() {
     if (!activeLeague) { setLeagueStandings([]); setLoading(false); return }
     setLoading(true)
     try {
-
-    const { data: members } = await supabase
-      .from('league_members')
-      .select('user_id, role, prediction_mode')
-      .eq('league_id', activeLeague.id)
-
-    if (!members || members.length === 0) {
-      setLeagueStandings([])
-      return
-    }
-
-    const memberIds        = members.map(m => m.user_id)
-    const perLeagueUserIds = members.filter(m => m.prediction_mode === 'per_league').map(m => m.user_id)
-    const globalUserIds    = members.filter(m => m.prediction_mode !== 'per_league').map(m => m.user_id)
-
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username, total_points')
-      .in('id', memberIds)
-
-    let perLeaguePointsMap = {}
-    let perLeagueStatsMap  = {}
-    if (perLeagueUserIds.length > 0) {
-      const { data: leaguePreds } = await supabase
-        .from('predictions')
-        .select('user_id, points_earned')
+      const { data: members } = await supabase
+        .from('league_members')
+        .select('user_id, role')
         .eq('league_id', activeLeague.id)
-        .in('user_id', perLeagueUserIds)
 
-      ;(leaguePreds ?? []).forEach(p => {
-        perLeaguePointsMap[p.user_id] = (perLeaguePointsMap[p.user_id] ?? 0) + (p.points_earned ?? 0)
-        if (!perLeagueStatsMap[p.user_id]) perLeagueStatsMap[p.user_id] = { exact: 0, correct: 0, total: 0 }
-        perLeagueStatsMap[p.user_id].total++
-        if (p.points_earned === 3) perLeagueStatsMap[p.user_id].exact++
-        else if (p.points_earned === 1) perLeagueStatsMap[p.user_id].correct++
-      })
-    }
-
-    let globalStatsMap = {}
-    if (globalUserIds.length > 0) {
-      const { data: globalPreds } = await supabase
-        .from('predictions')
-        .select('user_id, points_earned')
-        .is('league_id', null)
-        .in('user_id', globalUserIds)
-
-      ;(globalPreds ?? []).forEach(p => {
-        if (!globalStatsMap[p.user_id]) globalStatsMap[p.user_id] = { exact: 0, correct: 0, total: 0 }
-        globalStatsMap[p.user_id].total++
-        if (p.points_earned === 3) globalStatsMap[p.user_id].exact++
-        else if (p.points_earned === 1) globalStatsMap[p.user_id].correct++
-      })
-    }
-
-    const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
-
-    const result = members.map(member => {
-      const profile     = profileMap[member.user_id] ?? {}
-      const isPerLeague = member.prediction_mode === 'per_league'
-      const points      = isPerLeague
-        ? (perLeaguePointsMap[member.user_id] ?? 0)
-        : (profile.total_points ?? 0)
-      const stats       = isPerLeague
-        ? (perLeagueStatsMap[member.user_id] ?? { exact: 0, correct: 0, total: 0 })
-        : (globalStatsMap[member.user_id] ?? { exact: 0, correct: 0, total: 0 })
-      return {
-        id:              member.user_id,
-        username:        profile.username,
-        role:            member.role,
-        prediction_mode: member.prediction_mode ?? 'global',
-        league_points:   points,
-        stats,
+      if (!members || members.length === 0) {
+        setLeagueStandings([])
+        return
       }
-    })
-      .sort((a, b) => b.league_points - a.league_points)
-      .map((entry, i) => ({ ...entry, position: i + 1 }))
 
-    setLeagueStandings(result)
-    const me = result.find(r => r.id === user.id)
-    if (me) setMyLeagueStats(me.stats)
+      const memberIds = members.map(m => m.user_id)
+
+      const [{ data: profiles }, { data: leaguePreds }] = await Promise.all([
+        supabase.from('profiles').select('id, username').in('id', memberIds),
+        supabase.from('predictions').select('user_id, points_earned')
+          .eq('league_id', activeLeague.id).in('user_id', memberIds),
+      ])
+
+      const pointsMap = {}
+      const statsMap  = {}
+      ;(leaguePreds ?? []).forEach(p => {
+        pointsMap[p.user_id] = (pointsMap[p.user_id] ?? 0) + (p.points_earned ?? 0)
+        if (!statsMap[p.user_id]) statsMap[p.user_id] = { exact: 0, correct: 0, total: 0 }
+        statsMap[p.user_id].total++
+        if (p.points_earned === 3)      statsMap[p.user_id].exact++
+        else if (p.points_earned === 1) statsMap[p.user_id].correct++
+      })
+
+      const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
+
+      const result = members
+        .map(member => {
+          const profile = profileMap[member.user_id] ?? {}
+          return {
+            id:            member.user_id,
+            username:      profile.username,
+            role:          member.role,
+            league_points: pointsMap[member.user_id] ?? 0,
+            stats:         statsMap[member.user_id] ?? { exact: 0, correct: 0, total: 0 },
+          }
+        })
+        .sort((a, b) => b.league_points - a.league_points)
+        .map((entry, i) => ({ ...entry, position: i + 1 }))
+
+      setLeagueStandings(result)
+      const me = result.find(r => r.id === user.id)
+      if (me) setMyLeagueStats(me.stats)
     } finally {
       setLoading(false)
     }
@@ -188,7 +150,6 @@ export default function Clasificacion() {
 
   function handleTabChange(newTab) {
     setTab(newTab)
-    setLoading(true)
   }
 
   const tabs = [
@@ -199,7 +160,7 @@ export default function Clasificacion() {
 
   // ── Shared table header ───────────────────────────────────────────────────
 
-  const IndividualTable = useCallback(({ standings, showMode = false }) => {
+  const IndividualTable = useCallback(({ standings, showStats = false }) => {
     const myEntry = standings.find(s => s.id === user.id)
 
     return (
@@ -218,7 +179,6 @@ export default function Clasificacion() {
                     {myEntry.role === 'admin' && (
                       <span className="text-xs text-amber-600/80 bg-amber-600/10 px-1.5 rounded">👑 Admin</span>
                     )}
-                    {showMode && <ModeBadge mode={myEntry.prediction_mode} />}
                   </div>
                   <div className="text-sm text-stone-400">Posición #{myEntry.position}</div>
                 </div>
@@ -228,7 +188,7 @@ export default function Clasificacion() {
                 <div className="text-xs text-stone-500">puntos</div>
               </div>
             </div>
-            {showMode && (
+            {showStats && (
               <div className="flex gap-2 mt-3">
                 <StatBadge label="Exactos"     value={myLeagueStats.exact}   color="text-amber-400" />
                 <StatBadge label="Correctos"   value={myLeagueStats.correct} color="text-blue-400" />
@@ -286,11 +246,6 @@ export default function Clasificacion() {
                           </span>
                           {isMe && <span className="text-xs text-amber-500/60 flex-shrink-0">Tú</span>}
                         </div>
-                        {showMode && (
-                          <div className="mt-0.5">
-                            <ModeBadge mode={entry.prediction_mode} />
-                          </div>
-                        )}
                       </div>
                     </div>
                     <div className="hidden sm:block text-center text-amber-400 font-semibold text-sm">
@@ -365,7 +320,7 @@ export default function Clasificacion() {
               <p className="text-stone-400 text-sm -mt-2">
                 {globalStandings.length} participante{globalStandings.length !== 1 ? 's' : ''} en total
               </p>
-              <IndividualTable standings={globalStandings} showMode={false} />
+              <IndividualTable standings={globalStandings} />
             </>
           )}
 
@@ -402,9 +357,9 @@ export default function Clasificacion() {
                   <p className="text-stone-400 text-sm -mt-2">
                     {activeLeague?.name} · {leagueStandings.length} participante{leagueStandings.length !== 1 ? 's' : ''}
                   </p>
-                  <IndividualTable standings={leagueStandings} showMode={true} />
+                  <IndividualTable standings={leagueStandings} showStats />
                   <p className="text-center text-stone-400 text-xs">
-                    Los puntos se calculan de los pronósticos activos de cada jugador en esta liga
+                    Los puntos se calculan de los pronósticos de cada jugador en esta liga
                   </p>
                 </>
               )}

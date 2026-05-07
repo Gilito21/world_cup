@@ -15,22 +15,23 @@ function timeLeft(dateStr) {
   return `${m} min`
 }
 
-export default function UpcomingAlert({ predictionMode }) {
+export default function UpcomingAlert() {
   const { user }         = useAuth()
   const { activeLeague } = useLeague()
-  const [missing, setMissing]   = useState([])
+  const [missing, setMissing]     = useState([])
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
     setDismissed(false)
     fetchMissing()
-  }, [user?.id, activeLeague?.id, predictionMode])
+  }, [user?.id, activeLeague?.id])
 
   async function fetchMissing() {
-    const now      = new Date()
+    if (!activeLeague) { setMissing([]); return }
+
+    const now       = new Date()
     const windowEnd = new Date(now.getTime() + WINDOW_HOURS * 3_600_000)
 
-    // Partidos programados en las próximas WINDOW_HOURS horas
     const { data: upcoming } = await supabase
       .from('matches')
       .select('id, home_team, away_team, home_flag, away_flag, match_date')
@@ -41,12 +42,8 @@ export default function UpcomingAlert({ predictionMode }) {
 
     if (!upcoming || upcoming.length === 0) { setMissing([]); return }
 
-    // Pronósticos existentes para esos partidos
-    const predQuery = predictionMode === 'per_league' && activeLeague
-      ? supabase.from('predictions').select('match_id').eq('user_id', user.id).eq('league_id', activeLeague.id)
-      : supabase.from('predictions').select('match_id').eq('user_id', user.id).is('league_id', null)
-
-    const { data: preds } = await predQuery
+    const { data: preds } = await supabase
+      .from('predictions').select('match_id').eq('user_id', user.id).eq('league_id', activeLeague.id)
     const predictedIds = new Set((preds ?? []).map(p => p.match_id))
 
     setMissing(upcoming.filter(m => !predictedIds.has(m.id)))
