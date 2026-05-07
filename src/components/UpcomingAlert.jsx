@@ -81,14 +81,14 @@ export default function UpcomingAlert({ predictionMode }) {
             return (
               <li key={m.id} className="flex items-center gap-2 text-sm">
                 <span>{m.home_flag}</span>
-                <span className="text-stone-300 truncate">
+                <span className="text-stone-700 truncate">
                   {m.home_team} vs {m.away_team}
                 </span>
                 {t && (
                   <span className={`ml-auto flex-shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
                     parseFloat(t) < 3 && t.includes('h') === false
                       ? 'bg-red-500/20 text-red-400'
-                      : 'bg-stone-700 text-stone-400'
+                      : 'bg-stone-200 text-stone-500'
                   }`}>
                     en {t}
                   </span>
@@ -97,7 +97,7 @@ export default function UpcomingAlert({ predictionMode }) {
             )
           })}
           {missing.length > 3 && (
-            <li className="text-xs text-stone-500">y {missing.length - 3} más…</li>
+            <li className="text-xs text-stone-400">y {missing.length - 3} más…</li>
           )}
         </ul>
       </div>
