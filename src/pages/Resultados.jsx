@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
 
 const STAGES = {
-  group:          'Fase de grupos',
-  round_of_32:   'Ronda de 32',
-  round_of_16:   'Octavos de final',
-  quarter_final:  'Cuartos de final',
-  semi_final:     'Semifinales',
-  third_place:    'Tercer puesto',
-  final:          'Gran Final',
+  group:         'Fase de grupos',
+  round_of_32:  'Ronda de 32',
+  round_of_16:  'Octavos de final',
+  quarter_final: 'Cuartos de final',
+  semi_final:    'Semifinales',
+  third_place:   'Tercer puesto',
+  final:         'Gran Final',
 }
 
 function formatDate(dateStr) {
@@ -25,101 +26,208 @@ function getWinner(home, away) {
   return 'draw'
 }
 
-function PredictionResult({ prediction, match }) {
-  if (!prediction) {
-    return <span className="text-stone-600 text-xs italic">Sin pronóstico</span>
+// ── Fila de un pronóstico en la tabla expandida ─────────────────────────────
+function PredRow({ entry, realHome, realAway }) {
+  const pts        = entry.points_earned ?? 0
+  const exact      = entry.home_score === realHome && entry.away_score === realAway
+  const realWinner = getWinner(realHome, realAway)
+  const predWinner = getWinner(entry.home_score, entry.away_score)
+  const correct    = !exact && predWinner === realWinner
+
+  return (
+    <div className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+      exact   ? 'bg-amber-500/10'
+      : correct ? 'bg-blue-500/10'
+      : 'bg-stone-800/40'
+    }`}>
+      {/* Avatar + nombre */}
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+        exact ? 'bg-amber-500/30 text-amber-300' : correct ? 'bg-blue-500/20 text-blue-300' : 'bg-stone-700 text-stone-400'
+      }`}>
+        {entry.username?.[0]?.toUpperCase()}
+      </div>
+      <span className="font-medium text-stone-200 truncate flex-1">{entry.username}</span>
+
+      {/* Pronóstico */}
+      <span className="font-mono text-stone-300 flex-shrink-0">
+        {entry.home_score} - {entry.away_score}
+      </span>
+
+      {/* Puntos */}
+      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
+        pts === 3 ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+        : pts === 1 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+        : 'bg-stone-700/50 text-stone-500 border-stone-600'
+      }`}>
+        {pts === 3 ? '🎯 +3' : pts === 1 ? '✓ +1' : '✗ 0'}
+      </span>
+    </div>
+  )
+}
+
+// ── Tarjeta de partido finalizado ────────────────────────────────────────────
+function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
+  const { user }   = useAuth()
+  const winner     = getWinner(match.home_score, match.away_score)
+  const [expanded, setExpanded]     = useState(false)
+  const [allPreds, setAllPreds]     = useState(null)
+  const [loadingPreds, setLoadingPreds] = useState(false)
+
+  async function loadAllPredictions() {
+    if (allPreds !== null) { setExpanded(e => !e); return }
+    setExpanded(true)
+    setLoadingPreds(true)
+
+    // Predicciones del partido según el modo de la liga
+    const predQuery = predictionMode === 'per_league' && leagueId
+      ? supabase.from('predictions').select('user_id, home_score, away_score, points_earned').eq('match_id', match.id).eq('league_id', leagueId)
+      : supabase.from('predictions').select('user_id, home_score, away_score, points_earned').eq('match_id', match.id).is('league_id', null)
+
+    const { data: preds } = await predQuery
+
+    // Perfiles para obtener usernames
+    const userIds = [...new Set((preds ?? []).map(p => p.user_id))]
+    const { data: profiles } = userIds.length
+      ? await supabase.from('profiles').select('id, username').in('id', userIds)
+      : { data: [] }
+
+    const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
+    const enriched = (preds ?? [])
+      .map(p => ({ ...p, username: profileMap[p.user_id]?.username ?? '?' }))
+      .sort((a, b) => (b.points_earned ?? 0) - (a.points_earned ?? 0))
+
+    setAllPreds(enriched)
+    setLoadingPreds(false)
   }
 
-  const pts = prediction.points_earned ?? 0
-  const predWinner = getWinner(prediction.home_score, prediction.away_score)
-  const realWinner = getWinner(match.home_score, match.away_score)
-  const exact      = prediction.home_score === match.home_score && prediction.away_score === match.away_score
+  const stats = allPreds
+    ? {
+        total:   allPreds.length,
+        exact:   allPreds.filter(p => p.points_earned === 3).length,
+        correct: allPreds.filter(p => p.points_earned === 1).length,
+        wrong:   allPreds.filter(p => (p.points_earned ?? 0) === 0).length,
+      }
+    : null
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-stone-400 text-sm">
-        {prediction.home_score} - {prediction.away_score}
-      </span>
-      {exact ? (
-        <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
-          🎯 +3
-        </span>
-      ) : predWinner === realWinner ? (
-        <span className="text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
-          ✓ +1
-        </span>
-      ) : (
-        <span className="text-xs font-bold text-stone-500 bg-stone-800 border border-stone-700 px-2 py-0.5 rounded-full">
-          ✗ 0
-        </span>
-      )}
-    </div>
-  )
-}
+    <div className="card overflow-hidden">
+      {/* Cabecera del partido */}
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-stone-500 capitalize">{formatDate(match.match_date)}</span>
+            {match.group_name && (
+              <span className="text-xs text-stone-600 bg-stone-800 px-1.5 py-0.5 rounded">Grupo {match.group_name}</span>
+            )}
+          </div>
+          <span className="text-xs text-stone-600 bg-stone-800 px-2 py-0.5 rounded-full border border-stone-700">
+            {STAGES[match.stage] ?? match.stage}
+          </span>
+        </div>
 
-function FinishedMatchCard({ match, prediction }) {
-  const winner = getWinner(match.home_score, match.away_score)
-
-  return (
-    <div className="card p-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-stone-500 capitalize">{formatDate(match.match_date)}</span>
-          {match.group_name && (
-            <span className="text-xs text-stone-600 bg-stone-800 px-1.5 py-0.5 rounded">
-              Grupo {match.group_name}
+        <div className="flex items-center gap-3">
+          <div className={`flex-1 flex items-center justify-end gap-2 min-w-0 ${winner !== 'home' ? 'opacity-60' : ''}`}>
+            <span className={`text-sm font-semibold truncate text-right ${winner === 'home' ? 'text-stone-100' : 'text-stone-400'}`}>
+              {match.home_team}
             </span>
+            <span className="text-xl flex-shrink-0">{match.home_flag}</span>
+          </div>
+
+          <div className="flex-shrink-0 flex items-center gap-2 bg-stone-800 rounded-xl px-4 py-2 border border-stone-700">
+            <span className={`text-xl font-bold ${winner === 'home' ? 'text-amber-400' : 'text-stone-300'}`}>{match.home_score}</span>
+            <span className="text-stone-600 text-sm">-</span>
+            <span className={`text-xl font-bold ${winner === 'away' ? 'text-amber-400' : 'text-stone-300'}`}>{match.away_score}</span>
+          </div>
+
+          <div className={`flex-1 flex items-center justify-start gap-2 min-w-0 ${winner !== 'away' ? 'opacity-60' : ''}`}>
+            <span className="text-xl flex-shrink-0">{match.away_flag}</span>
+            <span className={`text-sm font-semibold truncate ${winner === 'away' ? 'text-stone-100' : 'text-stone-400'}`}>
+              {match.away_team}
+            </span>
+          </div>
+        </div>
+
+        {/* Mi pronóstico + botón ver todos */}
+        <div className="mt-3 pt-3 border-t border-stone-800 flex items-center justify-between gap-3">
+          <div className="text-xs text-stone-500">
+            {myPrediction ? (
+              <>
+                Tu pronóstico:{' '}
+                <span className="text-stone-300 font-medium font-mono">
+                  {myPrediction.home_score} - {myPrediction.away_score}
+                </span>
+                {' · '}
+                <span className={
+                  myPrediction.points_earned === 3 ? 'text-amber-400 font-semibold' :
+                  myPrediction.points_earned === 1 ? 'text-blue-400' : 'text-stone-500'
+                }>
+                  {myPrediction.points_earned === 3 ? '🎯 +3 pts' :
+                   myPrediction.points_earned === 1 ? '✓ +1 pt' : '✗ 0 pts'}
+                </span>
+              </>
+            ) : (
+              <span className="italic">Sin pronóstico</span>
+            )}
+          </div>
+
+          <button
+            onClick={loadAllPredictions}
+            className="flex items-center gap-1.5 text-xs text-amber-500 hover:text-amber-400 transition-colors flex-shrink-0"
+          >
+            <span>{expanded ? '▲' : '▼'}</span>
+            <span>{expanded ? 'Ocultar' : 'Ver todos'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Panel expandido: pronósticos de todos */}
+      {expanded && (
+        <div className="border-t border-stone-800 bg-stone-900/50 px-4 pb-4 pt-3">
+          {loadingPreds ? (
+            <div className="flex justify-center py-4"><Spinner /></div>
+          ) : allPreds && allPreds.length > 0 ? (
+            <>
+              {/* Resumen rápido */}
+              <div className="flex gap-3 mb-3 text-xs text-stone-500">
+                <span>{stats.total} pronósticos</span>
+                <span className="text-amber-400">🎯 {stats.exact} exactos</span>
+                <span className="text-blue-400">✓ {stats.correct} correctos</span>
+                <span>✗ {stats.wrong} fallados</span>
+              </div>
+              {/* Lista de pronósticos */}
+              <div className="space-y-1.5">
+                {allPreds.map(p => (
+                  <PredRow
+                    key={p.user_id}
+                    entry={p}
+                    realHome={match.home_score}
+                    realAway={match.away_score}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-stone-500 text-sm text-center py-3 italic">
+              Nadie pronosticó este partido.
+            </p>
           )}
         </div>
-        <span className="text-xs text-stone-600 bg-stone-800 px-2 py-0.5 rounded-full border border-stone-700">
-          {STAGES[match.stage] ?? match.stage}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-3">
-        {/* Home team */}
-        <div className={`flex-1 flex items-center justify-end gap-2 min-w-0 ${winner === 'home' ? 'opacity-100' : 'opacity-60'}`}>
-          <span className={`text-sm font-semibold truncate text-right ${winner === 'home' ? 'text-stone-100' : 'text-stone-400'}`}>
-            {match.home_team}
-          </span>
-          <span className="text-xl flex-shrink-0">{match.home_flag}</span>
-        </div>
-
-        {/* Score */}
-        <div className="flex-shrink-0 flex items-center gap-2 bg-stone-800 rounded-xl px-4 py-2 border border-stone-700">
-          <span className={`text-xl font-bold ${winner === 'home' ? 'text-amber-400' : 'text-stone-300'}`}>
-            {match.home_score}
-          </span>
-          <span className="text-stone-600 text-sm">-</span>
-          <span className={`text-xl font-bold ${winner === 'away' ? 'text-amber-400' : 'text-stone-300'}`}>
-            {match.away_score}
-          </span>
-        </div>
-
-        {/* Away team */}
-        <div className={`flex-1 flex items-center justify-start gap-2 min-w-0 ${winner === 'away' ? 'opacity-100' : 'opacity-60'}`}>
-          <span className="text-xl flex-shrink-0">{match.away_flag}</span>
-          <span className={`text-sm font-semibold truncate ${winner === 'away' ? 'text-stone-100' : 'text-stone-400'}`}>
-            {match.away_team}
-          </span>
-        </div>
-      </div>
-
-      {/* My prediction */}
-      <div className="mt-3 pt-3 border-t border-stone-800/80 flex items-center justify-between">
-        <span className="text-xs text-stone-500">Tu pronóstico</span>
-        <PredictionResult prediction={prediction} match={match} />
-      </div>
+      )}
 
       {match.venue && (
-        <div className="mt-1 text-center text-xs text-stone-700">📍 {match.venue}</div>
+        <div className="px-4 pb-3 text-center text-xs text-stone-700">📍 {match.venue}</div>
       )}
     </div>
   )
 }
 
+// ── Página principal ─────────────────────────────────────────────────────────
 export default function Resultados() {
-  const { user } = useAuth()
+  const { user }                   = useAuth()
+  const { activeLeague }           = useLeague()
+  const predictionMode             = activeLeague?.prediction_mode ?? 'global'
+  const leagueId                   = predictionMode === 'per_league' ? activeLeague?.id : null
+
   const [matches, setMatches]         = useState([])
   const [predictions, setPredictions] = useState({})
   const [loading, setLoading]         = useState(true)
@@ -127,19 +235,15 @@ export default function Resultados() {
 
   useEffect(() => {
     loadData()
-  }, [user])
+  }, [user, activeLeague?.id, predictionMode])
 
   async function loadData() {
+    setLoading(true)
     const [{ data: matchData }, { data: predData }] = await Promise.all([
-      supabase
-        .from('matches')
-        .select('*')
-        .eq('status', 'finished')
-        .order('match_date', { ascending: false }),
-      supabase
-        .from('predictions')
-        .select('*')
-        .eq('user_id', user.id),
+      supabase.from('matches').select('*').eq('status', 'finished').order('match_date', { ascending: false }),
+      predictionMode === 'per_league' && activeLeague
+        ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
+        : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null),
     ])
 
     if (matchData) setMatches(matchData)
@@ -151,7 +255,6 @@ export default function Resultados() {
     setLoading(false)
   }
 
-  // Stats summary
   const stats = matches.reduce(
     (acc, m) => {
       const p = predictions[m.id]
@@ -172,7 +275,6 @@ export default function Resultados() {
     ? matches.filter(m => predictions[m.id])
     : matches.filter(m => !predictions[m.id])
 
-  // Group by stage
   const grouped = filtered.reduce((acc, m) => {
     const key = STAGES[m.stage] ?? m.stage
     ;(acc[key] = acc[key] ?? []).push(m)
@@ -180,28 +282,25 @@ export default function Resultados() {
   }, {})
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <div className="flex justify-center items-center py-20"><Spinner size="lg" /></div>
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-stone-100">Resultados</h2>
-        <p className="text-stone-400 text-sm mt-1">Partidos finalizados y tu puntuación en cada uno</p>
+        <p className="text-stone-400 text-sm mt-1">
+          Partidos finalizados · Despliega cada partido para ver los pronósticos de todos
+        </p>
       </div>
 
-      {/* Stats summary */}
       {matches.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: 'Puntos obtenidos', value: stats.points, color: 'text-amber-400', icon: '⭐' },
             { label: 'Exactos (×3pts)',  value: stats.exact,  color: 'text-amber-300', icon: '🎯' },
             { label: 'Correctos (×1pt)', value: stats.correct, color: 'text-blue-400', icon: '✓' },
-            { label: 'Fallados',         value: stats.wrong,   color: 'text-stone-400', icon: '✗' },
+            { label: 'Fallados',         value: stats.wrong,  color: 'text-stone-400', icon: '✗' },
           ].map(({ label, value, color, icon }) => (
             <div key={label} className="card p-4 text-center">
               <div className="text-lg mb-0.5">{icon}</div>
@@ -220,20 +319,17 @@ export default function Resultados() {
         </div>
       ) : (
         <>
-          {/* Filter buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {[
-              { key: 'all', label: `Todos (${matches.length})` },
-              { key: 'predicted', label: `Con pronóstico (${matches.filter(m => predictions[m.id]).length})` },
+              { key: 'all',         label: `Todos (${matches.length})` },
+              { key: 'predicted',   label: `Con pronóstico (${matches.filter(m => predictions[m.id]).length})` },
               { key: 'unpredicted', label: `Sin pronóstico (${matches.filter(m => !predictions[m.id]).length})` },
             ].map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => setFilter(key)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  filter === key
-                    ? 'bg-amber-500 text-stone-950'
-                    : 'bg-stone-800 text-stone-400 hover:text-stone-100'
+                  filter === key ? 'bg-amber-500 text-stone-950' : 'bg-stone-800 text-stone-400 hover:text-stone-100'
                 }`}
               >
                 {label}
@@ -241,7 +337,6 @@ export default function Resultados() {
             ))}
           </div>
 
-          {/* Results grouped by stage */}
           {Object.entries(grouped).map(([stage, stageMatches]) => (
             <div key={stage}>
               <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
@@ -252,7 +347,9 @@ export default function Resultados() {
                   <FinishedMatchCard
                     key={m.id}
                     match={m}
-                    prediction={predictions[m.id]}
+                    myPrediction={predictions[m.id]}
+                    leagueId={leagueId}
+                    predictionMode={predictionMode}
                   />
                 ))}
               </div>
