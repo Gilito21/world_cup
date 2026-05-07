@@ -240,7 +240,7 @@ export default function Auth() {
         }
 
         if (!authData?.session) {
-          setSuccess('¡Cuenta creada! Revisa tu email para confirmarla y luego inicia sesión.')
+          setSuccess('¡Cuenta creada! Ya puedes iniciar sesión.')
         }
       }
     } catch (err) {
