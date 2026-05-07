@@ -78,9 +78,10 @@ export function LeagueProvider({ children }) {
       .single()
     if (error) throw error
 
-    await supabase
+    const { error: memberError } = await supabase
       .from('league_members')
       .insert({ league_id: league.id, user_id: user.id, role: 'admin' })
+    if (memberError) throw memberError
 
     await loadLeagues()
     // Activar la liga recién creada

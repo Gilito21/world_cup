@@ -439,7 +439,7 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
 
 export default function Pronosticos() {
   const { user }                  = useAuth()
-  const { activeLeague, leagues } = useLeague()
+  const { activeLeague, leagues, loading: leagueLoading } = useLeague()
 
   const [matches,     setMatches]     = useState([])
   const [predictions, setPredictions] = useState({})
@@ -458,6 +458,9 @@ export default function Pronosticos() {
 
   // ── Data loading ────────────────────────────────────────────────────────────
   useEffect(() => {
+    // Wait until LeagueContext has resolved which league is active before loading
+    if (leagueLoading) return
+
     let cancelled = false
 
     async function load() {
@@ -516,7 +519,7 @@ export default function Pronosticos() {
 
     load()
     return () => { cancelled = true }
-  }, [user?.id, activeLeague?.id])
+  }, [user?.id, activeLeague?.id, leagueLoading])
 
   // ── Cascade: group predictions → predicted knockout teams ───────────────────
   const predictedOverlay = useMemo(() => {
