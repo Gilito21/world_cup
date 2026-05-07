@@ -4,9 +4,10 @@ import { useLeague } from '../contexts/LeagueContext'
 import LeagueSwitcher from './LeagueSwitcher'
 
 const NAV = [
-  { to: '/pronosticos',   label: 'Pronósticos', icon: '🎯' },
+  { to: '/pronosticos',   label: 'Pronósticos',  icon: '🎯' },
   { to: '/clasificacion', label: 'Clasificación', icon: '🏆' },
-  { to: '/resultados',    label: 'Resultados',   icon: '📋' },
+  { to: '/resultados',    label: 'Resultados',    icon: '📋' },
+  { to: '/bracket',       label: 'Bracket',       icon: '⚽' },
 ]
 
 export default function Layout() {
