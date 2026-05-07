@@ -163,9 +163,9 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <ScoreInput value={home} onChange={handleChange(setHome)} disabled={isLocked} />
+              <ScoreInput value={home} onChange={setHome} disabled={isLocked} />
               <span className="text-stone-400 font-bold text-sm">-</span>
-              <ScoreInput value={away} onChange={handleChange(setAway)} disabled={isLocked} />
+              <ScoreInput value={away} onChange={setAway} disabled={isLocked} />
             </div>
           )}
         </div>
