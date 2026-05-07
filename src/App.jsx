@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
+import { LeagueProvider } from './contexts/LeagueContext'
 import Layout from './components/Layout'
 import Auth from './pages/Auth'
 import Pronosticos from './pages/Pronosticos'
@@ -26,25 +27,27 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/auth"
-        element={user ? <Navigate to="/pronosticos" replace /> : <Auth />}
-      />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Navigate to="/pronosticos" replace />} />
-        <Route path="pronosticos" element={<Pronosticos />} />
-        <Route path="clasificacion" element={<Clasificacion />} />
-        <Route path="resultados" element={<Resultados />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <LeagueProvider>
+      <Routes>
+        <Route
+          path="/auth"
+          element={user ? <Navigate to="/pronosticos" replace /> : <Auth />}
+        />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/pronosticos" replace />} />
+          <Route path="pronosticos"  element={<Pronosticos />} />
+          <Route path="clasificacion" element={<Clasificacion />} />
+          <Route path="resultados"   element={<Resultados />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </LeagueProvider>
   )
 }
