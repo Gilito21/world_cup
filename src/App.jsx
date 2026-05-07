@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext'
 import { LeagueProvider } from './contexts/LeagueContext'
 import Layout from './components/Layout'
 import Auth from './pages/Auth'
+import ResetPassword from './pages/ResetPassword'
 import Pronosticos from './pages/Pronosticos'
 import Clasificacion from './pages/Clasificacion'
 import Resultados from './pages/Resultados'
@@ -29,10 +30,8 @@ export default function App() {
   return (
     <LeagueProvider>
       <Routes>
-        <Route
-          path="/auth"
-          element={user ? <Navigate to="/pronosticos" replace /> : <Auth />}
-        />
+        <Route path="/auth"           element={user ? <Navigate to="/pronosticos" replace /> : <Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/"
           element={

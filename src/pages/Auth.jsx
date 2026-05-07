@@ -3,6 +3,88 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import Spinner from '../components/Spinner'
 
+function ForgotPassword({ onBack }) {
+  const [email, setEmail]     = useState('')
+  const [loading, setLoading] = useState(false)
+  const [sent, setSent]       = useState(false)
+  const [error, setError]     = useState('')
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    const redirectTo = `${window.location.origin}/reset-password`
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+    setLoading(false)
+    if (err) { setError(err.message); return }
+    setSent(true)
+  }
+
+  return (
+    <div className="min-h-screen bg-stone-950 flex items-center justify-center px-4">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
+      </div>
+      <div className="relative w-full max-w-md animate-slide-up">
+        <div className="text-center mb-8">
+          <div className="text-5xl mb-3">⚽</div>
+          <h1 className="text-2xl font-bold text-stone-100">
+            Porra <span className="text-amber-500">Mundial 2026</span>
+          </h1>
+        </div>
+        <div className="card p-6">
+          {sent ? (
+            <div className="text-center space-y-3 py-4">
+              <div className="text-4xl">📧</div>
+              <p className="text-stone-100 font-semibold">Email enviado</p>
+              <p className="text-stone-400 text-sm">
+                Revisa tu bandeja de entrada. El enlace caduca en 1 hora.
+              </p>
+              <button onClick={onBack} className="btn-secondary w-full mt-2">
+                Volver al inicio de sesión
+              </button>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-lg font-semibold text-stone-100 mb-1">Recuperar contraseña</h2>
+              <p className="text-stone-400 text-sm mb-5">
+                Te enviamos un enlace para crear una nueva contraseña.
+              </p>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-300 mb-1.5">Tu email</label>
+                  <input
+                    type="email"
+                    className="input"
+                    placeholder="tu@email.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    autoFocus
+                    autoComplete="email"
+                  />
+                </div>
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+                    {error}
+                  </div>
+                )}
+                <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
+                  {loading && <Spinner size="sm" />}
+                  Enviar enlace
+                </button>
+              </form>
+              <button onClick={onBack} className="w-full text-center text-stone-500 text-sm mt-4 hover:text-stone-300 transition-colors">
+                ← Volver
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
@@ -13,10 +95,11 @@ const USERNAME_RE = /^[a-zA-Z0-9_-]+$/
 
 export default function Auth() {
   const { signIn, signUp } = useAuth()
-  const [mode, setMode]       = useState('login')
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [success, setSuccess] = useState('')
+  const [mode, setMode]         = useState('login')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
+  const [success, setSuccess]   = useState('')
+  const [showForgot, setShowForgot] = useState(false)
 
   const [form, setForm] = useState({ email: '', password: '', username: '' })
 
@@ -148,6 +231,8 @@ export default function Auth() {
     setForm(f => ({ ...f, username: '' }))
   }
 
+  if (showForgot) return <ForgotPassword onBack={() => setShowForgot(false)} />
+
   // Si el registro se completó con liga creada, mostrar el código
   if (createdCode) {
     return (
@@ -268,7 +353,18 @@ export default function Auth() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-300 mb-1.5">Contraseña</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium text-stone-300">Contraseña</label>
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowForgot(true)}
+                    className="text-xs text-amber-500 hover:text-amber-400 hover:underline underline-offset-2"
+                  >
+                    ¿Olvidaste la contraseña?
+                  </button>
+                )}
+              </div>
               <input
                 type="password"
                 className="input"
