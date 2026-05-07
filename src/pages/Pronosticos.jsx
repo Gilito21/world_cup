@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
+import UpcomingAlert from '../components/UpcomingAlert'
 
 const STAGES = {
   group:         'Fase de grupos',
@@ -326,6 +327,9 @@ export default function Pronosticos() {
         onToggle={handleToggleMode}
         toggling={toggling}
       />
+
+      {/* Alerta de partidos próximos sin pronosticar */}
+      <UpcomingAlert predictionMode={predictionMode} />
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
