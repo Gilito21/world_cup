@@ -316,35 +316,38 @@ export default function Pronosticos() {
   const [error, setError]             = useState('')
 
   useEffect(() => {
-    loadData()
-  }, [user?.id, activeLeague?.id, predictionMode])
+    let cancelled = false
 
-  async function loadData() {
-    setLoading(true)
-    try {
-      const matchQuery = supabase.from('matches').select('*').order('match_date')
-      const predQuery = predictionMode === 'per_league' && activeLeague
-        ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
-        : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
+    async function load() {
+      setLoading(true)
+      try {
+        const matchQuery = supabase.from('matches').select('*').order('match_date')
+        const predQuery = predictionMode === 'per_league' && activeLeague
+          ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
+          : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
 
-      const [{ data: matchData }, { data: predData }] = await Promise.all([matchQuery, predQuery])
+        const [{ data: matchData }, { data: predData }] = await Promise.all([matchQuery, predQuery])
 
-      if (matchData) {
-        setMatches(matchData)
-        const availableStages = [...new Set(matchData.map(m => m.stage))]
-        if (availableStages.length > 0 && !availableStages.includes(activeStage)) {
-          setActiveStage(STAGE_ORDER.find(s => availableStages.includes(s)) ?? availableStages[0])
+        if (cancelled) return
+
+        if (matchData) {
+          setMatches(matchData)
+          const available = [...new Set(matchData.map(m => m.stage))]
+          setActiveStage(prev => available.includes(prev) ? prev : (STAGE_ORDER.find(s => available.includes(s)) ?? available[0]))
         }
+        if (predData) {
+          const map = {}
+          predData.forEach(p => { map[p.match_id] = p })
+          setPredictions(map)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      if (predData) {
-        const map = {}
-        predData.forEach(p => { map[p.match_id] = p })
-        setPredictions(map)
-      }
-    } finally {
-      setLoading(false)
     }
-  }
+
+    load()
+    return () => { cancelled = true }
+  }, [user?.id, activeLeague?.id, predictionMode])
 
   const handleSave = useCallback(async (matchId, home, away) => {
     setError('')

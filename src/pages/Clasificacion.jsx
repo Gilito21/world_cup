@@ -33,8 +33,8 @@ export default function Clasificacion() {
   const [loading, setLoading]           = useState(true)
   const [showModal, setShowModal]       = useState(false)
 
-  useEffect(() => { loadGlobal() }, [])
-  useEffect(() => { if (tab === 'league') loadLeague() }, [tab, activeLeague])
+  useEffect(() => { if (tab === 'global')    loadGlobal()    }, [tab])
+  useEffect(() => { if (tab === 'league')    loadLeague()    }, [tab, activeLeague?.id])
   useEffect(() => { if (tab === 'companies') loadCompanies() }, [tab])
 
   // ── Global ───────────────────────────────────────────────────────────────
@@ -188,7 +188,6 @@ export default function Clasificacion() {
 
   function handleTabChange(newTab) {
     setTab(newTab)
-    setLoading(true)
   }
 
   const tabs = [
