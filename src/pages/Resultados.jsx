@@ -38,18 +38,18 @@ function PredRow({ entry, realHome, realAway }) {
     <div className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
       exact   ? 'bg-amber-500/10'
       : correct ? 'bg-blue-500/10'
-      : 'bg-stone-800/40'
+      : 'bg-stone-100'
     }`}>
       {/* Avatar + nombre */}
       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-        exact ? 'bg-amber-500/30 text-amber-300' : correct ? 'bg-blue-500/20 text-blue-300' : 'bg-stone-700 text-stone-400'
+        exact ? 'bg-amber-500/30 text-amber-600' : correct ? 'bg-blue-500/20 text-blue-500' : 'bg-stone-200 text-stone-500'
       }`}>
         {entry.username?.[0]?.toUpperCase()}
       </div>
-      <span className="font-medium text-stone-200 truncate flex-1">{entry.username}</span>
+      <span className="font-medium text-stone-800 truncate flex-1">{entry.username}</span>
 
       {/* Pronóstico */}
-      <span className="font-mono text-stone-300 flex-shrink-0">
+      <span className="font-mono text-stone-700 flex-shrink-0">
         {entry.home_score} - {entry.away_score}
       </span>
 
@@ -57,7 +57,7 @@ function PredRow({ entry, realHome, realAway }) {
       <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
         pts === 3 ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
         : pts === 1 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-        : 'bg-stone-700/50 text-stone-500 border-stone-600'
+        : 'bg-stone-200 text-stone-500 border-stone-300'
       }`}>
         {pts === 3 ? '🎯 +3' : pts === 1 ? '✓ +1' : '✗ 0'}
       </span>
@@ -117,43 +117,43 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
           <div className="flex items-center gap-2">
             <span className="text-xs text-stone-500 capitalize">{formatDate(match.match_date)}</span>
             {match.group_name && (
-              <span className="text-xs text-stone-600 bg-stone-800 px-1.5 py-0.5 rounded">Grupo {match.group_name}</span>
+              <span className="text-xs text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">Grupo {match.group_name}</span>
             )}
           </div>
-          <span className="text-xs text-stone-600 bg-stone-800 px-2 py-0.5 rounded-full border border-stone-700">
+          <span className="text-xs text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full border border-stone-300">
             {STAGES[match.stage] ?? match.stage}
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           <div className={`flex-1 flex items-center justify-end gap-2 min-w-0 ${winner !== 'home' ? 'opacity-60' : ''}`}>
-            <span className={`text-sm font-semibold truncate text-right ${winner === 'home' ? 'text-stone-100' : 'text-stone-400'}`}>
+            <span className={`text-sm font-semibold truncate text-right ${winner === 'home' ? 'text-stone-900' : 'text-stone-400'}`}>
               {match.home_team}
             </span>
             <span className="text-xl flex-shrink-0">{match.home_flag}</span>
           </div>
 
-          <div className="flex-shrink-0 flex items-center gap-2 bg-stone-800 rounded-xl px-4 py-2 border border-stone-700">
-            <span className={`text-xl font-bold ${winner === 'home' ? 'text-amber-400' : 'text-stone-300'}`}>{match.home_score}</span>
-            <span className="text-stone-600 text-sm">-</span>
-            <span className={`text-xl font-bold ${winner === 'away' ? 'text-amber-400' : 'text-stone-300'}`}>{match.away_score}</span>
+          <div className="flex-shrink-0 flex items-center gap-2 bg-stone-100 rounded-xl px-4 py-2 border border-stone-300">
+            <span className={`text-xl font-bold ${winner === 'home' ? 'text-amber-400' : 'text-stone-700'}`}>{match.home_score}</span>
+            <span className="text-stone-400 text-sm">-</span>
+            <span className={`text-xl font-bold ${winner === 'away' ? 'text-amber-400' : 'text-stone-700'}`}>{match.away_score}</span>
           </div>
 
           <div className={`flex-1 flex items-center justify-start gap-2 min-w-0 ${winner !== 'away' ? 'opacity-60' : ''}`}>
             <span className="text-xl flex-shrink-0">{match.away_flag}</span>
-            <span className={`text-sm font-semibold truncate ${winner === 'away' ? 'text-stone-100' : 'text-stone-400'}`}>
+            <span className={`text-sm font-semibold truncate ${winner === 'away' ? 'text-stone-900' : 'text-stone-400'}`}>
               {match.away_team}
             </span>
           </div>
         </div>
 
         {/* Mi pronóstico + botón ver todos */}
-        <div className="mt-3 pt-3 border-t border-stone-800 flex items-center justify-between gap-3">
+        <div className="mt-3 pt-3 border-t border-stone-200 flex items-center justify-between gap-3">
           <div className="text-xs text-stone-500">
             {myPrediction ? (
               <>
                 Tu pronóstico:{' '}
-                <span className="text-stone-300 font-medium font-mono">
+                <span className="text-stone-700 font-medium font-mono">
                   {myPrediction.home_score} - {myPrediction.away_score}
                 </span>
                 {' · '}
@@ -182,7 +182,7 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
 
       {/* Panel expandido: pronósticos de todos */}
       {expanded && (
-        <div className="border-t border-stone-800 bg-stone-900/50 px-4 pb-4 pt-3">
+        <div className="border-t border-stone-200 bg-stone-50 px-4 pb-4 pt-3">
           {loadingPreds ? (
             <div className="flex justify-center py-4"><Spinner /></div>
           ) : allPreds && allPreds.length > 0 ? (
@@ -215,7 +215,7 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
       )}
 
       {match.venue && (
-        <div className="px-4 pb-3 text-center text-xs text-stone-700">📍 {match.venue}</div>
+        <div className="px-4 pb-3 text-center text-xs text-stone-400">📍 {match.venue}</div>
       )}
     </div>
   )
@@ -288,7 +288,7 @@ export default function Resultados() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-stone-100">Resultados</h2>
+        <h2 className="text-2xl font-bold text-stone-900">Resultados</h2>
         <p className="text-stone-400 text-sm mt-1">
           Partidos finalizados · Despliega cada partido para ver los pronósticos de todos
         </p>
@@ -315,7 +315,7 @@ export default function Resultados() {
         <div className="card p-10 text-center">
           <div className="text-4xl mb-3">⏳</div>
           <p className="text-stone-400">Aún no hay partidos finalizados.</p>
-          <p className="text-stone-600 text-sm mt-1">El Mundial empieza el 11 de junio de 2026. ¡Prepara tus pronósticos!</p>
+          <p className="text-stone-400 text-sm mt-1">El Mundial empieza el 11 de junio de 2026. ¡Prepara tus pronósticos!</p>
         </div>
       ) : (
         <>
@@ -329,7 +329,7 @@ export default function Resultados() {
                 key={key}
                 onClick={() => setFilter(key)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  filter === key ? 'bg-amber-500 text-stone-950' : 'bg-stone-800 text-stone-400 hover:text-stone-100'
+                  filter === key ? 'bg-amber-500 text-stone-950' : 'bg-stone-100 text-stone-400 hover:text-stone-900'
                 }`}
               >
                 {label}

@@ -68,7 +68,7 @@ export default function Perfil() {
   return (
     <div className="space-y-6 max-w-lg">
       <div>
-        <h2 className="text-2xl font-bold text-stone-100">Mi perfil</h2>
+        <h2 className="text-2xl font-bold text-stone-900">Mi perfil</h2>
         <p className="text-stone-400 text-sm mt-1">Ajustes de tu cuenta</p>
       </div>
 
@@ -78,7 +78,7 @@ export default function Perfil() {
           {profile?.username?.[0]?.toUpperCase()}
         </div>
         <div className="min-w-0">
-          <p className="text-lg font-semibold text-stone-100 truncate">{profile?.username}</p>
+          <p className="text-lg font-semibold text-stone-900 truncate">{profile?.username}</p>
           <p className="text-stone-400 text-sm truncate">{user?.email}</p>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-semibold">
@@ -96,7 +96,7 @@ export default function Perfil() {
         ) : stats ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Pronósticos',  value: stats.totalPredictions, icon: '📝', color: 'text-stone-300' },
+              { label: 'Pronósticos',  value: stats.totalPredictions, icon: '📝', color: 'text-stone-700' },
               { label: 'Exactos',      value: stats.exact,            icon: '🎯', color: 'text-amber-400' },
               { label: 'Correctos',    value: stats.correct,          icon: '✓',  color: 'text-blue-400'  },
               { label: 'Precisión',    value: stats.accuracy !== null ? `${stats.accuracy}%` : '—', icon: '📊', color: 'text-green-400' },
@@ -117,7 +117,7 @@ export default function Perfil() {
         <div className="card p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <p className="text-stone-100 font-medium">Recordatorios por email</p>
+              <p className="text-stone-900 font-medium">Recordatorios por email</p>
               <p className="text-stone-400 text-sm mt-1">
                 Recibe un email cuando un partido empiece en menos de 2 horas y todavía no hayas pronosticado.
               </p>
@@ -130,7 +130,7 @@ export default function Perfil() {
               onClick={toggleReminders}
               disabled={savingReminders}
               className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none mt-0.5 ${
-                emailReminders ? 'bg-amber-500' : 'bg-stone-700'
+                emailReminders ? 'bg-amber-500' : 'bg-stone-300'
               } disabled:opacity-60`}
               role="switch"
               aria-checked={emailReminders}
