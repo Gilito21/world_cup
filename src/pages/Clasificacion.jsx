@@ -41,20 +41,23 @@ export default function Clasificacion() {
 
   async function loadGlobal() {
     setLoading(true)
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username, total_points')
-      .order('total_points', { ascending: false })
+    try {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, total_points')
+        .order('total_points', { ascending: false })
 
-    setGlobalStandings(
-      (profiles ?? []).map((p, i) => ({
-        ...p,
-        position:      i + 1,
-        league_points: p.total_points ?? 0,
-        stats:         { exact: 0, correct: 0, total: 0 },
-      }))
-    )
-    setLoading(false)
+      setGlobalStandings(
+        (profiles ?? []).map((p, i) => ({
+          ...p,
+          position:      i + 1,
+          league_points: p.total_points ?? 0,
+          stats:         { exact: 0, correct: 0, total: 0 },
+        }))
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
   // ── Liga ─────────────────────────────────────────────────────────────────
@@ -62,6 +65,7 @@ export default function Clasificacion() {
   async function loadLeague() {
     if (!activeLeague) { setLeagueStandings([]); setLoading(false); return }
     setLoading(true)
+    try {
 
     const { data: members } = await supabase
       .from('league_members')
@@ -70,7 +74,6 @@ export default function Clasificacion() {
 
     if (!members || members.length === 0) {
       setLeagueStandings([])
-      setLoading(false)
       return
     }
 
@@ -143,37 +146,42 @@ export default function Clasificacion() {
     setLeagueStandings(result)
     const me = result.find(r => r.id === user.id)
     if (me) setMyLeagueStats(me.stats)
-    setLoading(false)
+    } finally {
+      setLoading(false)
+    }
   }
 
   // ── Empresas ─────────────────────────────────────────────────────────────
 
   async function loadCompanies() {
     setLoading(true)
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username, company, total_points')
-      .not('company', 'is', null)
-      .neq('company', '')
+    try {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, company, total_points')
+        .not('company', 'is', null)
+        .neq('company', '')
 
-    const companyMap = {}
-    for (const p of profiles ?? []) {
-      if (!companyMap[p.company]) companyMap[p.company] = []
-      companyMap[p.company].push(p)
+      const companyMap = {}
+      for (const p of profiles ?? []) {
+        if (!companyMap[p.company]) companyMap[p.company] = []
+        companyMap[p.company].push(p)
+      }
+
+      const result = Object.entries(companyMap)
+        .map(([name, members]) => {
+          const sorted  = [...members].sort((a, b) => (b.total_points ?? 0) - (a.total_points ?? 0))
+          const avg     = members.reduce((s, m) => s + (m.total_points ?? 0), 0) / members.length
+          const hasMe   = members.some(m => m.id === user.id)
+          return { name, count: members.length, avg, top: sorted[0], hasMe }
+        })
+        .sort((a, b) => b.avg - a.avg)
+        .map((c, i) => ({ ...c, position: i + 1 }))
+
+      setCompanyStandings(result)
+    } finally {
+      setLoading(false)
     }
-
-    const result = Object.entries(companyMap)
-      .map(([name, members]) => {
-        const sorted  = [...members].sort((a, b) => (b.total_points ?? 0) - (a.total_points ?? 0))
-        const avg     = members.reduce((s, m) => s + (m.total_points ?? 0), 0) / members.length
-        const hasMe   = members.some(m => m.id === user.id)
-        return { name, count: members.length, avg, top: sorted[0], hasMe }
-      })
-      .sort((a, b) => b.avg - a.avg)
-      .map((c, i) => ({ ...c, position: i + 1 }))
-
-    setCompanyStandings(result)
-    setLoading(false)
   }
 
   // ── Render helpers ────────────────────────────────────────────────────────

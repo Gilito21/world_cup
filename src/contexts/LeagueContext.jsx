@@ -18,23 +18,24 @@ export function LeagueProvider({ children }) {
   const loadLeagues = useCallback(async () => {
     if (!user) { setLeagues([]); setActiveLeagueState(null); setLoading(false); return }
 
-    const { data } = await supabase
-      .from('league_members')
-      .select('role, prediction_mode, leagues(id, name, invite_code, created_by)')
-      .eq('user_id', user.id)
+    try {
+      const { data } = await supabase
+        .from('league_members')
+        .select('role, prediction_mode, leagues(id, name, invite_code, created_by)')
+        .eq('user_id', user.id)
 
-    const list = (data ?? []).map(m => ({ ...m.leagues, role: m.role, prediction_mode: m.prediction_mode ?? 'global' }))
-    setLeagues(list)
+      const list = (data ?? []).map(m => ({ ...m.leagues, role: m.role, prediction_mode: m.prediction_mode ?? 'global' }))
+      setLeagues(list)
 
-    // Restaurar liga activa desde localStorage
-    const savedId = localStorage.getItem(`porra-league-${user.id}`)
-    const saved   = list.find(l => l.id === savedId)
-    setActiveLeagueState(prev => {
-      // Si la actual sigue en la lista, mantenerla
-      if (prev && list.find(l => l.id === prev.id)) return list.find(l => l.id === prev.id)
-      return saved ?? list[0] ?? null
-    })
-    setLoading(false)
+      const savedId = localStorage.getItem(`porra-league-${user.id}`)
+      const saved   = list.find(l => l.id === savedId)
+      setActiveLeagueState(prev => {
+        if (prev && list.find(l => l.id === prev.id)) return list.find(l => l.id === prev.id)
+        return saved ?? list[0] ?? null
+      })
+    } finally {
+      setLoading(false)
+    }
   }, [user])
 
   useEffect(() => {
