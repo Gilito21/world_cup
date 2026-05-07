@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import Spinner from '../components/Spinner'
@@ -108,10 +109,25 @@ function generateCode() {
   return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
+function CopyLinkButton({ text }) {
+  const [copied, setCopied] = useState(false)
+  async function handleCopy() {
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <button onClick={handleCopy} className="btn-secondary text-xs px-3 py-2 flex-shrink-0">
+      {copied ? '✓' : 'Copiar'}
+    </button>
+  )
+}
+
 const USERNAME_RE = /^[a-zA-Z0-9_-]+$/
 
 export default function Auth() {
   const { signIn, signUp } = useAuth()
+  const [searchParams]          = useSearchParams()
   const [mode, setMode]         = useState('login')
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
@@ -137,6 +153,16 @@ export default function Auth() {
   const [leagueName, setLeagueName] = useState('')
   const [joinCode, setJoinCode]     = useState('')
   const [createdCode, setCreatedCode] = useState('')
+
+  // Pre-fill join code from invite link (?join=CODE)
+  useEffect(() => {
+    const code = searchParams.get('join')
+    if (code) {
+      setMode('register')
+      setLeagueMode('join')
+      setJoinCode(code.toUpperCase())
+    }
+  }, [])
 
   // Cerrar dropdown de empresa al hacer click fuera
   useEffect(() => {
@@ -289,17 +315,31 @@ export default function Auth() {
   if (showForgot) return <ForgotPassword onBack={() => setShowForgot(false)} />
 
   if (createdCode) {
+    const inviteLink = `${window.location.origin}/join/${createdCode}`
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
-        <div className="w-full max-w-md text-center space-y-5 animate-slide-up">
-          <div className="text-5xl">🎉</div>
-          <h2 className="text-xl font-bold text-stone-900">¡Liga creada!</h2>
-          <p className="text-stone-500">Comparte este código con tus amigos para que se unan:</p>
-          <div className="card p-6">
-            <p className="text-4xl font-bold tracking-[0.35em] text-amber-400 font-mono">{createdCode}</p>
+        <div className="w-full max-w-md space-y-5 animate-slide-up">
+          <div className="text-center space-y-2">
+            <div className="text-5xl">🎉</div>
+            <h2 className="text-xl font-bold text-stone-900">¡Liga creada!</h2>
+            <p className="text-stone-500 text-sm">Comparte el código o el link con tus amigos:</p>
           </div>
-          <p className="text-stone-400 text-sm">También lo encontrarás en el menú de ligas una vez dentro.</p>
-          <p className="text-green-500 text-sm">Tu cuenta está lista. Inicia sesión para empezar.</p>
+          <div className="card p-5 space-y-4">
+            <div className="text-center">
+              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">Código</p>
+              <p className="text-4xl font-bold tracking-[0.35em] text-amber-400 font-mono">{createdCode}</p>
+            </div>
+            <div className="border-t border-stone-100 pt-4 space-y-2">
+              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Link directo</p>
+              <div className="flex items-center gap-2">
+                <p className="flex-1 text-xs text-stone-500 bg-stone-100 rounded-xl px-3 py-2 font-mono truncate">
+                  {inviteLink}
+                </p>
+                <CopyLinkButton text={inviteLink} />
+              </div>
+            </div>
+          </div>
+          <p className="text-stone-400 text-xs text-center">Tu cuenta está lista. Inicia sesión para empezar.</p>
           <button onClick={() => switchMode('login')} className="btn-primary w-full">Iniciar sesión</button>
         </div>
       </div>

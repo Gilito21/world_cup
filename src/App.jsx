@@ -8,6 +8,7 @@ import Perfil from './pages/Perfil'
 import Pronosticos from './pages/Pronosticos'
 import Clasificacion from './pages/Clasificacion'
 import Resultados from './pages/Resultados'
+import JoinLeague from './pages/JoinLeague'
 import Spinner from './components/Spinner'
 import NotFound from './pages/NotFound'
 
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="resultados"    element={<Resultados />} />
           <Route path="perfil"        element={<Perfil />} />
         </Route>
+        <Route path="/join/:code" element={<JoinLeague />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </LeagueProvider>
