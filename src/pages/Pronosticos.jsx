@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
 import UpcomingAlert from '../components/UpcomingAlert'
 import { Flag, teamName } from '../utils/teams'
+import { computePredictedKnockout } from '../utils/tournament'
 
 const STAGE_ORDER = ['group', 'round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
 
@@ -77,9 +78,20 @@ function ScoreInput({ value, onChange, disabled }) {
   )
 }
 
-function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
+// isTbd: DB team name is a placeholder, not a real team yet
+function isTbd(name) {
+  return !name || name === 'TBD' || name === 'TBA' || name === 'Por determinar'
+}
+
+function MatchCard({ match, prediction, onSave, draft, onDraftChange, predictedHome, predictedAway }) {
   const isLocked   = match.status !== 'scheduled' || Date.now() >= new Date(match.match_date).getTime() - LOCK_MS
   const isFinished = match.status === 'finished'
+
+  // Use predicted team names when the DB still has TBD placeholders
+  const displayHome = isTbd(match.home_team) ? (predictedHome ?? match.home_team) : match.home_team
+  const displayAway = isTbd(match.away_team) ? (predictedAway ?? match.away_team) : match.away_team
+  const hasPredictedTeams = (isTbd(match.home_team) || isTbd(match.away_team)) &&
+                            (predictedHome || predictedAway)
 
   const home = draft?.home ?? ''
   const away = draft?.away ?? ''
@@ -132,6 +144,11 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
               Grupo {match.group_name}
             </span>
           )}
+          {hasPredictedTeams && (
+            <span className="text-xs text-violet-500 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded">
+              🔮 según tus pronósticos
+            </span>
+          )}
           {match.status === 'scheduled' && <Countdown matchDate={match.match_date} />}
         </div>
         <div className="flex items-center gap-2">
@@ -144,8 +161,10 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
 
       <div className="flex items-center gap-3">
         <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
-          <span className="text-sm font-semibold text-stone-900 truncate text-right">{teamName(match.home_team)}</span>
-          <Flag team={match.home_team} />
+          <span className={`text-sm font-semibold truncate text-right ${isTbd(match.home_team) && predictedHome ? 'text-violet-600' : 'text-stone-900'}`}>
+            {teamName(displayHome)}
+          </span>
+          <Flag team={displayHome} />
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -171,8 +190,10 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
         </div>
 
         <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
-          <Flag team={match.away_team} />
-          <span className="text-sm font-semibold text-stone-900 truncate">{teamName(match.away_team)}</span>
+          <Flag team={displayAway} />
+          <span className={`text-sm font-semibold truncate ${isTbd(match.away_team) && predictedAway ? 'text-violet-600' : 'text-stone-900'}`}>
+            {teamName(displayAway)}
+          </span>
         </div>
       </div>
 
@@ -180,7 +201,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
         <div className="mt-3 pt-3 border-t border-stone-200 text-center text-xs text-stone-500">
           Tu pronóstico:{' '}
           <span className="text-stone-700 font-medium">
-            {teamName(match.home_team)} {prediction.home_score} - {prediction.away_score} {teamName(match.away_team)}
+            {teamName(displayHome)} {prediction.home_score} - {prediction.away_score} {teamName(displayAway)}
           </span>
         </div>
       )}
@@ -279,7 +300,7 @@ export default function Pronosticos() {
         const matchQuery = supabase.from('matches').select('*').order('match_date')
         const predQuery = activeLeague
           ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
-          : supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', 'none')
+          : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
 
         const [{ data: matchData }, { data: predData }] = await Promise.all([matchQuery, predQuery])
 
@@ -308,6 +329,22 @@ export default function Pronosticos() {
     load()
     return () => { cancelled = true }
   }, [user?.id, activeLeague?.id])
+
+  // Cascade user's group predictions → predicted teams for every knockout match
+  const predictedOverlay = useMemo(() => {
+    if (!matches.length) return {}
+    const predMap = {}
+    for (const [matchId, pred] of Object.entries(predictions)) {
+      predMap[matchId] = { home_score: pred.home_score, away_score: pred.away_score }
+    }
+    // Also include unsaved drafts so the overlay updates as the user types
+    for (const [matchId, draft] of Object.entries(drafts)) {
+      if (draft.home !== '' && draft.away !== '') {
+        predMap[matchId] = { home_score: Number(draft.home), away_score: Number(draft.away) }
+      }
+    }
+    return computePredictedKnockout(matches, predMap)
+  }, [matches, predictions, drafts])
 
   const handleSave = useCallback(async (matchId, home, away) => {
     setError('')
@@ -554,6 +591,8 @@ export default function Pronosticos() {
                       onSave={handleSave}
                       draft={drafts[m.id]}
                       onDraftChange={handleDraftChange}
+                      predictedHome={predictedOverlay[m.id]?.homeTeam}
+                      predictedAway={predictedOverlay[m.id]?.awayTeam}
                     />
                   ))}
                 </div>

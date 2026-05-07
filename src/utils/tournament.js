@@ -420,6 +420,125 @@ export function buildFullBracket(allMatches) {
   return { standings, qualifiers, r32, knockoutSlots }
 }
 
+// ─── STAGE → BRACKET-ID LISTS ────────────────────────────────────────────────
+
+export const STAGE_BRACKET_IDS = {
+  round_of_32:   ['R32_M1','R32_M2','R32_M3','R32_M4','R32_M5','R32_M6','R32_M7','R32_M8',
+                  'R32_M9','R32_M10','R32_M11','R32_M12','R32_M13','R32_M14','R32_M15','R32_M16'],
+  round_of_16:   ['R16_M1','R16_M2','R16_M3','R16_M4','R16_M5','R16_M6','R16_M7','R16_M8'],
+  quarter_final: ['QF_M1','QF_M2','QF_M3','QF_M4'],
+  semi_final:    ['SF_M1','SF_M2'],
+  third_place:   ['THIRD_PLACE'],
+  final:         ['FINAL'],
+}
+
+// ─── PREDICTED-KNOCKOUT OVERLAY ───────────────────────────────────────────────
+
+/**
+ * Given all DB matches and the user's saved predictions (match_id → prediction),
+ * compute which teams the user expects to appear in each knockout DB match.
+ *
+ * Cascade:
+ *   user's group predictions   → predicted group standings
+ *   predicted group standings  → predicted R32 teams
+ *   user's R32 predictions     → predicted R16 teams
+ *   user's R16 predictions     → predicted QF teams
+ *   … and so on through the Final / 3rd-place match.
+ *
+ * DB knockout matches are paired with bracket template positions by sorting
+ * each stage's matches by match_date (earliest = position 0 = first template slot).
+ * This assumes football-data.org returns knockout matches in bracket order.
+ *
+ * @param {object[]} dbMatches     – all matches from the DB (any stage, any status)
+ * @param {{ [matchId: string]: { home_score: number, away_score: number } }} userPredMap
+ * @returns {{ [dbMatchId: string]: { homeTeam: string|null, awayTeam: string|null } }}
+ */
+export function computePredictedKnockout(dbMatches, userPredMap) {
+  // ── Step 1: compute predicted group standings ─────────────────────────────
+  const groupMatches = dbMatches.filter(m => m.stage === 'group')
+
+  // Synthetic matches: prefer user's predicted scores; fall back to real scores
+  const syntheticGroup = groupMatches.map(m => {
+    const pred = userPredMap[m.id]
+    return {
+      ...m,
+      home_score: pred != null ? pred.home_score : m.home_score,
+      away_score: pred != null ? pred.away_score : m.away_score,
+    }
+  })
+
+  const predictedStandings = computeAllStandings(syntheticGroup)
+
+  // ── Step 2: build predicted R32 bracket ───────────────────────────────────
+  const r32Bracket = buildRoundOf32(predictedStandings)  // 16 items in template order
+
+  // ── Step 3: pair DB knockout matches with bracket positions ───────────────
+  // For each knockout stage, sort DB matches by date → index = bracket position
+  const dbByStage = {}
+  for (const m of dbMatches) {
+    if (m.stage === 'group') continue
+    ;(dbByStage[m.stage] = dbByStage[m.stage] ?? []).push(m)
+  }
+  for (const stage of Object.keys(dbByStage)) {
+    dbByStage[stage].sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
+  }
+
+  const result = {}  // dbMatchId → { homeTeam, awayTeam }
+
+  // ── Step 4: propagate teams round by round ────────────────────────────────
+  // bracketSlots: bracketMatchId → { home: teamName, away: teamName }
+  const bracketSlots = {}
+
+  // Seed R32 from the template
+  for (const bm of r32Bracket) {
+    bracketSlots[bm.id] = { home: bm.homeTeam, away: bm.awayTeam }
+  }
+
+  // Process stages in order
+  const KNOCKOUT_STAGES = ['round_of_32','round_of_16','quarter_final','semi_final','third_place','final']
+
+  for (const stage of KNOCKOUT_STAGES) {
+    const bracketIds = STAGE_BRACKET_IDS[stage] ?? []
+    const dbMatches_ = dbByStage[stage] ?? []
+
+    // Pair DB match ↔ bracket position by index
+    bracketIds.forEach((bracketId, idx) => {
+      const dbMatch = dbMatches_[idx]
+      if (!dbMatch) return
+
+      const teams = bracketSlots[bracketId] ?? { home: null, away: null }
+      result[dbMatch.id] = { homeTeam: teams.home ?? null, awayTeam: teams.away ?? null }
+
+      // Now resolve the winner of this DB match (from user's prediction)
+      // and push it into the next bracket slot
+      const pred   = userPredMap[dbMatch.id]
+      const prog   = BRACKET_PROGRESSION[bracketId]
+      if (!pred || !prog || teams.home == null || teams.away == null) return
+
+      const winner =
+        pred.home_score > pred.away_score ? teams.home  :
+        pred.away_score > pred.home_score ? teams.away  :
+        null  // draw / not yet resolved
+
+      const loser =
+        pred.home_score > pred.away_score ? teams.away  :
+        pred.away_score > pred.home_score ? teams.home  :
+        null
+
+      if (winner) {
+        if (!bracketSlots[prog.nextMatch]) bracketSlots[prog.nextMatch] = {}
+        bracketSlots[prog.nextMatch][prog.nextSlot] = winner
+      }
+      if (loser && prog.loserMatch) {
+        if (!bracketSlots[prog.loserMatch]) bracketSlots[prog.loserMatch] = {}
+        bracketSlots[prog.loserMatch][prog.loserSlot] = loser
+      }
+    })
+  }
+
+  return result
+}
+
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
 /** Human-readable label for a bracket match ID */
