@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
@@ -439,7 +440,7 @@ export default function Clasificacion() {
         </>
       )}
 
-      {showModal && <LeagueModal onClose={() => setShowModal(false)} />}
+      {showModal && createPortal(<LeagueModal onClose={() => setShowModal(false)} />, document.body)}
     </div>
   )
 }

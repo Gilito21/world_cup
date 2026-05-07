@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useLeague } from '../contexts/LeagueContext'
 import LeagueModal from './LeagueModal'
 
@@ -25,7 +26,7 @@ export default function LeagueSwitcher() {
           <span>+</span>
           <span className="hidden sm:inline">Unirse a liga</span>
         </button>
-        {showModal && <LeagueModal onClose={() => setShowModal(false)} />}
+        {showModal && createPortal(<LeagueModal onClose={() => setShowModal(false)} />, document.body)}
       </>
     )
   }
@@ -96,7 +97,7 @@ export default function LeagueSwitcher() {
         )}
       </div>
 
-      {showModal && <LeagueModal onClose={() => { setShowModal(false) }} />}
+      {showModal && createPortal(<LeagueModal onClose={() => setShowModal(false)} />, document.body)}
     </>
   )
 }
