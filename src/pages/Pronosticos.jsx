@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
 import UpcomingAlert from '../components/UpcomingAlert'
 import { Flag, teamName } from '../utils/teams'
+import { computePredictedKnockout } from '../utils/tournament'
 
 const STAGE_ORDER = ['group', 'round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
 
@@ -24,10 +25,10 @@ const STATUS_BADGE = {
   finished: { label: 'Finalizado', cls: 'bg-stone-200 text-stone-500 border-stone-300' },
 }
 
-const LOCK_MS = 30 * 60 * 1000
+// ─── UTILS ────────────────────────────────────────────────────────────────────
 
-function getTimeLeft(dateStr) {
-  const diff = new Date(dateStr) - Date.now()
+function getTimeLeft(ts) {
+  const diff = ts - Date.now()
   if (diff <= 0) return null
   return {
     days:    Math.floor(diff / 86400000),
@@ -37,10 +38,22 @@ function getTimeLeft(dateStr) {
   }
 }
 
+function formatDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString('es-ES', {
+    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function isTbd(name) {
+  return !name || name === 'TBD' || name === 'TBA' || name === 'Por determinar'
+}
+
+// ─── COUNTDOWN ────────────────────────────────────────────────────────────────
+
 function Countdown({ matchDate }) {
-  const [left, setLeft] = useState(() => getTimeLeft(matchDate))
+  const [left, setLeft] = useState(() => getTimeLeft(new Date(matchDate).getTime()))
   useEffect(() => {
-    const t = setInterval(() => setLeft(getTimeLeft(matchDate)), 1000)
+    const t = setInterval(() => setLeft(getTimeLeft(new Date(matchDate).getTime())), 1000)
     return () => clearInterval(t)
   }, [matchDate])
   if (!left) return null
@@ -55,11 +68,23 @@ function Countdown({ matchDate }) {
   )
 }
 
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('es-ES', {
-    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-  })
+function CutoffCountdown({ cutoffTime }) {
+  const [left, setLeft] = useState(() => getTimeLeft(cutoffTime))
+  useEffect(() => {
+    const t = setInterval(() => setLeft(getTimeLeft(cutoffTime)), 1000)
+    return () => clearInterval(t)
+  }, [cutoffTime])
+  if (!left) return <span className="font-semibold text-red-500">¡Cerrado!</span>
+  const { days, hours, minutes, seconds } = left
+  return (
+    <span className="font-mono font-semibold text-stone-700">
+      {days > 0 && <>{days}d </>}
+      {String(hours).padStart(2, '0')}h {String(minutes).padStart(2, '0')}m {String(seconds).padStart(2, '0')}s
+    </span>
+  )
 }
+
+// ─── SCORE INPUT ─────────────────────────────────────────────────────────────
 
 function ScoreInput({ value, onChange, disabled }) {
   return (
@@ -77,23 +102,154 @@ function ScoreInput({ value, onChange, disabled }) {
   )
 }
 
-function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
-  const isLocked   = match.status !== 'scheduled' || Date.now() >= new Date(match.match_date).getTime() - LOCK_MS
-  const isFinished = match.status === 'finished'
+// ─── SUBMIT PANEL ─────────────────────────────────────────────────────────────
 
-  const home = draft?.home ?? ''
-  const away = draft?.away ?? ''
-  const setHome = (val) => onDraftChange(match.id, val, away)
-  const setAway = (val) => onDraftChange(match.id, home, val)
+function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submittedAt, onSubmit, submitting }) {
+  const pct          = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0
+  const isPastCutoff = !!(cutoffTime && Date.now() >= cutoffTime)
+  const isComplete   = filledCount === totalCount && totalCount > 0
+  const canSubmit    = isComplete && !isPastCutoff && !isSubmitted
 
-  const changed = home !== '' && away !== '' && (
+  if (isSubmitted) {
+    return (
+      <div className="card p-4 bg-green-50/80 border-green-200 flex items-center gap-4">
+        <span className="text-3xl flex-shrink-0">✅</span>
+        <div className="min-w-0">
+          <p className="font-bold text-green-700">Pronóstico enviado definitivamente</p>
+          <p className="text-xs text-green-600 mt-0.5">
+            {submittedAt
+              ? new Date(submittedAt).toLocaleDateString('es-ES', {
+                  day: 'numeric', month: 'long', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit',
+                })
+              : ''}
+            {' · '}{totalCount} partidos · Ya no es posible modificar
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card p-4 space-y-3">
+      {/* Progress bar */}
+      <div>
+        <div className="flex items-center justify-between text-xs mb-1.5">
+          <span className="text-stone-500 font-medium">Progreso del pronóstico completo</span>
+          <span className={`font-bold tabular-nums ${isComplete ? 'text-green-500' : 'text-stone-600'}`}>
+            {filledCount} / {totalCount} partidos
+          </span>
+        </div>
+        <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-amber-500'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Cutoff countdown */}
+      {cutoffTime && !isPastCutoff && (
+        <p className="text-xs text-stone-400 flex items-center gap-1.5 flex-wrap">
+          <span>⏰ El plazo de envío cierra 1 hora antes del primer partido:</span>
+          <CutoffCountdown cutoffTime={cutoffTime} />
+        </p>
+      )}
+
+      {isPastCutoff && (
+        <div className="flex items-center gap-2 text-sm text-red-500 font-medium">
+          <span>🔒</span>
+          <span>El período de pronósticos ha cerrado — ya no se aceptan envíos.</span>
+        </div>
+      )}
+
+      {/* Submit button */}
+      {!isPastCutoff && (
+        <button
+          onClick={onSubmit}
+          disabled={!canSubmit || submitting}
+          className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-3"
+        >
+          {submitting ? <Spinner size="sm" /> : <span>🏆</span>}
+          {isComplete
+            ? 'Enviar pronóstico definitivo'
+            : `Falta completar ${totalCount - filledCount} partido${totalCount - filledCount !== 1 ? 's' : ''}`}
+        </button>
+      )}
+
+      {!isComplete && !isPastCutoff && (
+        <p className="text-xs text-center text-stone-400">
+          Debes rellenar el resultado de <strong>todos</strong> los partidos (grupos + eliminatorias) antes de poder enviar.
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ─── CONFIRM MODAL ────────────────────────────────────────────────────────────
+
+function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
+  return (
+    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="card p-6 max-w-sm w-full space-y-5 shadow-2xl">
+        <div className="text-center space-y-2">
+          <span className="text-5xl">🏆</span>
+          <h3 className="text-xl font-bold text-stone-900">¿Enviar pronóstico?</h3>
+          <p className="text-stone-500 text-sm">
+            Estás a punto de enviar tus <strong>{totalCount} pronósticos</strong>.
+            Una vez enviado <strong>no podrás modificar ningún resultado</strong>.
+          </p>
+          <p className="text-xs text-stone-400">Esta acción es irreversible.</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            disabled={submitting}
+            className="btn-secondary flex-1"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={submitting}
+            className="btn-primary flex-1 flex items-center justify-center gap-2"
+          >
+            {submitting && <Spinner size="sm" />}
+            Confirmar envío
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── MATCH CARD ───────────────────────────────────────────────────────────────
+
+function MatchCard({ match, prediction, onSave, draft, onDraftChange, predictedHome, predictedAway, submitted }) {
+  // When the overall bracket is submitted, all inputs are locked regardless of match status
+  const isFinished  = match.status === 'finished'
+  const isLocked    = submitted || isFinished ||
+                      match.status !== 'scheduled' ||
+                      Date.now() >= new Date(match.match_date).getTime() - 30 * 60 * 1000
+
+  const displayHome = isTbd(match.home_team) ? (predictedHome ?? match.home_team) : match.home_team
+  const displayAway = isTbd(match.away_team) ? (predictedAway ?? match.away_team) : match.away_team
+  const hasPredictedTeams = (isTbd(match.home_team) || isTbd(match.away_team)) &&
+                            (predictedHome || predictedAway)
+
+  const home    = draft?.home ?? ''
+  const away    = draft?.away ?? ''
+  const setHome = val => onDraftChange(match.id, val, away)
+  const setAway = val => onDraftChange(match.id, home, val)
+
+  const changed = !submitted && home !== '' && away !== '' && (
     !prediction ||
     Number(home) !== prediction.home_score ||
     Number(away) !== prediction.away_score
   )
 
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved]   = useState(false)
+  const [saved,  setSaved]  = useState(false)
 
   useEffect(() => { setSaved(false) }, [prediction])
 
@@ -105,25 +261,13 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
     if (ok) setSaved(true)
   }
 
-  function PointsBadge() {
-    if (!isFinished || !prediction) return null
-    const pts = prediction.points_earned ?? 0
-    const cfg = pts === 3
-      ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-      : pts === 1
-      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-      : 'bg-stone-200 text-stone-500 border-stone-300'
-    return (
-      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${cfg}`}>
-        {pts === 3 ? '🎯 +3' : pts === 1 ? '✓ +1' : '✗ 0'} pts
-      </span>
-    )
-  }
-
   const badge = STATUS_BADGE[match.status]
 
   return (
-    <div className={`card p-4 transition-all duration-200 ${isFinished ? 'opacity-80' : 'hover:border-stone-300 hover:shadow-sm'}`}>
+    <div className={`card p-4 transition-all duration-200 ${
+      isFinished ? 'opacity-80' : submitted ? '' : 'hover:border-stone-300 hover:shadow-sm'
+    }`}>
+      {/* Header row */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-stone-500">{formatDate(match.match_date)}</span>
@@ -132,20 +276,41 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
               Grupo {match.group_name}
             </span>
           )}
-          {match.status === 'scheduled' && <Countdown matchDate={match.match_date} />}
+          {hasPredictedTeams && !isFinished && (
+            <span className="text-xs text-violet-500 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded">
+              🔮 según tus pronósticos
+            </span>
+          )}
+          {match.status === 'scheduled' && !submitted && <Countdown matchDate={match.match_date} />}
         </div>
         <div className="flex items-center gap-2">
           {badge && (
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>{badge.label}</span>
           )}
-          <PointsBadge />
+          {/* Points badge after results come in */}
+          {isFinished && prediction && (() => {
+            const pts = prediction.points_earned ?? 0
+            const cfg = pts === 3 ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                      : pts === 1 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                      :             'bg-stone-200 text-stone-500 border-stone-300'
+            return (
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${cfg}`}>
+                {pts === 3 ? '🎯 +3' : pts === 1 ? '✓ +1' : '✗ 0'} pts
+              </span>
+            )
+          })()}
         </div>
       </div>
 
+      {/* Teams + score */}
       <div className="flex items-center gap-3">
         <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
-          <span className="text-sm font-semibold text-stone-900 truncate text-right">{teamName(match.home_team)}</span>
-          <Flag team={match.home_team} />
+          <span className={`text-sm font-semibold truncate text-right ${
+            isTbd(match.home_team) && predictedHome ? 'text-violet-600' : 'text-stone-900'
+          }`}>
+            {teamName(displayHome)}
+          </span>
+          <Flag team={displayHome} />
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -171,55 +336,71 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange }) {
         </div>
 
         <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
-          <Flag team={match.away_team} />
-          <span className="text-sm font-semibold text-stone-900 truncate">{teamName(match.away_team)}</span>
+          <Flag team={displayAway} />
+          <span className={`text-sm font-semibold truncate ${
+            isTbd(match.away_team) && predictedAway ? 'text-violet-600' : 'text-stone-900'
+          }`}>
+            {teamName(displayAway)}
+          </span>
         </div>
       </div>
 
+      {/* Footer */}
       {isFinished && prediction && (
         <div className="mt-3 pt-3 border-t border-stone-200 text-center text-xs text-stone-500">
           Tu pronóstico:{' '}
           <span className="text-stone-700 font-medium">
-            {teamName(match.home_team)} {prediction.home_score} - {prediction.away_score} {teamName(match.away_team)}
+            {teamName(displayHome)} {prediction.home_score} – {prediction.away_score} {teamName(displayAway)}
           </span>
         </div>
       )}
 
-      {!isLocked && !isFinished && (
+      {/* Submitted lock footer */}
+      {submitted && !isFinished && (
+        <div className="mt-3 pt-3 border-t border-stone-100 text-center text-xs text-stone-400 flex items-center justify-center gap-1">
+          <span>🔒</span>
+          <span>
+            Pronóstico enviado:{' '}
+            <span className="font-medium text-stone-600">
+              {home || prediction?.home_score ?? '?'} – {away || prediction?.away_score ?? '?'}
+            </span>
+          </span>
+        </div>
+      )}
+
+      {/* Draft save button (only when not submitted, not locked, not finished) */}
+      {!submitted && !isLocked && !isFinished && (
         <div className="mt-3 pt-3 border-t border-stone-200 flex items-center justify-between">
-          <span className="text-xs text-stone-500">
-            {!prediction ? 'Sin pronóstico' : changed ? 'Cambios sin guardar' : 'Guardado'}
+          <span className="text-xs text-stone-400">
+            {!prediction && (home === '' || away === '') ? 'Sin resultado' :
+             !prediction ? 'Borrador sin guardar' :
+             changed     ? 'Cambios sin guardar' :
+                           '✓ Borrador guardado'}
           </span>
           <button
             onClick={handleSave}
             disabled={saving || home === '' || away === '' || (!changed && !!prediction)}
-            className="btn-primary text-xs px-4 py-1.5 flex items-center gap-1.5"
+            className="text-xs text-stone-400 hover:text-amber-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            {saving && <Spinner size="sm" />}
-            {saved && !changed ? '✓ Guardado' : 'Guardar'}
+            {saving ? <Spinner size="sm" /> : saved && !changed ? 'Guardado' : 'Guardar borrador'}
           </button>
-        </div>
-      )}
-
-      {isLocked && !isFinished && (
-        <div className="mt-3 pt-3 border-t border-stone-200 text-center text-xs text-stone-500">
-          🔒 Pronósticos cerrados · cierre 30 min antes del partido
         </div>
       )}
     </div>
   )
 }
 
-// ─── Sidebar de fases ─────────────────────────────────────────────────────────
-function StageSidebar({ stages, activeStage, onSelect, pendingCount }) {
+// ─── SIDEBAR DE FASES ─────────────────────────────────────────────────────────
+
+function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
   return (
     <aside className="hidden md:block flex-shrink-0">
-      <nav className="sticky top-24 group/nav w-11 hover:w-48 transition-all duration-200 overflow-hidden">
+      <nav className="sticky top-24 group/nav w-11 hover:w-52 transition-all duration-200 overflow-hidden">
         <div className="space-y-0.5 py-1 pr-1">
           {STAGE_ORDER.map(stage => {
-            const info    = STAGE_INFO[stage]
-            const hasData = stages.includes(stage)
-            const pending = pendingCount(stage)
+            const info     = STAGE_INFO[stage]
+            const hasData  = stages.includes(stage)
+            const unfilled = unfilledCount(stage)
             const isActive = activeStage === stage
 
             return (
@@ -229,22 +410,20 @@ function StageSidebar({ stages, activeStage, onSelect, pendingCount }) {
                 title={info.full}
                 disabled={!hasData}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                  isActive
-                    ? 'bg-amber-500 text-stone-950 shadow-sm'
-                    : hasData
-                    ? 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'
-                    : 'text-stone-300 cursor-default'
+                  isActive  ? 'bg-amber-500 text-stone-950 shadow-sm'
+                  : hasData ? 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'
+                  :           'text-stone-300 cursor-default'
                 }`}
               >
                 <span className="text-base flex-shrink-0 leading-none">{info.icon}</span>
                 <span className="opacity-0 group-hover/nav:opacity-100 transition-opacity duration-150 flex-1 text-left truncate">
                   {info.short}
                 </span>
-                {pending > 0 && (
+                {unfilled > 0 && (
                   <span className={`opacity-0 group-hover/nav:opacity-100 transition-opacity duration-150 text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
                     isActive ? 'bg-stone-950/20 text-stone-950' : 'bg-amber-500/20 text-amber-600'
                   }`}>
-                    {pending}
+                    {unfilled}
                   </span>
                 )}
               </button>
@@ -256,40 +435,65 @@ function StageSidebar({ stages, activeStage, onSelect, pendingCount }) {
   )
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────────
+// ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
+
 export default function Pronosticos() {
-  const { user }                          = useAuth()
-  const { activeLeague, leagues }         = useLeague()
+  const { user }                  = useAuth()
+  const { activeLeague, leagues } = useLeague()
 
-  const [matches, setMatches]         = useState([])
+  const [matches,     setMatches]     = useState([])
   const [predictions, setPredictions] = useState({})
-  const [drafts, setDrafts]           = useState({})
-  const [loading, setLoading]         = useState(true)
-  const [savingAll, setSavingAll]     = useState(false)
-  const [copying, setCopying]         = useState(false)
+  const [drafts,      setDrafts]      = useState({})
+  const [loading,     setLoading]     = useState(true)
   const [activeStage, setActiveStage] = useState('group')
-  const [error, setError]             = useState('')
+  const [error,       setError]       = useState('')
+  const [copying,     setCopying]     = useState(false)
 
+  // Submission state
+  const [isSubmitted,  setIsSubmitted]  = useState(false)
+  const [submittedAt,  setSubmittedAt]  = useState(null)
+  const [cutoffTime,   setCutoffTime]   = useState(null)
+  const [submitting,   setSubmitting]   = useState(false)
+  const [showConfirm,  setShowConfirm]  = useState(false)
+
+  // ── Data loading ────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false
 
     async function load() {
       setLoading(true)
       try {
-        const matchQuery = supabase.from('matches').select('*').order('match_date')
         const predQuery = activeLeague
           ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
-          : supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', 'none')
+          : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
 
-        const [{ data: matchData }, { data: predData }] = await Promise.all([matchQuery, predQuery])
+        const subQuery = activeLeague
+          ? supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).eq('league_id', activeLeague.id).maybeSingle()
+          : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).maybeSingle()
+
+        const [
+          { data: matchData },
+          { data: predData },
+          { data: subData },
+        ] = await Promise.all([
+          supabase.from('matches').select('*').order('match_date'),
+          predQuery,
+          subQuery,
+        ])
 
         if (cancelled) return
 
         if (matchData) {
           setMatches(matchData)
+          // Cutoff = 1 hour before the first group-stage match
+          const firstGroup = matchData.find(m => m.stage === 'group') ?? matchData[0]
+          if (firstGroup) {
+            setCutoffTime(new Date(firstGroup.match_date).getTime() - 60 * 60 * 1000)
+          }
           const available = [...new Set(matchData.map(m => m.stage))]
           setActiveStage(prev => available.includes(prev) ? prev : (STAGE_ORDER.find(s => available.includes(s)) ?? available[0]))
         }
+
         if (predData) {
           const map = {}
           const initialDrafts = {}
@@ -300,6 +504,11 @@ export default function Pronosticos() {
           setPredictions(map)
           setDrafts(initialDrafts)
         }
+
+        if (subData) {
+          setIsSubmitted(true)
+          setSubmittedAt(subData.submitted_at)
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -309,6 +518,22 @@ export default function Pronosticos() {
     return () => { cancelled = true }
   }, [user?.id, activeLeague?.id])
 
+  // ── Cascade: group predictions → predicted knockout teams ───────────────────
+  const predictedOverlay = useMemo(() => {
+    if (!matches.length) return {}
+    const predMap = {}
+    for (const [matchId, pred] of Object.entries(predictions)) {
+      predMap[matchId] = { home_score: pred.home_score, away_score: pred.away_score }
+    }
+    for (const [matchId, draft] of Object.entries(drafts)) {
+      if (draft.home !== '' && draft.away !== '') {
+        predMap[matchId] = { home_score: Number(draft.home), away_score: Number(draft.away) }
+      }
+    }
+    return computePredictedKnockout(matches, predMap)
+  }, [matches, predictions, drafts])
+
+  // ── Save a single draft ─────────────────────────────────────────────────────
   const handleSave = useCallback(async (matchId, home, away) => {
     setError('')
     const existing = predictions[matchId]
@@ -320,10 +545,7 @@ export default function Pronosticos() {
       : await supabase.from('predictions').insert(payload).select().single()
 
     if (err) {
-      const msg = err.message?.includes('empieza en menos') || err.message?.includes('comenzado') || err.message?.includes('finalizado')
-        ? '🔒 Los pronósticos cierran 30 min antes del partido.'
-        : 'Error al guardar el pronóstico.'
-      setError(msg)
+      setError('Error al guardar el borrador.')
       return false
     }
     setPredictions(p => ({ ...p, [matchId]: data }))
@@ -335,22 +557,7 @@ export default function Pronosticos() {
     setDrafts(d => ({ ...d, [matchId]: { home, away } }))
   }, [])
 
-  const handleSaveAll = useCallback(async () => {
-    setSavingAll(true)
-    setError('')
-    const toSave = matches.filter(m => {
-      if (m.status !== 'scheduled') return false
-      if (Date.now() >= new Date(m.match_date).getTime() - LOCK_MS) return false
-      const d = drafts[m.id]
-      if (!d || d.home === '' || d.away === '') return false
-      const pred = predictions[m.id]
-      if (!pred) return true
-      return Number(d.home) !== pred.home_score || Number(d.away) !== pred.away_score
-    })
-    await Promise.all(toSave.map(m => handleSave(m.id, Number(drafts[m.id].home), Number(drafts[m.id].away))))
-    setSavingAll(false)
-  }, [matches, drafts, predictions, handleSave])
-
+  // ── Copy predictions from another league ────────────────────────────────────
   const copyFromLeague = useCallback(async (sourceLeagueId) => {
     setCopying(true)
     setError('')
@@ -396,28 +603,69 @@ export default function Pronosticos() {
     }
   }, [user.id, activeLeague])
 
-  const otherLeagues = leagues.filter(l => l.id !== activeLeague?.id)
-  const hasPredictions = Object.keys(predictions).length > 0
+  // ── Final submission ─────────────────────────────────────────────────────────
+  const handleSubmit = useCallback(async () => {
+    setSubmitting(true)
+    setError('')
+    try {
+      // 1. Flush all unsaved drafts in parallel
+      const toSave = matches.filter(m => {
+        const d = drafts[m.id]
+        if (!d || d.home === '' || d.away === '') return false
+        const pred = predictions[m.id]
+        if (!pred) return true
+        return Number(d.home) !== pred.home_score || Number(d.away) !== pred.away_score
+      })
 
-  const stages = [...new Set(matches.map(m => m.stage))]
+      if (toSave.length > 0) {
+        const results = await Promise.all(
+          toSave.map(m => handleSave(m.id, Number(drafts[m.id].home), Number(drafts[m.id].away)))
+        )
+        if (results.some(r => r === false)) {
+          setError('Error guardando algunos pronósticos. Inténtalo de nuevo.')
+          return
+        }
+      }
 
-  const pendingCount = (stage) =>
-    matches.filter(
-      m => m.stage === stage &&
-           !predictions[m.id] &&
-           m.status === 'scheduled' &&
-           Date.now() < new Date(m.match_date).getTime() - LOCK_MS
-    ).length
+      // 2. Record the submission (unique per user+league — DB enforces no duplicates)
+      const leagueId = activeLeague?.id ?? null
+      const { error: err } = await supabase
+        .from('prediction_submissions')
+        .insert({ user_id: user.id, league_id: leagueId })
 
-  const saveableCount = matches.filter(m => {
-    if (m.status !== 'scheduled') return false
-    if (Date.now() >= new Date(m.match_date).getTime() - LOCK_MS) return false
-    const d = drafts[m.id]
-    if (!d || d.home === '' || d.away === '') return false
-    const pred = predictions[m.id]
-    if (!pred) return true
-    return Number(d.home) !== pred.home_score || Number(d.away) !== pred.away_score
-  }).length
+      if (err) throw err
+
+      setIsSubmitted(true)
+      setSubmittedAt(new Date().toISOString())
+      setShowConfirm(false)
+    } catch {
+      setError('Error al enviar el pronóstico. Inténtalo de nuevo.')
+    } finally {
+      setSubmitting(false)
+    }
+  }, [matches, drafts, predictions, handleSave, user.id, activeLeague])
+
+  // ── Derived values ──────────────────────────────────────────────────────────
+  const otherLeagues    = leagues.filter(l => l.id !== activeLeague?.id)
+  const hasPredictions  = Object.keys(predictions).length > 0
+  const stages          = [...new Set(matches.map(m => m.stage))]
+  const totalCount      = matches.length
+  const isPastCutoff    = !!(cutoffTime && Date.now() >= cutoffTime)
+
+  const filledCount = useMemo(
+    () => matches.filter(m => { const d = drafts[m.id]; return d && d.home !== '' && d.away !== '' }).length,
+    [matches, drafts]
+  )
+
+  // Badge on sidebar: how many matches in this stage still have no draft
+  const unfilledCount = useCallback((stage) =>
+    matches.filter(m => {
+      if (m.stage !== stage) return false
+      const d = drafts[m.id]
+      return !d || d.home === '' || d.away === ''
+    }).length,
+    [matches, drafts]
+  )
 
   const filtered = matches.filter(m => m.stage === activeStage)
   const grouped  = filtered.reduce((acc, m) => {
@@ -428,25 +676,52 @@ export default function Pronosticos() {
     return acc
   }, {})
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   if (loading) {
     return <div className="flex justify-center items-center py-20"><Spinner size="lg" /></div>
   }
 
   return (
     <div className="space-y-5">
+      {showConfirm && (
+        <ConfirmModal
+          onConfirm={handleSubmit}
+          onCancel={() => setShowConfirm(false)}
+          submitting={submitting}
+          totalCount={totalCount}
+        />
+      )}
+
+      {/* Page header */}
       <div>
         <h2 className="text-2xl font-bold text-stone-900">Mis pronósticos</h2>
         <p className="text-stone-400 text-sm mt-1">
-          Predice el marcador · Exacto = 3 pts · Resultado correcto = 1 pt · Cierre 30 min antes
+          Rellena <strong>todos los partidos</strong> (grupos + eliminatorias) y envía tu pronóstico completo de una vez.
+          Una vez enviado no se puede modificar.
         </p>
       </div>
 
-      {activeLeague && !hasPredictions && otherLeagues.length > 0 && (
+      {/* Submit panel — always visible */}
+      {matches.length > 0 && (
+        <SubmitPanel
+          filledCount={filledCount}
+          totalCount={totalCount}
+          cutoffTime={cutoffTime}
+          isSubmitted={isSubmitted}
+          submittedAt={submittedAt}
+          onSubmit={() => setShowConfirm(true)}
+          submitting={submitting}
+        />
+      )}
+
+      {/* Copy from league prompt */}
+      {activeLeague && !hasPredictions && !isSubmitted && otherLeagues.length > 0 && (
         <div className="card p-4 border-amber-500/20 bg-amber-500/5 space-y-3">
           <div>
-            <p className="text-sm font-semibold text-stone-800">¿Reutilizar pronósticos de otra liga?</p>
+            <p className="text-sm font-semibold text-stone-800">¿Reutilizar borradores de otra liga?</p>
             <p className="text-xs text-stone-500 mt-0.5">
-              Aún no tienes pronósticos en <span className="font-medium text-amber-600">{activeLeague.name}</span>.
+              Aún no tienes borradores en{' '}
+              <span className="font-medium text-amber-600">{activeLeague.name}</span>.
               Puedes copiar los de otra liga como punto de partida.
             </p>
           </div>
@@ -484,20 +759,20 @@ export default function Pronosticos() {
         </div>
       ) : (
         <div className="flex gap-3 items-start">
-          {/* Sidebar de fases — desktop */}
+          {/* Sidebar — desktop */}
           <StageSidebar
             stages={stages}
             activeStage={activeStage}
             onSelect={setActiveStage}
-            pendingCount={pendingCount}
+            unfilledCount={unfilledCount}
           />
 
           <div className="flex-1 min-w-0 space-y-4">
-            {/* Tabs de fase — mobile */}
+            {/* Tabs — mobile */}
             <div className="md:hidden flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
               {STAGE_ORDER.filter(s => stages.includes(s)).map(stage => {
-                const info    = STAGE_INFO[stage]
-                const pending = pendingCount(stage)
+                const info     = STAGE_INFO[stage]
+                const unfilled = unfilledCount(stage)
                 return (
                   <button
                     key={stage}
@@ -510,11 +785,11 @@ export default function Pronosticos() {
                   >
                     <span>{info.icon}</span>
                     <span>{info.short}</span>
-                    {pending > 0 && (
+                    {unfilled > 0 && !isSubmitted && (
                       <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
                         activeStage === stage ? 'bg-stone-950/20' : 'bg-amber-500/20 text-amber-600'
                       }`}>
-                        {pending}
+                        {unfilled}
                       </span>
                     )}
                   </button>
@@ -522,26 +797,27 @@ export default function Pronosticos() {
               })}
             </div>
 
-            {/* Cabecera de fase activa */}
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">{STAGE_INFO[activeStage]?.icon}</span>
-                <h3 className="text-lg font-bold text-stone-800">{STAGE_INFO[activeStage]?.full}</h3>
-                <span className="text-sm text-stone-400">· {filtered.length} partido{filtered.length !== 1 ? 's' : ''}</span>
-              </div>
-              {saveableCount > 0 && (
-                <button
-                  onClick={handleSaveAll}
-                  disabled={savingAll}
-                  className="btn-primary text-sm px-4 py-2 flex items-center gap-2 flex-shrink-0"
-                >
-                  {savingAll ? <Spinner size="sm" /> : '💾'}
-                  Guardar todo ({saveableCount})
-                </button>
+            {/* Stage header */}
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{STAGE_INFO[activeStage]?.icon}</span>
+              <h3 className="text-lg font-bold text-stone-800">{STAGE_INFO[activeStage]?.full}</h3>
+              <span className="text-sm text-stone-400">
+                · {filtered.length} partido{filtered.length !== 1 ? 's' : ''}
+              </span>
+              {!isSubmitted && (
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ml-1 ${
+                  unfilledCount(activeStage) === 0
+                    ? 'bg-green-100 text-green-600'
+                    : 'bg-amber-100 text-amber-600'
+                }`}>
+                  {unfilledCount(activeStage) === 0
+                    ? '✓ Completo'
+                    : `${unfilledCount(activeStage)} sin rellenar`}
+                </span>
               )}
             </div>
 
-            {/* Partidos por fecha */}
+            {/* Match cards by day */}
             {Object.entries(grouped).map(([day, dayMatches]) => (
               <div key={day}>
                 <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 capitalize">{day}</p>
@@ -554,6 +830,9 @@ export default function Pronosticos() {
                       onSave={handleSave}
                       draft={drafts[m.id]}
                       onDraftChange={handleDraftChange}
+                      predictedHome={predictedOverlay[m.id]?.homeTeam}
+                      predictedAway={predictedOverlay[m.id]?.awayTeam}
+                      submitted={isSubmitted}
                     />
                   ))}
                 </div>
