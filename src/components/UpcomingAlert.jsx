@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, sq } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { Flag, teamName } from '../utils/teams'
@@ -22,32 +22,43 @@ export default function UpcomingAlert() {
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
     setDismissed(false)
+
+    async function fetchMissing() {
+      if (!activeLeague) { if (!cancelled) setMissing([]); return }
+
+      const predictionMode = activeLeague.prediction_mode ?? 'global'
+      const now       = new Date()
+      const windowEnd = new Date(now.getTime() + WINDOW_HOURS * 3_600_000)
+
+      const { data: upcoming } = await sq(
+        supabase
+          .from('matches')
+          .select('id, home_team, away_team, home_flag, away_flag, match_date')
+          .eq('status', 'scheduled')
+          .gt('match_date', now.toISOString())
+          .lte('match_date', windowEnd.toISOString())
+          .order('match_date')
+      )
+
+      if (cancelled) return
+      if (!upcoming || upcoming.length === 0) { setMissing([]); return }
+
+      const predQuery = predictionMode === 'per_league'
+        ? supabase.from('predictions').select('match_id').eq('user_id', user.id).eq('league_id', activeLeague.id)
+        : supabase.from('predictions').select('match_id').eq('user_id', user.id).is('league_id', null)
+
+      const { data: preds } = await sq(predQuery)
+      if (cancelled) return
+
+      const predictedIds = new Set((preds ?? []).map(p => p.match_id))
+      setMissing(upcoming.filter(m => !predictedIds.has(m.id)))
+    }
+
     fetchMissing()
-  }, [user?.id, activeLeague?.id])
-
-  async function fetchMissing() {
-    if (!activeLeague) { setMissing([]); return }
-
-    const now       = new Date()
-    const windowEnd = new Date(now.getTime() + WINDOW_HOURS * 3_600_000)
-
-    const { data: upcoming } = await supabase
-      .from('matches')
-      .select('id, home_team, away_team, home_flag, away_flag, match_date')
-      .eq('status', 'scheduled')
-      .gt('match_date', now.toISOString())
-      .lte('match_date', windowEnd.toISOString())
-      .order('match_date')
-
-    if (!upcoming || upcoming.length === 0) { setMissing([]); return }
-
-    const { data: preds } = await supabase
-      .from('predictions').select('match_id').eq('user_id', user.id).eq('league_id', activeLeague.id)
-    const predictedIds = new Set((preds ?? []).map(p => p.match_id))
-
-    setMissing(upcoming.filter(m => !predictedIds.has(m.id)))
-  }
+    return () => { cancelled = true }
+  }, [user?.id, activeLeague?.id, activeLeague?.prediction_mode])
 
   if (dismissed || missing.length === 0) return null
 
@@ -76,6 +87,7 @@ export default function UpcomingAlert() {
         <ul className="mt-2 space-y-1">
           {missing.slice(0, 3).map(m => {
             const t = timeLeft(m.match_date)
+            const hoursLeft = (new Date(m.match_date) - new Date()) / 3_600_000
             return (
               <li key={m.id} className="flex items-center gap-2 text-sm">
                 <Flag team={m.home_team} />
@@ -84,7 +96,7 @@ export default function UpcomingAlert() {
                 </span>
                 {t && (
                   <span className={`ml-auto flex-shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                    parseFloat(t) < 3 && t.includes('h') === false
+                    hoursLeft < 3
                       ? 'bg-red-500/20 text-red-400'
                       : 'bg-stone-200 text-stone-500'
                   }`}>
