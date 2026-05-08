@@ -9,6 +9,7 @@ import Pronosticos from './pages/Pronosticos'
 import Clasificacion from './pages/Clasificacion'
 import Resultados from './pages/Resultados'
 import Bracket from './pages/Bracket'
+import Reglas from './pages/Reglas'
 import JoinLeague from './pages/JoinLeague'
 import Spinner from './components/Spinner'
 import NotFound from './pages/NotFound'
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="clasificacion" element={<Clasificacion />} />
           <Route path="resultados"    element={<Resultados />} />
           <Route path="bracket"       element={<Bracket />} />
+          <Route path="reglas"        element={<Reglas />} />
           <Route path="perfil"        element={<Perfil />} />
         </Route>
         <Route path="/join/:code" element={<JoinLeague />} />
