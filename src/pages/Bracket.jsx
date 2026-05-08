@@ -298,24 +298,34 @@ export default function Bracket() {
   const [activeTab,  setActiveTab]  = useState('grupos')
 
   useEffect(() => {
+    let cancelled = false
+
     async function load() {
       setLoading(true)
-      const { data } = await supabase
-        .from('matches')
-        .select('*')
-        .order('match_date')
-      if (data) setAllMatches(data)
-      setLoading(false)
+      try {
+        const { data } = await supabase
+          .from('matches')
+          .select('*')
+          .order('match_date')
+        if (!cancelled && data) setAllMatches(data)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
     load()
 
     // Real-time subscription: re-derive bracket whenever any match changes
     const channel = supabase
-      .channel('bracket-matches')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches' }, () => load())
+      .channel(`bracket-matches-${Date.now()}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches' }, () => {
+        if (!cancelled) load()
+      })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      cancelled = true
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   // ── Pure bracket derivation (recalculated on every render, no cache needed) ──

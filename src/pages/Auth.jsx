@@ -364,7 +364,7 @@ export default function Auth() {
           <h1 className="text-3xl font-bold text-white">
             Porra <span className="text-amber-400">Mundial 2026</span>
           </h1>
-          <p className="text-stone-400 text-sm mt-1.5">🇺🇸 USA · 🇲🇽 México · 🇨🇦 Canadá</p>
+          <p className="text-stone-400 text-sm mt-1.5">México vs Sudáfrica</p>
         </div>
 
         <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 overflow-hidden p-1.5">

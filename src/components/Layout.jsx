@@ -108,9 +108,6 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-stone-200/60 py-5 text-center text-stone-400 text-xs">
-        Mundial 2026 · USA · México · Canadá
-      </footer>
     </div>
   )
 }
