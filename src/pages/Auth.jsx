@@ -63,12 +63,7 @@ function ForgotPassword({ onBack }) {
       </div>
       <div className="relative w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
-          <div className="relative inline-flex items-center justify-center mb-5">
-            <div className="absolute w-24 h-24 bg-amber-500/20 rounded-full blur-2xl" />
-            <div className="relative w-16 h-16 bg-gradient-to-br from-amber-400/20 to-orange-500/10 rounded-full border border-amber-500/25 flex items-center justify-center text-4xl shadow-inner">
-              ⚽
-            </div>
-          </div>
+          <div className="text-5xl mb-5">⚽</div>
           <h1 className="text-3xl font-bold text-white">
             Porra <span className="text-amber-400">Mundial 2026</span>
           </h1>
@@ -365,12 +360,7 @@ export default function Auth() {
 
       <div className="relative w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
-          <div className="relative inline-flex items-center justify-center mb-5">
-            <div className="absolute w-24 h-24 bg-amber-500/20 rounded-full blur-2xl" />
-            <div className="relative w-16 h-16 bg-gradient-to-br from-amber-400/20 to-orange-500/10 rounded-full border border-amber-500/25 flex items-center justify-center text-4xl shadow-inner">
-              ⚽
-            </div>
-          </div>
+          <div className="text-5xl mb-5">⚽</div>
           <h1 className="text-3xl font-bold text-white">
             Porra <span className="text-amber-400">Mundial 2026</span>
           </h1>

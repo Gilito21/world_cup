@@ -28,10 +28,7 @@ export default function Layout() {
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
           {/* Logo */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="relative">
-              <div className="absolute inset-0 bg-amber-500/30 rounded-full blur-md scale-150" />
-              <span className="relative text-2xl">⚽</span>
-            </div>
+            <span className="text-2xl">⚽</span>
             <div className="hidden sm:block">
               <span className="font-bold text-stone-900 text-lg leading-tight">Porra</span>
               <span className="font-bold text-amber-500 text-lg leading-tight"> Mundial 2026</span>
@@ -47,9 +44,13 @@ export default function Layout() {
           <div className="flex items-center gap-2 flex-shrink-0">
             {profile && (
               <Link to="/perfil" className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-stone-100 transition-all duration-150 group">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shadow-amber-500/30">
-                  {profile.username?.[0]?.toUpperCase()}
-                </div>
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt={profile.username} className="w-8 h-8 rounded-full object-cover shadow-sm" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shadow-amber-500/30">
+                    {profile.username?.[0]?.toUpperCase()}
+                  </div>
+                )}
                 <span className="text-stone-700 text-sm font-medium">{profile.username}</span>
                 <span className="bg-gradient-to-r from-amber-500/15 to-orange-400/10 text-amber-600 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-500/20">
                   {profile.total_points ?? 0} pts
@@ -107,7 +108,7 @@ export default function Layout() {
       </main>
 
       <footer className="border-t border-stone-200/60 py-5 text-center text-stone-400 text-xs">
-        🌍 Mundial 2026 · 🇺🇸 USA · 🇲🇽 México · 🇨🇦 Canadá
+        Mundial 2026 · USA · México · Canadá
       </footer>
     </div>
   )
