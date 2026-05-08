@@ -10,7 +10,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
  * Si la query no responde en `ms` ms devuelve { data: null, error: null }
  * para que los finally blocks liberen el spinner en lugar de colgarse.
  */
-export function sq(query, ms = 8000) {
+export function sq(query, ms = 15000) {
   return Promise.race([
     query,
     new Promise(resolve => setTimeout(() => resolve({ data: null, error: null }), ms)),
