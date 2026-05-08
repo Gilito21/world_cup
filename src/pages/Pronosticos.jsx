@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, sq } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
@@ -479,9 +479,9 @@ export default function Pronosticos() {
           { data: predData },
           { data: subData },
         ] = await Promise.all([
-          supabase.from('matches').select('*').order('match_date'),
-          predQuery,
-          subQuery,
+          sq(supabase.from('matches').select('*').order('match_date')),
+          sq(predQuery),
+          sq(subQuery),
         ])
 
         if (cancelled) return

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, sq } from '../lib/supabase'
 import Spinner from '../components/Spinner'
 import { Flag, teamName } from '../utils/teams'
 import {
@@ -303,10 +303,9 @@ export default function Bracket() {
     async function load() {
       setLoading(true)
       try {
-        const { data } = await supabase
-          .from('matches')
-          .select('*')
-          .order('match_date')
+        const { data } = await sq(
+          supabase.from('matches').select('*').order('match_date')
+        )
         if (!cancelled && data) setAllMatches(data)
       } finally {
         if (!cancelled) setLoading(false)
