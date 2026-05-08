@@ -9,8 +9,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Timeout de seguridad: si Supabase no responde en 8s, desbloquear la UI
-    const timeout = setTimeout(() => setLoading(false), 8000)
+    // Timeout de seguridad: si Supabase no responde en 15s, desbloquear la UI
+    const timeout = setTimeout(() => setLoading(false), 15000)
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       clearTimeout(timeout)

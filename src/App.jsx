@@ -25,39 +25,41 @@ function ProtectedRoute({ children }) {
 export default function App() {
   const { user, loading } = useAuth()
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-stone-50">
-        <Spinner size="lg" />
-      </div>
-    )
-  }
-
+  // LeagueProvider lives outside the auth-loading guard so that league data
+  // starts fetching as soon as user?.id is known (set before fetchProfile
+  // completes), running in parallel with the profile request instead of
+  // waiting for it to finish first.
   return (
     <LeagueProvider>
-      <Routes>
-        <Route path="/"               element={user ? <Navigate to="/pronosticos" replace /> : <Landing />} />
-        <Route path="/auth"           element={user ? <Navigate to="/pronosticos" replace /> : <Auth />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/pronosticos" replace />} />
-          <Route path="pronosticos"   element={<Pronosticos />} />
-          <Route path="clasificacion" element={<Clasificacion />} />
-          <Route path="resultados"    element={<Resultados />} />
-          <Route path="bracket"       element={<Bracket />} />
-          <Route path="reglas"        element={<Reglas />} />
-          <Route path="perfil"        element={<Perfil />} />
-        </Route>
-        <Route path="/join/:code" element={<JoinLeague />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      {loading ? (
+        <div className="flex items-center justify-center h-screen bg-stone-50">
+          <Spinner size="lg" />
+        </div>
+      ) : (
+        <Routes>
+          <Route path="/"               element={user ? <Navigate to="/pronosticos" replace /> : <Landing />} />
+          <Route path="/auth"           element={user ? <Navigate to="/pronosticos" replace /> : <Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/pronosticos" replace />} />
+            <Route path="pronosticos"   element={<Pronosticos />} />
+            <Route path="clasificacion" element={<Clasificacion />} />
+            <Route path="resultados"    element={<Resultados />} />
+            <Route path="bracket"       element={<Bracket />} />
+            <Route path="reglas"        element={<Reglas />} />
+            <Route path="perfil"        element={<Perfil />} />
+          </Route>
+          <Route path="/join/:code" element={<JoinLeague />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      )}
     </LeagueProvider>
   )
 }
