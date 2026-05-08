@@ -8,6 +8,7 @@ const NAV = [
   { to: '/clasificacion', label: 'Clasificación', icon: '🏆' },
   { to: '/resultados',    label: 'Resultados',    icon: '📋' },
   { to: '/bracket',       label: 'Bracket',       icon: '⚽' },
+  { to: '/reglas',        label: 'Cómo funciona', icon: '📖' },
 ]
 
 export default function Layout() {
