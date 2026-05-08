@@ -56,18 +56,24 @@ function ForgotPassword({ onBack }) {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 flex items-center justify-center px-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-orange-500/8 rounded-full blur-3xl" />
       </div>
       <div className="relative w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">⚽</div>
-          <h1 className="text-2xl font-bold text-stone-900">
-            Porra <span className="text-amber-500">Mundial 2026</span>
+          <div className="relative inline-flex items-center justify-center mb-5">
+            <div className="absolute w-24 h-24 bg-amber-500/20 rounded-full blur-2xl" />
+            <div className="relative w-16 h-16 bg-gradient-to-br from-amber-400/20 to-orange-500/10 rounded-full border border-amber-500/25 flex items-center justify-center text-4xl shadow-inner">
+              ⚽
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-white">
+            Porra <span className="text-amber-400">Mundial 2026</span>
           </h1>
         </div>
-        <div className="card p-6">
+        <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 p-6">
           {sent ? (
             <div className="text-center space-y-3 py-4">
               <div className="text-4xl">📧</div>
@@ -317,17 +323,20 @@ export default function Auth() {
   if (createdCode) {
     const inviteLink = `${window.location.origin}/join/${createdCode}`
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
-        <div className="w-full max-w-md space-y-5 animate-slide-up">
+      <div className="min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 flex items-center justify-center px-4">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-3xl" />
+        </div>
+        <div className="relative w-full max-w-md space-y-5 animate-slide-up">
           <div className="text-center space-y-2">
-            <div className="text-5xl">🎉</div>
-            <h2 className="text-xl font-bold text-stone-900">¡Liga creada!</h2>
-            <p className="text-stone-500 text-sm">Comparte el código o el link con tus amigos:</p>
+            <div className="text-5xl mb-1">🎉</div>
+            <h2 className="text-2xl font-bold text-white">¡Liga creada!</h2>
+            <p className="text-stone-400 text-sm">Comparte el código o el link con tus amigos:</p>
           </div>
-          <div className="card p-5 space-y-4">
+          <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 p-5 space-y-4">
             <div className="text-center">
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">Código</p>
-              <p className="text-4xl font-bold tracking-[0.35em] text-amber-400 font-mono">{createdCode}</p>
+              <p className="text-4xl font-bold tracking-[0.35em] text-amber-500 font-mono">{createdCode}</p>
             </div>
             <div className="border-t border-stone-100 pt-4 space-y-2">
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Link directo</p>
@@ -339,7 +348,7 @@ export default function Auth() {
               </div>
             </div>
           </div>
-          <p className="text-stone-400 text-xs text-center">Tu cuenta está lista. Inicia sesión para empezar.</p>
+          <p className="text-stone-500 text-xs text-center">Tu cuenta está lista. Inicia sesión para empezar.</p>
           <button onClick={() => switchMode('login')} className="btn-primary w-full">Iniciar sesión</button>
         </div>
       </div>
@@ -347,22 +356,28 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 flex items-center justify-center px-4 py-8">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
-        <div className="absolute top-2/3 left-1/3 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-2/3 left-1/4 w-80 h-80 bg-orange-500/8 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-amber-600/8 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">⚽</div>
-          <h1 className="text-2xl font-bold text-stone-900">
-            Porra <span className="text-amber-500">Mundial 2026</span>
+          <div className="relative inline-flex items-center justify-center mb-5">
+            <div className="absolute w-24 h-24 bg-amber-500/20 rounded-full blur-2xl" />
+            <div className="relative w-16 h-16 bg-gradient-to-br from-amber-400/20 to-orange-500/10 rounded-full border border-amber-500/25 flex items-center justify-center text-4xl shadow-inner">
+              ⚽
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-white">
+            Porra <span className="text-amber-400">Mundial 2026</span>
           </h1>
-          <p className="text-stone-400 text-sm mt-1">USA · México · Canadá</p>
+          <p className="text-stone-400 text-sm mt-1.5">🇺🇸 USA · 🇲🇽 México · 🇨🇦 Canadá</p>
         </div>
 
-        <div className="card p-1">
+        <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 overflow-hidden p-1.5">
           <div className="flex rounded-xl overflow-hidden bg-stone-100 p-1 mb-5">
             {[['login', 'Iniciar sesión'], ['register', 'Registrarse']].map(([m, label]) => (
               <button key={m} onClick={() => switchMode(m)}
@@ -533,10 +548,10 @@ export default function Auth() {
           </form>
         </div>
 
-        <p className="text-center text-stone-400 text-xs mt-4">
+        <p className="text-center text-stone-500 text-xs mt-5">
           {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
           <button onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
-            className="text-amber-500 hover:text-amber-400 hover:underline underline-offset-2">
+            className="text-amber-400 hover:text-amber-300 hover:underline underline-offset-2 font-medium">
             {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
           </button>
         </p>
