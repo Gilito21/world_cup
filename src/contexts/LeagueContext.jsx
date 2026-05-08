@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, sq } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 
 const LeagueContext = createContext({})
@@ -19,10 +19,12 @@ export function LeagueProvider({ children }) {
     if (!user) { setLeagues([]); setActiveLeagueState(null); setLoading(false); return }
 
     try {
-      const { data } = await supabase
-        .from('league_members')
-        .select('role, prediction_mode, leagues(id, name, invite_code, created_by)')
-        .eq('user_id', user.id)
+      const { data } = await sq(
+        supabase
+          .from('league_members')
+          .select('role, prediction_mode, leagues(id, name, invite_code, created_by)')
+          .eq('user_id', user.id)
+      )
 
       const list = (data ?? []).map(m => ({ ...m.leagues, role: m.role, prediction_mode: m.prediction_mode ?? 'global' }))
       setLeagues(list)

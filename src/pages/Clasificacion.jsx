@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { supabase } from '../lib/supabase'
+import { supabase, sq } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import LeagueModal from '../components/LeagueModal'
@@ -38,10 +38,9 @@ export default function Clasificacion() {
   async function loadGlobal() {
     setLoading(true)
     try {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, total_points')
-        .order('total_points', { ascending: false })
+      const { data: profiles } = await sq(
+        supabase.from('profiles').select('id, username, total_points').order('total_points', { ascending: false })
+      )
 
       setGlobalStandings(
         (profiles ?? []).map((p, i) => ({
@@ -62,10 +61,9 @@ export default function Clasificacion() {
     if (!activeLeague) { setLeagueStandings([]); setLoading(false); return }
     setLoading(true)
     try {
-      const { data: members } = await supabase
-        .from('league_members')
-        .select('user_id, role')
-        .eq('league_id', activeLeague.id)
+      const { data: members } = await sq(
+        supabase.from('league_members').select('user_id, role').eq('league_id', activeLeague.id)
+      )
 
       if (!members || members.length === 0) {
         setLeagueStandings([])
@@ -75,9 +73,9 @@ export default function Clasificacion() {
       const memberIds = members.map(m => m.user_id)
 
       const [{ data: profiles }, { data: leaguePreds }] = await Promise.all([
-        supabase.from('profiles').select('id, username').in('id', memberIds),
-        supabase.from('predictions').select('user_id, points_earned')
-          .eq('league_id', activeLeague.id).in('user_id', memberIds),
+        sq(supabase.from('profiles').select('id, username').in('id', memberIds)),
+        sq(supabase.from('predictions').select('user_id, points_earned')
+          .eq('league_id', activeLeague.id).in('user_id', memberIds)),
       ])
 
       const pointsMap = {}
@@ -119,11 +117,10 @@ export default function Clasificacion() {
   async function loadCompanies() {
     setLoading(true)
     try {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, company, total_points')
-        .not('company', 'is', null)
-        .neq('company', '')
+      const { data: profiles } = await sq(
+        supabase.from('profiles').select('id, username, company, total_points')
+          .not('company', 'is', null).neq('company', '')
+      )
 
       const companyMap = {}
       for (const p of profiles ?? []) {
