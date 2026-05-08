@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, sq } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
@@ -40,11 +40,9 @@ export function AuthProvider({ children }) {
 
   async function fetchProfile(userId) {
     try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
+      const { data } = await sq(
+        supabase.from('profiles').select('*').eq('id', userId).single()
+      )
       setProfile(data)
     } finally {
       setLoading(false)
