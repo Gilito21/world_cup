@@ -150,10 +150,6 @@ export default function Landing() {
         </Link>
       </section>
 
-      {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 py-5 text-center text-stone-600 text-xs">
-        Mundial 2026 · USA · México · Canadá
-      </footer>
     </div>
   )
 }

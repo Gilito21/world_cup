@@ -239,20 +239,22 @@ export default function Resultados() {
 
   async function loadData() {
     setLoading(true)
-    const [{ data: matchData }, { data: predData }] = await Promise.all([
-      supabase.from('matches').select('*').eq('status', 'finished').order('match_date', { ascending: false }),
-      predictionMode === 'per_league' && activeLeague
-        ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
-        : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null),
-    ])
-
-    if (matchData) setMatches(matchData)
-    if (predData) {
-      const map = {}
-      predData.forEach(p => { map[p.match_id] = p })
-      setPredictions(map)
+    try {
+      const [{ data: matchData }, { data: predData }] = await Promise.all([
+        supabase.from('matches').select('*').eq('status', 'finished').order('match_date', { ascending: false }),
+        predictionMode === 'per_league' && activeLeague
+          ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
+          : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null),
+      ])
+      if (matchData) setMatches(matchData)
+      if (predData) {
+        const map = {}
+        predData.forEach(p => { map[p.match_id] = p })
+        setPredictions(map)
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const stats = matches.reduce(
