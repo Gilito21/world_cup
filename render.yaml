@@ -10,6 +10,17 @@ services:
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
         sync: false
+    headers:
+      # index.html nunca se cachea — así el navegador siempre pide la versión
+      # nueva después de un deploy y carga los bundles correctos.
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      # Los assets de Vite llevan hash en el nombre (content-addressed), por lo
+      # que se pueden cachear indefinidamente de forma segura.
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
     routes:
       - type: rewrite
         source: /*
