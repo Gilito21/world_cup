@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase, sq } from '../lib/supabase'
 
 const AuthContext = createContext({})
@@ -7,6 +7,9 @@ export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const loadingRef = useRef(true)
+
+  useEffect(() => { loadingRef.current = loading }, [loading])
 
   useEffect(() => {
     // Timeout de seguridad: si Supabase no responde en 15s, desbloquear la UI
@@ -23,6 +26,8 @@ export function AuthProvider({ children }) {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // INITIAL_SESSION duplicates what getSession() already handles above
+      if (event === 'INITIAL_SESSION') return
       setUser(session?.user ?? null)
       if (session?.user) {
         // TOKEN_REFRESHED solo renueva el JWT, no hace falta recargar el perfil
@@ -35,7 +40,21 @@ export function AuthProvider({ children }) {
       }
     })
 
-    return () => { subscription.unsubscribe(); clearTimeout(timeout) }
+    // Safety: when the user returns to this tab, if loading is somehow still
+    // true (e.g. a background network call was throttled by Chrome), unblock
+    // after 2s to avoid the infinite spinner.
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && loadingRef.current) {
+        setTimeout(() => { if (loadingRef.current) setLoading(false) }, 2000)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [])
 
   async function fetchProfile(userId) {

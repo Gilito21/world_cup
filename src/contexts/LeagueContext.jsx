@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 
@@ -14,6 +14,9 @@ export function LeagueProvider({ children }) {
   const [leagues, setLeagues]           = useState([])
   const [activeLeague, setActiveLeagueState] = useState(null)
   const [loading, setLoading]           = useState(true)
+  const loadingRef = useRef(true)
+
+  useEffect(() => { loadingRef.current = loading }, [loading])
 
   const loadLeagues = useCallback(async () => {
     if (!user) { setLeagues([]); setActiveLeagueState(null); setLoading(false); return }
@@ -44,6 +47,18 @@ export function LeagueProvider({ children }) {
     setLoading(true)
     loadLeagues()
   }, [loadLeagues])
+
+  // Safety: force-unblock league loading when the user returns to the tab,
+  // in case a background network call was throttled or suspended by Chrome.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && loadingRef.current) {
+        setTimeout(() => { if (loadingRef.current) setLoading(false) }, 3000)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
 
   // Join pending league from invite link after login/register
   useEffect(() => {
