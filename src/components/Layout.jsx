@@ -23,11 +23,15 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-stone-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-stone-50/80 backdrop-blur-md border-b border-stone-200">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200/80 shadow-sm">
+        <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-amber-500 via-orange-400 to-amber-500" />
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
           {/* Logo */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
-            <span className="text-2xl">⚽</span>
+            <div className="relative">
+              <div className="absolute inset-0 bg-amber-500/30 rounded-full blur-md scale-150" />
+              <span className="relative text-2xl">⚽</span>
+            </div>
             <div className="hidden sm:block">
               <span className="font-bold text-stone-900 text-lg leading-tight">Porra</span>
               <span className="font-bold text-amber-500 text-lg leading-tight"> Mundial 2026</span>
@@ -42,19 +46,19 @@ export default function Layout() {
           {/* Derecha: perfil + salir */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {profile && (
-              <Link to="/perfil" className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-stone-100 transition-colors">
-                <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-semibold text-xs">
+              <Link to="/perfil" className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-stone-100 transition-all duration-150 group">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shadow-amber-500/30">
                   {profile.username?.[0]?.toUpperCase()}
                 </div>
-                <span className="text-stone-700 text-sm">{profile.username}</span>
-                <span className="bg-amber-500/10 text-amber-400 text-xs font-bold px-2 py-0.5 rounded-full border border-amber-500/20">
+                <span className="text-stone-700 text-sm font-medium">{profile.username}</span>
+                <span className="bg-gradient-to-r from-amber-500/15 to-orange-400/10 text-amber-600 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-500/20">
                   {profile.total_points ?? 0} pts
                 </span>
               </Link>
             )}
             <button
               onClick={handleSignOut}
-              className="text-stone-500 hover:text-stone-900 text-sm px-2.5 py-1.5 rounded-lg hover:bg-stone-100 transition-colors"
+              className="text-stone-400 hover:text-red-500 text-sm px-2.5 py-1.5 rounded-xl hover:bg-red-50 transition-all duration-150"
             >
               Salir
             </button>
@@ -84,7 +88,7 @@ export default function Layout() {
 
       {/* Banda de contexto de liga activa */}
       {activeLeague && (
-        <div className="bg-amber-500/5 border-b border-amber-500/10">
+        <div className="bg-gradient-to-r from-amber-500/8 via-amber-500/5 to-transparent border-b border-amber-500/15">
           <div className="max-w-5xl mx-auto px-4 py-1.5 flex items-center gap-2">
             {activeLeague.role === 'admin' && <span className="text-xs">👑</span>}
             <span className="text-xs text-amber-500/70 font-medium">{activeLeague.name}</span>
@@ -102,8 +106,8 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-stone-200 py-4 text-center text-stone-400 text-xs">
-        Mundial 2026 · USA · México · Canadá
+      <footer className="border-t border-stone-200/60 py-5 text-center text-stone-400 text-xs">
+        🌍 Mundial 2026 · 🇺🇸 USA · 🇲🇽 México · 🇨🇦 Canadá
       </footer>
     </div>
   )
