@@ -440,6 +440,7 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
 export default function Pronosticos() {
   const { user }                  = useAuth()
   const { activeLeague, leagues, loading: leagueLoading } = useLeague()
+  const predictionMode = activeLeague?.prediction_mode ?? 'global'
 
   const [matches,     setMatches]     = useState([])
   const [predictions, setPredictions] = useState({})
@@ -466,11 +467,11 @@ export default function Pronosticos() {
     async function load() {
       setLoading(true)
       try {
-        const predQuery = activeLeague
+        const predQuery = (predictionMode === 'per_league' && activeLeague)
           ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
           : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
 
-        const subQuery = activeLeague
+        const subQuery = (predictionMode === 'per_league' && activeLeague)
           ? supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).eq('league_id', activeLeague.id).maybeSingle()
           : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).maybeSingle()
 
@@ -519,7 +520,7 @@ export default function Pronosticos() {
 
     load()
     return () => { cancelled = true }
-  }, [user?.id, activeLeague?.id, leagueLoading])
+  }, [user?.id, activeLeague?.id, predictionMode, leagueLoading])
 
   // ── Cascade: group predictions → predicted knockout teams ───────────────────
   const predictedOverlay = useMemo(() => {
@@ -540,7 +541,7 @@ export default function Pronosticos() {
   const handleSave = useCallback(async (matchId, home, away) => {
     setError('')
     const existing = predictions[matchId]
-    const leagueId = activeLeague?.id ?? null
+    const leagueId = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : null
     const payload  = { user_id: user.id, match_id: matchId, home_score: home, away_score: away, league_id: leagueId }
 
     const { data, error: err } = existing
@@ -565,23 +566,26 @@ export default function Pronosticos() {
     setCopying(true)
     setError('')
     try {
-      const { data: sourcePreds } = await supabase
-        .from('predictions')
-        .select('match_id, home_score, away_score')
-        .eq('user_id', user.id)
-        .eq('league_id', sourceLeagueId)
+      const sourceLeague = leagues.find(l => l.id === sourceLeagueId)
+      const sourcePredMode = sourceLeague?.prediction_mode ?? 'global'
+      const sourceQuery = sourcePredMode === 'per_league'
+        ? supabase.from('predictions').select('match_id, home_score, away_score').eq('user_id', user.id).eq('league_id', sourceLeagueId)
+        : supabase.from('predictions').select('match_id, home_score, away_score').eq('user_id', user.id).is('league_id', null)
+
+      const { data: sourcePreds } = await sourceQuery
 
       if (!sourcePreds?.length) {
         setError('Esa liga no tiene pronósticos guardados todavía.')
         return
       }
 
+      const destLeagueId = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : null
       const rows = sourcePreds.map(p => ({
         user_id:    user.id,
         match_id:   p.match_id,
         home_score: p.home_score,
         away_score: p.away_score,
-        league_id:  activeLeague.id,
+        league_id:  destLeagueId,
       }))
 
       const { data, error: err } = await supabase
@@ -604,7 +608,7 @@ export default function Pronosticos() {
     } finally {
       setCopying(false)
     }
-  }, [user.id, activeLeague])
+  }, [user.id, activeLeague, leagues, predictionMode])
 
   // ── Final submission ─────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
@@ -631,7 +635,7 @@ export default function Pronosticos() {
       }
 
       // 2. Record the submission (unique per user+league — DB enforces no duplicates)
-      const leagueId = activeLeague?.id ?? null
+      const leagueId = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : null
       const { error: err } = await supabase
         .from('prediction_submissions')
         .insert({ user_id: user.id, league_id: leagueId })

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Spinner from '../components/Spinner'
@@ -10,6 +10,7 @@ export default function ResetPassword() {
   const [confirm, setConfirm]   = useState('')
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
+  const redirectTimer = useRef(null)
 
   // Supabase inyecta el token de reset en el hash de la URL.
   // Al cargar la página, onAuthStateChange lo detecta y establece la sesión.
@@ -17,7 +18,10 @@ export default function ResetPassword() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setStep('new-password')
     })
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      if (redirectTimer.current) clearTimeout(redirectTimer.current)
+    }
   }, [])
 
   async function handleSubmit(e) {
@@ -32,7 +36,7 @@ export default function ResetPassword() {
 
     if (err) { setError(err.message); return }
     setStep('done')
-    setTimeout(() => navigate('/auth'), 3000)
+    redirectTimer.current = setTimeout(() => navigate('/auth'), 3000)
   }
 
   return (

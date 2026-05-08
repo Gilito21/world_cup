@@ -9,11 +9,16 @@ export default function LeagueSwitcher() {
   const [showModal, setShowModal] = useState(false)
   const ref = useRef(null)
 
-  // Cerrar al hacer click fuera
+  // Cerrar al hacer click fuera o pulsar Escape
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    const keyHandler = (e) => { if (e.key === 'Escape') setOpen(false) }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('keydown', keyHandler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', keyHandler)
+    }
   }, [])
 
   if (leagues.length === 0) {
