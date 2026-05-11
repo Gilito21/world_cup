@@ -358,12 +358,18 @@ export function advanceKnockoutRound(finishedMatches) {
   for (const m of finishedMatches) {
     if (m.home_score == null || m.away_score == null) continue
 
+    // Prefer the explicit winner field (set by update-results.js, accounts for ET/penalties).
+    // Fall back to score comparison for matches without the field (legacy data).
     const winner =
+      m.winner === 'home' ? (m.homeTeam ?? m.home_team) :
+      m.winner === 'away' ? (m.awayTeam ?? m.away_team) :
       m.home_score > m.away_score ? (m.homeTeam ?? m.home_team) :
       m.away_score > m.home_score ? (m.awayTeam ?? m.away_team) :
-      null  // draw / not yet decided
+      null
 
     const loser =
+      m.winner === 'home' ? (m.awayTeam ?? m.away_team) :
+      m.winner === 'away' ? (m.homeTeam ?? m.home_team) :
       m.home_score > m.away_score ? (m.awayTeam ?? m.away_team) :
       m.away_score > m.home_score ? (m.homeTeam ?? m.home_team) :
       null
@@ -515,14 +521,19 @@ export function computePredictedKnockout(dbMatches, userPredMap) {
       const prog   = BRACKET_PROGRESSION[bracketId]
       if (!pred || !prog || teams.home == null || teams.away == null) return
 
+      // For knockout draws, use the user's tiebreaker to determine who advances.
       const winner =
-        pred.home_score > pred.away_score ? teams.home  :
-        pred.away_score > pred.home_score ? teams.away  :
-        null  // draw / not yet resolved
+        pred.home_score > pred.away_score ? teams.home :
+        pred.away_score > pred.home_score ? teams.away :
+        pred.tiebreaker === 'home'        ? teams.home :
+        pred.tiebreaker === 'away'        ? teams.away :
+        null
 
       const loser =
-        pred.home_score > pred.away_score ? teams.away  :
-        pred.away_score > pred.home_score ? teams.home  :
+        pred.home_score > pred.away_score ? teams.away :
+        pred.away_score > pred.home_score ? teams.home :
+        pred.tiebreaker === 'home'        ? teams.away :
+        pred.tiebreaker === 'away'        ? teams.home :
         null
 
       if (winner) {

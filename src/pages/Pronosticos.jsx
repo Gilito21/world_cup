@@ -225,7 +225,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
 
 // ─── MATCH CARD ───────────────────────────────────────────────────────────────
 
-function MatchCard({ match, prediction, onSave, draft, onDraftChange, predictedHome, predictedAway, submitted }) {
+function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, submitted }) {
   // When the overall bracket is submitted, all inputs are locked regardless of match status
   const isFinished  = match.status === 'finished'
   const isLocked    = submitted || isFinished ||
@@ -237,15 +237,19 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, predictedH
   const hasPredictedTeams = (isTbd(match.home_team) || isTbd(match.away_team)) &&
                             (predictedHome || predictedAway)
 
-  const home    = draft?.home ?? ''
-  const away    = draft?.away ?? ''
-  const setHome = val => onDraftChange(match.id, val, away)
-  const setAway = val => onDraftChange(match.id, home, val)
+  const home        = draft?.home ?? ''
+  const away        = draft?.away ?? ''
+  const tiebreaker  = draft?.tiebreaker ?? null
+  const setHome     = val => onDraftChange(match.id, val, away)
+  const setAway     = val => onDraftChange(match.id, home, val)
+  const isKnockout  = match.stage !== 'group'
+  const isDraw      = home !== '' && away !== '' && Number(home) === Number(away)
 
   const changed = !submitted && home !== '' && away !== '' && (
     !prediction ||
     Number(home) !== prediction.home_score ||
-    Number(away) !== prediction.away_score
+    Number(away) !== prediction.away_score ||
+    (isKnockout && isDraw && (tiebreaker ?? null) !== (prediction.tiebreaker ?? null))
   )
 
   const [saving, setSaving] = useState(false)
@@ -256,7 +260,8 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, predictedH
   async function handleSave() {
     if (home === '' || away === '') return
     setSaving(true)
-    const ok = await onSave(match.id, Number(home), Number(away))
+    const effectiveTiebreaker = isKnockout ? tiebreaker : null
+    const ok = await onSave(match.id, Number(home), Number(away), effectiveTiebreaker)
     setSaving(false)
     if (ok) setSaved(true)
   }
@@ -345,26 +350,88 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, predictedH
         </div>
       </div>
 
+      {/* Tiebreaker selector: knockout draw predictions only */}
+      {isKnockout && isDraw && !isFinished && (
+        <div className="mt-3 pt-3 border-t border-stone-100 flex flex-col items-center gap-2">
+          <span className="text-xs text-stone-500 font-medium">¿Quién pasa a la siguiente ronda?</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => !isLocked && onTiebreakerChange(match.id, 'home')}
+              disabled={isLocked}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                tiebreaker === 'home'
+                  ? 'bg-amber-500 border-amber-500 text-stone-950'
+                  : 'bg-white border-stone-200 text-stone-600 hover:border-amber-400 hover:text-stone-900'
+              } disabled:opacity-40 disabled:cursor-not-allowed`}
+            >
+              <Flag team={displayHome} />
+              <span>{teamName(displayHome)}</span>
+            </button>
+            <button
+              onClick={() => !isLocked && onTiebreakerChange(match.id, 'away')}
+              disabled={isLocked}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                tiebreaker === 'away'
+                  ? 'bg-amber-500 border-amber-500 text-stone-950'
+                  : 'bg-white border-stone-200 text-stone-600 hover:border-amber-400 hover:text-stone-900'
+              } disabled:opacity-40 disabled:cursor-not-allowed`}
+            >
+              <Flag team={displayAway} />
+              <span>{teamName(displayAway)}</span>
+            </button>
+          </div>
+          {!tiebreaker && !isLocked && (
+            <span className="text-xs text-amber-600 font-medium">Selecciona quién avanza</span>
+          )}
+        </div>
+      )}
+
       {/* Footer */}
       {isFinished && prediction && (
-        <div className="mt-3 pt-3 border-t border-stone-200 text-center text-xs text-stone-500">
-          Tu pronóstico:{' '}
-          <span className="text-stone-700 font-medium">
-            {teamName(displayHome)} {prediction.home_score} – {prediction.away_score} {teamName(displayAway)}
-          </span>
+        <div className="mt-3 pt-3 border-t border-stone-200 text-center text-xs text-stone-500 space-y-1">
+          <div>
+            Tu pronóstico:{' '}
+            <span className="text-stone-700 font-medium">
+              {teamName(displayHome)} {prediction.home_score} – {prediction.away_score} {teamName(displayAway)}
+            </span>
+          </div>
+          {isKnockout && match.home_score === match.away_score && match.winner && (
+            <div>
+              Avanzó:{' '}
+              <span className="font-medium text-stone-600">
+                {match.winner === 'home' ? teamName(displayHome) : teamName(displayAway)}
+              </span>
+              {prediction.tiebreaker && (
+                <span className={`ml-1.5 font-medium ${prediction.tiebreaker === match.winner ? 'text-green-600' : 'text-red-500'}`}>
+                  {`(pronosticaste ${prediction.tiebreaker === 'home' ? teamName(displayHome) : teamName(displayAway)} `}
+                  {prediction.tiebreaker === match.winner ? '✓)' : '✗)'}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {/* Submitted lock footer */}
       {submitted && !isFinished && (
-        <div className="mt-3 pt-3 border-t border-stone-100 text-center text-xs text-stone-400 flex items-center justify-center gap-1">
-          <span>🔒</span>
-          <span>
-            Pronóstico enviado:{' '}
-            <span className="font-medium text-stone-600">
-              {(home || prediction?.home_score) ?? '?'} – {(away || prediction?.away_score) ?? '?'}
+        <div className="mt-3 pt-3 border-t border-stone-100 text-center text-xs text-stone-400 space-y-0.5">
+          <div className="flex items-center justify-center gap-1">
+            <span>🔒</span>
+            <span>
+              Pronóstico enviado:{' '}
+              <span className="font-medium text-stone-600">
+                {(home || prediction?.home_score) ?? '?'} – {(away || prediction?.away_score) ?? '?'}
+              </span>
             </span>
-          </span>
+          </div>
+          {isKnockout && tiebreaker && isDraw && (
+            <div>
+              Avanza:{' '}
+              <span className="font-medium text-stone-600">
+                {tiebreaker === 'home' ? teamName(displayHome) : teamName(displayAway)}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -503,7 +570,7 @@ export default function Pronosticos() {
           const initialDrafts = {}
           predData.forEach(p => {
             map[p.match_id] = p
-            initialDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? '') }
+            initialDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? ''), tiebreaker: p.tiebreaker ?? null }
           })
           setPredictions(map)
           setDrafts(initialDrafts)
@@ -527,22 +594,22 @@ export default function Pronosticos() {
     if (!matches.length) return {}
     const predMap = {}
     for (const [matchId, pred] of Object.entries(predictions)) {
-      predMap[matchId] = { home_score: pred.home_score, away_score: pred.away_score }
+      predMap[matchId] = { home_score: pred.home_score, away_score: pred.away_score, tiebreaker: pred.tiebreaker ?? null }
     }
     for (const [matchId, draft] of Object.entries(drafts)) {
       if (draft.home !== '' && draft.away !== '') {
-        predMap[matchId] = { home_score: Number(draft.home), away_score: Number(draft.away) }
+        predMap[matchId] = { home_score: Number(draft.home), away_score: Number(draft.away), tiebreaker: draft.tiebreaker ?? null }
       }
     }
     return computePredictedKnockout(matches, predMap)
   }, [matches, predictions, drafts])
 
   // ── Save a single draft ─────────────────────────────────────────────────────
-  const handleSave = useCallback(async (matchId, home, away) => {
+  const handleSave = useCallback(async (matchId, home, away, tiebreaker = null) => {
     setError('')
     const existing = predictions[matchId]
     const leagueId = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : null
-    const payload  = { user_id: user.id, match_id: matchId, home_score: home, away_score: away, league_id: leagueId }
+    const payload  = { user_id: user.id, match_id: matchId, home_score: home, away_score: away, league_id: leagueId, tiebreaker: tiebreaker ?? null }
 
     const { data, error: err } = existing
       ? await supabase.from('predictions').update(payload).eq('id', existing.id).select().single()
@@ -553,12 +620,16 @@ export default function Pronosticos() {
       return false
     }
     setPredictions(p => ({ ...p, [matchId]: data }))
-    setDrafts(d => ({ ...d, [matchId]: { home: String(data.home_score), away: String(data.away_score) } }))
+    setDrafts(d => ({ ...d, [matchId]: { home: String(data.home_score), away: String(data.away_score), tiebreaker: data.tiebreaker ?? null } }))
     return true
   }, [predictions, user.id, activeLeague])
 
   const handleDraftChange = useCallback((matchId, home, away) => {
-    setDrafts(d => ({ ...d, [matchId]: { home, away } }))
+    setDrafts(d => ({ ...d, [matchId]: { ...(d[matchId] ?? {}), home, away } }))
+  }, [])
+
+  const handleTiebreakerChange = useCallback((matchId, tiebreaker) => {
+    setDrafts(d => ({ ...d, [matchId]: { ...(d[matchId] ?? { home: '', away: '' }), tiebreaker } }))
   }, [])
 
   // ── Copy predictions from another league ────────────────────────────────────
@@ -569,8 +640,8 @@ export default function Pronosticos() {
       const sourceLeague = leagues.find(l => l.id === sourceLeagueId)
       const sourcePredMode = sourceLeague?.prediction_mode ?? 'global'
       const sourceQuery = sourcePredMode === 'per_league'
-        ? supabase.from('predictions').select('match_id, home_score, away_score').eq('user_id', user.id).eq('league_id', sourceLeagueId)
-        : supabase.from('predictions').select('match_id, home_score, away_score').eq('user_id', user.id).is('league_id', null)
+        ? supabase.from('predictions').select('match_id, home_score, away_score, tiebreaker').eq('user_id', user.id).eq('league_id', sourceLeagueId)
+        : supabase.from('predictions').select('match_id, home_score, away_score, tiebreaker').eq('user_id', user.id).is('league_id', null)
 
       const { data: sourcePreds } = await sourceQuery
 
@@ -585,6 +656,7 @@ export default function Pronosticos() {
         match_id:   p.match_id,
         home_score: p.home_score,
         away_score: p.away_score,
+        tiebreaker: p.tiebreaker ?? null,
         league_id:  destLeagueId,
       }))
 
@@ -599,7 +671,7 @@ export default function Pronosticos() {
       const newDrafts = {}
       data.forEach(p => {
         map[p.match_id] = p
-        newDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? '') }
+        newDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? ''), tiebreaker: p.tiebreaker ?? null }
       })
       setPredictions(map)
       setDrafts(newDrafts)
@@ -621,12 +693,13 @@ export default function Pronosticos() {
         if (!d || d.home === '' || d.away === '') return false
         const pred = predictions[m.id]
         if (!pred) return true
-        return Number(d.home) !== pred.home_score || Number(d.away) !== pred.away_score
+        const tiebreakerChanged = m.stage !== 'group' && (d.tiebreaker ?? null) !== (pred.tiebreaker ?? null)
+        return Number(d.home) !== pred.home_score || Number(d.away) !== pred.away_score || tiebreakerChanged
       })
 
       if (toSave.length > 0) {
         const results = await Promise.all(
-          toSave.map(m => handleSave(m.id, Number(drafts[m.id].home), Number(drafts[m.id].away)))
+          toSave.map(m => handleSave(m.id, Number(drafts[m.id].home), Number(drafts[m.id].away), drafts[m.id].tiebreaker ?? null))
         )
         if (results.some(r => r === false)) {
           setError('Error guardando algunos pronósticos. Inténtalo de nuevo.')
@@ -660,7 +733,12 @@ export default function Pronosticos() {
   const isPastCutoff    = !!(cutoffTime && Date.now() >= cutoffTime)
 
   const filledCount = useMemo(
-    () => matches.filter(m => { const d = drafts[m.id]; return d && d.home !== '' && d.away !== '' }).length,
+    () => matches.filter(m => {
+      const d = drafts[m.id]
+      if (!d || d.home === '' || d.away === '') return false
+      if (m.stage !== 'group' && Number(d.home) === Number(d.away) && !d.tiebreaker) return false
+      return true
+    }).length,
     [matches, drafts]
   )
 
@@ -669,7 +747,9 @@ export default function Pronosticos() {
     matches.filter(m => {
       if (m.stage !== stage) return false
       const d = drafts[m.id]
-      return !d || d.home === '' || d.away === ''
+      if (!d || d.home === '' || d.away === '') return true
+      if (m.stage !== 'group' && Number(d.home) === Number(d.away) && !d.tiebreaker) return true
+      return false
     }).length,
     [matches, drafts]
   )
@@ -837,6 +917,7 @@ export default function Pronosticos() {
                       onSave={handleSave}
                       draft={drafts[m.id]}
                       onDraftChange={handleDraftChange}
+                      onTiebreakerChange={handleTiebreakerChange}
                       predictedHome={predictedOverlay[m.id]?.homeTeam}
                       predictedAway={predictedOverlay[m.id]?.awayTeam}
                       submitted={isSubmitted}
