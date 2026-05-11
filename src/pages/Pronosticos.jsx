@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
+import { getCache, setCache } from '../lib/dataCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
@@ -512,7 +513,10 @@ export default function Pronosticos() {
   const [matches,     setMatches]     = useState(() => getMatchCache() ?? [])
   const [predictions, setPredictions] = useState({})
   const [drafts,      setDrafts]      = useState({})
-  const [loading,     setLoading]     = useState(true)
+  // Start as loading only if we have no cached matches at all. When the user
+  // navigates back to this page and we already have data in memory, render it
+  // immediately and refresh in the background — no spinner.
+  const [loading,     setLoading]     = useState(() => !getMatchCache())
   const [activeStage, setActiveStage] = useState('group')
   const [error,       setError]       = useState('')
   const [copying,     setCopying]     = useState(false)
@@ -530,9 +534,42 @@ export default function Pronosticos() {
     if (leagueLoading) return
 
     let cancelled = false
+    const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
+    const predCacheKey = `preds:${user.id}:${leagueKey}`
+    const subCacheKey  = `sub:${user.id}:${leagueKey}`
+
+    // Hydrate from caches immediately so the user sees their data without a spinner
+    const cachedPreds = getCache(predCacheKey)
+    const cachedSub   = getCache(subCacheKey)
+    if (cachedPreds) {
+      setPredictions(cachedPreds)
+      const initialDrafts = {}
+      for (const [matchId, p] of Object.entries(cachedPreds)) {
+        initialDrafts[matchId] = {
+          home: String(p.home_score ?? ''),
+          away: String(p.away_score ?? ''),
+          tiebreaker: p.tiebreaker ?? null,
+        }
+      }
+      setDrafts(initialDrafts)
+    } else {
+      setPredictions({})
+      setDrafts({})
+    }
+    if (cachedSub !== null) {
+      setIsSubmitted(cachedSub?.submitted ?? false)
+      setSubmittedAt(cachedSub?.submittedAt ?? null)
+    } else {
+      setIsSubmitted(false)
+      setSubmittedAt(null)
+    }
+
+    const hasMatches = matches.length > 0 || !!getMatchCache()
+    const hasCachedView = hasMatches && cachedPreds
 
     async function load() {
-      setLoading(true)
+      // Only block UI with a spinner if we have nothing to show
+      if (!hasCachedView) setLoading(true)
       try {
         const predQuery = (predictionMode === 'per_league' && activeLeague)
           ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
@@ -578,11 +615,21 @@ export default function Pronosticos() {
           })
           setPredictions(map)
           setDrafts(initialDrafts)
+          setCache(predCacheKey, map)
         }
 
-        if (subData) {
-          setIsSubmitted(true)
-          setSubmittedAt(subData.submitted_at)
+        // subData is null both on "no submission" and on timeout — only treat the
+        // success case (predData arrived) as authoritative for the submission slot.
+        if (predData !== null) {
+          if (subData) {
+            setIsSubmitted(true)
+            setSubmittedAt(subData.submitted_at)
+            setCache(subCacheKey, { submitted: true, submittedAt: subData.submitted_at })
+          } else {
+            setIsSubmitted(false)
+            setSubmittedAt(null)
+            setCache(subCacheKey, { submitted: false, submittedAt: null })
+          }
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -591,6 +638,7 @@ export default function Pronosticos() {
 
     load()
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeLeague?.id, predictionMode, leagueLoading])
 
   // ── Cascade: group predictions → predicted knockout teams ───────────────────
@@ -623,10 +671,15 @@ export default function Pronosticos() {
       setError('Error al guardar el borrador.')
       return false
     }
-    setPredictions(p => ({ ...p, [matchId]: data }))
+    setPredictions(p => {
+      const next = { ...p, [matchId]: data }
+      const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
+      setCache(`preds:${user.id}:${leagueKey}`, next)
+      return next
+    })
     setDrafts(d => ({ ...d, [matchId]: { home: String(data.home_score), away: String(data.away_score), tiebreaker: data.tiebreaker ?? null } }))
     return true
-  }, [predictions, user.id, activeLeague])
+  }, [predictions, user.id, activeLeague, predictionMode])
 
   const handleDraftChange = useCallback((matchId, home, away) => {
     setDrafts(d => ({ ...d, [matchId]: { ...(d[matchId] ?? {}), home, away } }))
@@ -685,6 +738,8 @@ export default function Pronosticos() {
       })
       setPredictions(map)
       setDrafts(newDrafts)
+      const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
+      setCache(`preds:${user.id}:${leagueKey}`, map)
     } catch {
       setError('Error al copiar los pronósticos.')
     } finally {
@@ -725,8 +780,11 @@ export default function Pronosticos() {
 
       if (err) throw err
 
+      const submittedAtNow = new Date().toISOString()
       setIsSubmitted(true)
-      setSubmittedAt(new Date().toISOString())
+      setSubmittedAt(submittedAtNow)
+      const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
+      setCache(`sub:${user.id}:${leagueKey}`, { submitted: true, submittedAt: submittedAtNow })
       setShowConfirm(false)
     } catch {
       setError('Error al enviar el pronóstico. Inténtalo de nuevo.')

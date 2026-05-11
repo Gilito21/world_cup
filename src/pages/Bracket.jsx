@@ -303,9 +303,12 @@ export default function Bracket() {
     let cancelled = false
 
     async function load() {
-      const hit = getMatchCache()
-      if (!hit) setLoading(true)
+      // Only show the spinner if we have absolutely nothing to render.
+      // When the page remounts after a tab switch we already have matches in
+      // state from the cache — refresh in the background instead.
+      if (allMatches.length === 0 && !getMatchCache()) setLoading(true)
       try {
+        const hit = getMatchCache()
         const { data } = hit
           ? await Promise.resolve({ data: hit })
           : await sq(supabase.from('matches').select('*').order('match_date'))
@@ -319,9 +322,11 @@ export default function Bracket() {
     }
     load()
 
-    // Real-time subscription: re-derive bracket whenever any match changes
+    // Real-time subscription: re-derive bracket whenever any match changes.
+    // Use a stable channel name so React StrictMode / fast remounts don't
+    // accumulate orphan channels.
     const channel = supabase
-      .channel(`bracket-matches-${Date.now()}`)
+      .channel('bracket-matches')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches' }, () => {
         if (!cancelled) load()
       })
@@ -331,6 +336,7 @@ export default function Bracket() {
       cancelled = true
       supabase.removeChannel(channel)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Pure bracket derivation (recalculated on every render, no cache needed) ──
