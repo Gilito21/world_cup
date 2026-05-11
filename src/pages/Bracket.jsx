@@ -6,6 +6,7 @@ import {
   GROUPS,
   THIRD_PLACE_QUALIFIERS,
   computeAllStandings,
+  filterCompleteGroups,
   getQualifiers,
   buildRoundOf32,
   advanceKnockoutRound,
@@ -328,9 +329,12 @@ export default function Bracket() {
   }, [])
 
   // ── Pure bracket derivation (recalculated on every render, no cache needed) ──
-  const standings = useMemo(() => computeAllStandings(allMatches), [allMatches])
-  const qualifiers = useMemo(() => getQualifiers(standings), [standings])
-  const r32Matches = useMemo(() => buildRoundOf32(standings), [standings])
+  // standings = raw partial results (used for group tables)
+  // resolvedStandings = only groups where ALL matches are finished (used for bracket/thirds)
+  const standings         = useMemo(() => computeAllStandings(allMatches), [allMatches])
+  const resolvedStandings = useMemo(() => filterCompleteGroups(standings, allMatches), [standings, allMatches])
+  const qualifiers        = useMemo(() => getQualifiers(resolvedStandings), [resolvedStandings])
+  const r32Matches        = useMemo(() => buildRoundOf32(resolvedStandings), [resolvedStandings])
 
   // Advance knockout rounds based on finished DB matches
   const knockoutSlots = useMemo(() => {
