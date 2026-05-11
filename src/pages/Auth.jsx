@@ -39,22 +39,21 @@ function expandAliases(query) {
   return [...new Set(terms)]
 }
 
-// ── Shared dark background ──────────────────────────────────────────────────
+// ── Shared light background ─────────────────────────────────────────────────
 function AuthBg({ children }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 flex items-center justify-center px-4 py-8">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-amber-500/8 rounded-full blur-[100px]" />
-        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-amber-600/5 rounded-full blur-3xl" />
-        <div
-          className="absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)',
-            backgroundSize: '60px 60px',
-          }}
-        />
-      </div>
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      {/* Subtle dot pattern */}
+      <div
+        className="absolute inset-0 opacity-50 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #d6d3d1 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+      {/* Soft amber glow */}
+      <div className="absolute -top-32 -right-32 w-96 h-96 bg-amber-100/70 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-orange-50 rounded-full blur-3xl pointer-events-none" />
       {children}
     </div>
   )
@@ -81,21 +80,21 @@ function ForgotPassword({ onBack }) {
   return (
     <AuthBg>
       <div className="relative w-full max-w-sm animate-slide-up">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-6 text-stone-400 hover:text-white transition-colors text-sm">
+        <Link to="/" className="flex items-center justify-center gap-2 mb-6 text-stone-600 hover:text-stone-900 transition-colors text-sm font-medium">
           <span>⚽</span>
-          <span className="font-bold">Porra <span className="text-amber-400">Mundial 2026</span></span>
+          <span className="font-bold text-stone-900">Porra <span className="text-amber-500">Mundial 2026</span></span>
         </Link>
-        <div className="bg-white rounded-3xl shadow-2xl shadow-black/40 overflow-hidden">
-          <div className="bg-gradient-to-br from-stone-900 to-stone-950 px-6 py-6 border-b border-white/8">
-            <h2 className="text-lg font-bold text-white">Recuperar contraseña</h2>
-            <p className="text-stone-400 text-sm mt-1">Te enviamos un enlace para crear una nueva.</p>
+        <div className="bg-white rounded-3xl shadow-xl shadow-stone-900/8 border border-stone-200 overflow-hidden">
+          <div className="bg-gradient-to-br from-amber-50 to-stone-50 px-6 py-6 border-b border-stone-100">
+            <h2 className="text-lg font-bold text-stone-900">Recuperar contraseña</h2>
+            <p className="text-stone-500 text-sm mt-1">Te enviamos un enlace para crear una nueva.</p>
           </div>
           <div className="p-6">
             {sent ? (
               <div className="text-center space-y-3 py-4">
                 <div className="text-4xl">📧</div>
                 <p className="text-stone-900 font-semibold">Email enviado</p>
-                <p className="text-stone-400 text-sm">Revisa tu bandeja de entrada. El enlace caduca en 1 hora.</p>
+                <p className="text-stone-500 text-sm">Revisa tu bandeja de entrada. El enlace caduca en 1 hora.</p>
                 <button onClick={onBack} className="btn-secondary w-full mt-2">Volver al inicio de sesión</button>
               </div>
             ) : (
@@ -107,7 +106,7 @@ function ForgotPassword({ onBack }) {
                     required autoFocus autoComplete="email" />
                 </div>
                 {error && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-500 text-sm">{error}</div>
+                  <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">{error}</div>
                 )}
                 <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
                   {loading && <Spinner size="sm" />} Enviar enlace
@@ -330,17 +329,17 @@ export default function Auth() {
         <div className="relative w-full max-w-sm animate-slide-up space-y-4">
           <div className="text-center">
             <div className="text-5xl mb-2">🎉</div>
-            <h2 className="text-2xl font-bold text-white">¡Liga creada!</h2>
-            <p className="text-stone-400 text-sm mt-1">Comparte el código o el link con tus amigos:</p>
+            <h2 className="text-2xl font-bold text-stone-900">¡Liga creada!</h2>
+            <p className="text-stone-500 text-sm mt-1">Comparte el código o el link con tus amigos:</p>
           </div>
-          <div className="bg-white rounded-3xl shadow-2xl shadow-black/40 overflow-hidden">
-            <div className="bg-gradient-to-br from-stone-900 to-stone-950 px-6 py-5 border-b border-white/8">
+          <div className="bg-white rounded-3xl shadow-xl shadow-stone-900/8 border border-stone-200 overflow-hidden">
+            <div className="bg-gradient-to-br from-amber-50 to-stone-50 px-6 py-5 border-b border-stone-100">
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 text-center">Código de invitación</p>
-              <p className="text-4xl font-black tracking-[0.4em] text-amber-400 font-mono text-center break-all">{createdCode}</p>
+              <p className="text-4xl font-black tracking-[0.4em] text-amber-500 font-mono text-center break-all">{createdCode}</p>
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Link directo</p>
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">Link directo</p>
                 <div className="flex items-center gap-2">
                   <p className="flex-1 text-xs text-stone-500 bg-stone-100 rounded-xl px-3 py-2 font-mono truncate">
                     {inviteLink}
@@ -363,23 +362,23 @@ export default function Auth() {
 
         {/* Back to landing */}
         <div className="text-center mb-5">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-300 text-sm transition-colors">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-800 text-sm transition-colors font-medium">
             ← Volver al inicio
           </Link>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-3xl shadow-2xl shadow-black/50 overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-xl shadow-stone-900/8 border border-stone-200 overflow-hidden">
 
-          {/* ── Dark header ──────────────────────────────────── */}
-          <div className="bg-gradient-to-br from-stone-900 via-stone-900 to-stone-950 px-6 pt-7 pb-5">
+          {/* ── Light header ─────────────────────────────────── */}
+          <div className="bg-gradient-to-br from-amber-50 via-orange-50/40 to-stone-50 px-6 pt-7 pb-5 border-b border-stone-100">
             {/* Logo */}
             <div className="flex flex-col items-center text-center mb-5">
               <div className="text-4xl mb-2.5">⚽</div>
-              <h1 className="text-xl font-bold text-white">
-                Porra <span className="text-amber-400">Mundial 2026</span>
+              <h1 className="text-xl font-bold text-stone-900">
+                Porra <span className="text-amber-500">Mundial 2026</span>
               </h1>
-              <p className="text-stone-500 text-xs mt-1">México vs Sudáfrica · 11 jun 2026</p>
+              <p className="text-stone-400 text-xs mt-1">México vs Sudáfrica · 11 jun 2026</p>
             </div>
 
             {/* Stats pills */}
@@ -387,7 +386,7 @@ export default function Auth() {
               {['48 equipos', '104 partidos', '1 ganador'].map(s => (
                 <span
                   key={s}
-                  className="text-[10px] sm:text-xs text-stone-400 bg-white/6 border border-white/10 px-2.5 py-1 rounded-full"
+                  className="text-[10px] sm:text-xs text-stone-500 bg-white/80 border border-stone-200 px-2.5 py-1 rounded-full"
                 >
                   {s}
                 </span>
@@ -395,15 +394,15 @@ export default function Auth() {
             </div>
 
             {/* Tab switcher */}
-            <div className="flex rounded-xl overflow-hidden bg-white/8 p-1">
+            <div className="flex rounded-xl overflow-hidden bg-stone-100 p-1">
               {[['login', 'Iniciar sesión'], ['register', 'Registrarse']].map(([m, label]) => (
                 <button
                   key={m}
                   onClick={() => switchMode(m)}
                   className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-150 ${
                     mode === m
-                      ? 'bg-amber-500 text-stone-950 shadow-sm'
-                      : 'text-stone-400 hover:text-stone-200'
+                      ? 'bg-amber-500 text-white shadow-sm'
+                      : 'text-stone-500 hover:text-stone-800'
                   }`}
                 >
                   {label}
@@ -412,7 +411,7 @@ export default function Auth() {
             </div>
           </div>
 
-          {/* ── White form body ───────────────────────────────── */}
+          {/* ── Form body ────────────────────────────────────── */}
           <form onSubmit={handleSubmit} className="px-6 py-6 space-y-4">
 
             {/* Username */}
@@ -441,8 +440,8 @@ export default function Auth() {
                   </div>
                 </div>
                 <p className={`text-xs mt-1.5 ${
-                  usernameStatus === 'available' ? 'text-green-500' :
-                  usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'text-red-400' : 'text-stone-400'
+                  usernameStatus === 'available' ? 'text-green-600' :
+                  usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'text-red-500' : 'text-stone-400'
                 }`}>
                   {usernameStatus === 'available' && '✓ Nombre disponible'}
                   {usernameStatus === 'taken'     && 'Este nombre ya está en uso, elige otro'}
@@ -534,7 +533,7 @@ export default function Auth() {
                       key={val} type="button" onClick={() => setLeagueMode(val)}
                       className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                         leagueMode === val
-                          ? 'bg-amber-500/10 border-amber-500/40 text-amber-600'
+                          ? 'bg-amber-50 border-amber-300 text-amber-700'
                           : 'bg-stone-50 border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700'
                       }`}
                     >
@@ -579,10 +578,10 @@ export default function Auth() {
             )}
 
             {error && (
-              <div className="bg-red-500/8 border border-red-500/25 rounded-xl px-4 py-3 text-red-500 text-sm">{error}</div>
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">{error}</div>
             )}
             {success && (
-              <div className="bg-green-500/8 border border-green-500/25 rounded-xl px-4 py-3 text-green-600 text-sm">{success}</div>
+              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm">{success}</div>
             )}
 
             <button
@@ -591,7 +590,7 @@ export default function Auth() {
               className="btn-primary w-full flex items-center justify-center gap-2 text-base"
             >
               {loading && <Spinner size="sm" />}
-              {mode === 'login' ? 'Entrar a la app' : 'Crear cuenta gratis'}
+              {mode === 'login' ? 'Entrar a la app' : 'Crear cuenta'}
             </button>
 
             <p className="text-center text-stone-400 text-xs pt-1">
@@ -599,9 +598,9 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
-                className="text-amber-600 hover:text-amber-500 hover:underline underline-offset-2 font-medium"
+                className="text-amber-600 hover:text-amber-500 hover:underline underline-offset-2 font-semibold"
               >
-                {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
+                {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
               </button>
             </p>
           </form>
