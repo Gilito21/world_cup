@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase, sq } from '../lib/supabase'
+import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
@@ -240,13 +241,19 @@ export default function Resultados() {
   async function loadData() {
     setLoading(true)
     try {
-      const [{ data: matchData }, { data: predData }] = await Promise.all([
-        sq(supabase.from('matches').select('*').eq('status', 'finished').order('match_date', { ascending: false })),
+      const cachedMatches = getMatchCache()
+      const [{ data: allMatchData }, { data: predData }] = await Promise.all([
+        cachedMatches
+          ? Promise.resolve({ data: cachedMatches })
+          : sq(supabase.from('matches').select('*').order('match_date', { ascending: false })),
         sq(predictionMode === 'per_league' && activeLeague
           ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
           : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)),
       ])
-      if (matchData) setMatches(matchData)
+      if (allMatchData) {
+        setMatchCache(allMatchData)
+        setMatches(allMatchData.filter(m => m.status === 'finished'))
+      }
       if (predData) {
         const map = {}
         predData.forEach(p => { map[p.match_id] = p })

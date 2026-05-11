@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { supabase, sq } from '../lib/supabase'
+import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import Spinner from '../components/Spinner'
 import { Flag, teamName } from '../utils/teams'
 import {
@@ -294,20 +295,24 @@ function KnockoutRound({ roundKey, r32Matches, knockoutSlots, dbMatchesByBracket
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function Bracket() {
-  const [allMatches, setAllMatches] = useState([])
-  const [loading,    setLoading]    = useState(true)
+  const [allMatches, setAllMatches] = useState(() => getMatchCache() ?? [])
+  const [loading,    setLoading]    = useState(() => !getMatchCache())
   const [activeTab,  setActiveTab]  = useState('grupos')
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
-      setLoading(true)
+      const hit = getMatchCache()
+      if (!hit) setLoading(true)
       try {
-        const { data } = await sq(
-          supabase.from('matches').select('*').order('match_date')
-        )
-        if (!cancelled && data) setAllMatches(data)
+        const { data } = hit
+          ? await Promise.resolve({ data: hit })
+          : await sq(supabase.from('matches').select('*').order('match_date'))
+        if (!cancelled && data) {
+          setMatchCache(data)
+          setAllMatches(data)
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
