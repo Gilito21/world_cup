@@ -56,8 +56,10 @@ async function updateMatches(matches) {
 
   for (const m of matches) {
     const newStatus    = mapStatus(m.status)
-    const newHomeScore = m.score?.fullTime?.home ?? null
-    const newAwayScore = m.score?.fullTime?.away ?? null
+    // extraTime holds the cumulative score after 120min for knockout matches;
+    // fall back to fullTime (90min) for group stage or matches decided in regulation.
+    const newHomeScore = m.score?.extraTime?.home ?? m.score?.fullTime?.home ?? null
+    const newAwayScore = m.score?.extraTime?.away ?? m.score?.fullTime?.away ?? null
 
     // Solo actualizar si hay datos relevantes que cambiar
     if (newStatus === 'scheduled' && newHomeScore === null) continue
