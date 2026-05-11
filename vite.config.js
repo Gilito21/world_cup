@@ -53,18 +53,15 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          {
-            // API de Supabase: network-first con fallback caché para soportar
-            // momentos de mala conexión (los datos siguen siendo fresh-first).
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-api',
-              networkTimeoutSeconds: 6,
-              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 5 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
+          // NOTA: NO cacheamos /rest/v1/ de Supabase con NetworkFirst.
+          // Lo intentamos antes y causaba colgones de 6-8s por query: el SW
+          // esperaba networkTimeoutSeconds=6, caía a cache (vacío o con
+          // respuestas malformadas), y supabase-js no podía parsearlas.
+          // Resultado: cada visibilitychange → SIGNED_IN → fetchProfile que
+          // se colgaba 8s, y loadLeagues que NUNCA devolvía datos →
+          // "no estás en ninguna liga". Las queries van directas a la red;
+          // sq() ya tiene timeout de 8s como red de seguridad, y los caches
+          // en memoria (matchCache, dataCache) cubren la UX de navegación.
         ],
       },
       devOptions: {
