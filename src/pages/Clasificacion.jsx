@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase, sq } from '../lib/supabase'
+import { getCache, setCache } from '../lib/dataCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import LeagueModal from '../components/LeagueModal'
@@ -171,11 +172,11 @@ export default function Clasificacion() {
   const { user }                                   = useAuth()
   const { activeLeague, leagues, setActiveLeague } = useLeague()
   const [tab, setTab]                   = useState('global')
-  const [globalStandings, setGlobalStandings]   = useState([])
+  const [globalStandings, setGlobalStandings]   = useState(() => getCache('lb:global') ?? [])
   const [leagueStandings, setLeagueStandings]   = useState([])
-  const [companyStandings, setCompanyStandings] = useState([])
+  const [companyStandings, setCompanyStandings] = useState(() => getCache('lb:companies') ?? [])
   const [myLeagueStats, setMyLeagueStats]       = useState({ exact: 0, correct: 0, total: 0 })
-  const [loading, setLoading]           = useState(true)
+  const [loading, setLoading]           = useState(false)
   const [showModal, setShowModal]       = useState(false)
   const [selectedProfile, setSelectedProfile] = useState(null)
 
@@ -186,7 +187,9 @@ export default function Clasificacion() {
   // ── Global ───────────────────────────────────────────────────────────────
 
   async function loadGlobal() {
-    setLoading(true)
+    const cached = getCache('lb:global')
+    if (cached) setGlobalStandings(cached)
+    else setLoading(true)
     try {
       const { data: profiles } = await sq(
         supabase.from('profiles')
@@ -194,14 +197,16 @@ export default function Clasificacion() {
           .order('total_points', { ascending: false })
       )
 
-      setGlobalStandings(
-        (profiles ?? []).map((p, i) => ({
+      if (profiles) {
+        const next = profiles.map((p, i) => ({
           ...p,
           position:      i + 1,
           league_points: p.total_points ?? 0,
           stats:         { exact: 0, correct: 0, total: 0 },
         }))
-      )
+        setGlobalStandings(next)
+        setCache('lb:global', next)
+      }
     } finally {
       setLoading(false)
     }
@@ -211,13 +216,23 @@ export default function Clasificacion() {
 
   async function loadLeague() {
     if (!activeLeague) { setLeagueStandings([]); setLoading(false); return }
-    setLoading(true)
+    const cacheKey = `lb:league:${activeLeague.id}`
+    const cached = getCache(cacheKey)
+    if (cached) {
+      setLeagueStandings(cached.standings)
+      setMyLeagueStats(cached.myStats ?? { exact: 0, correct: 0, total: 0 })
+    } else {
+      setLoading(true)
+    }
     try {
       const { data: members } = await sq(
         supabase.from('league_members').select('user_id, role').eq('league_id', activeLeague.id)
       )
 
-      if (!members || members.length === 0) {
+      // Timeout — keep whatever was already rendered (cache or stale state)
+      if (members === null) return
+
+      if (members.length === 0) {
         setLeagueStandings([])
         return
       }
@@ -260,7 +275,9 @@ export default function Clasificacion() {
 
       setLeagueStandings(result)
       const me = result.find(r => r.id === user.id)
-      if (me) setMyLeagueStats(me.stats)
+      const myStats = me?.stats ?? { exact: 0, correct: 0, total: 0 }
+      if (me) setMyLeagueStats(myStats)
+      setCache(cacheKey, { standings: result, myStats })
     } finally {
       setLoading(false)
     }
@@ -269,15 +286,19 @@ export default function Clasificacion() {
   // ── Empresas ─────────────────────────────────────────────────────────────
 
   async function loadCompanies() {
-    setLoading(true)
+    const cached = getCache('lb:companies')
+    if (cached) setCompanyStandings(cached)
+    else setLoading(true)
     try {
       const { data: profiles } = await sq(
         supabase.from('profiles').select('id, username, company, total_points, avatar_url')
           .not('company', 'is', null).neq('company', '')
       )
 
+      if (!profiles) return
+
       const companyMap = {}
-      for (const p of profiles ?? []) {
+      for (const p of profiles) {
         if (!companyMap[p.company]) companyMap[p.company] = []
         companyMap[p.company].push(p)
       }
@@ -293,6 +314,7 @@ export default function Clasificacion() {
         .map((c, i) => ({ ...c, position: i + 1 }))
 
       setCompanyStandings(result)
+      setCache('lb:companies', result)
     } finally {
       setLoading(false)
     }

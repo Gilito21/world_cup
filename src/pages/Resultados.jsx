@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
+import { getCache, setCache } from '../lib/dataCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
@@ -229,40 +230,54 @@ export default function Resultados() {
   const predictionMode             = activeLeague?.prediction_mode ?? 'global'
   const leagueId                   = predictionMode === 'per_league' ? activeLeague?.id : null
 
-  const [matches, setMatches]         = useState([])
+  const [matches, setMatches]         = useState(() => {
+    const cached = getMatchCache()
+    return cached ? cached.filter(m => m.status === 'finished') : []
+  })
   const [predictions, setPredictions] = useState({})
-  const [loading, setLoading]         = useState(true)
+  const [loading, setLoading]         = useState(() => !getMatchCache())
   const [filter, setFilter]           = useState('all')
 
   useEffect(() => {
-    loadData()
-  }, [user, activeLeague?.id, predictionMode])
+    const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
+    const predCacheKey = `preds:${user.id}:${leagueKey}`
 
-  async function loadData() {
-    setLoading(true)
-    try {
-      const cachedMatches = getMatchCache()
-      const [{ data: allMatchData }, { data: predData }] = await Promise.all([
-        cachedMatches
-          ? Promise.resolve({ data: cachedMatches })
-          : sq(supabase.from('matches').select('*').order('match_date', { ascending: false })),
-        sq(predictionMode === 'per_league' && activeLeague
-          ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
-          : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)),
-      ])
-      if (allMatchData) {
-        setMatchCache(allMatchData)
-        setMatches(allMatchData.filter(m => m.status === 'finished'))
+    // Hydrate predictions instantly from cache (shared with Pronósticos page)
+    const cachedPreds = getCache(predCacheKey)
+    if (cachedPreds) setPredictions(cachedPreds)
+    else setPredictions({})
+
+    const hasCachedView = matches.length > 0 && cachedPreds
+
+    async function load() {
+      if (!hasCachedView) setLoading(true)
+      try {
+        const cachedMatches = getMatchCache()
+        const [{ data: allMatchData }, { data: predData }] = await Promise.all([
+          cachedMatches
+            ? Promise.resolve({ data: cachedMatches })
+            : sq(supabase.from('matches').select('*').order('match_date', { ascending: false })),
+          sq(predictionMode === 'per_league' && activeLeague
+            ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
+            : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)),
+        ])
+        if (allMatchData) {
+          setMatchCache(allMatchData)
+          setMatches(allMatchData.filter(m => m.status === 'finished'))
+        }
+        if (predData) {
+          const map = {}
+          predData.forEach(p => { map[p.match_id] = p })
+          setPredictions(map)
+          setCache(predCacheKey, map)
+        }
+      } finally {
+        setLoading(false)
       }
-      if (predData) {
-        const map = {}
-        predData.forEach(p => { map[p.match_id] = p })
-        setPredictions(map)
-      }
-    } finally {
-      setLoading(false)
     }
-  }
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, activeLeague?.id, predictionMode])
 
   const stats = matches.reduce(
     (acc, m) => {
