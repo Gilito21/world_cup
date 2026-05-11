@@ -1,20 +1,21 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { invalidateCache } from '../lib/dataCache'
 import Spinner from '../components/Spinner'
 
-// Candidatos al Pichichi como atajos visuales (el usuario puede escribir libre).
-const TOP_SCORER_SUGGESTIONS = [
+// Candidatos al MVP como atajos visuales (el usuario puede escribir libre).
+const MVP_SUGGESTIONS = [
   { name: 'Kylian Mbappé',     flag: '🇫🇷' },
   { name: 'Lamine Yamal',      flag: '🇪🇸' },
   { name: 'Jude Bellingham',   flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
   { name: 'Vinícius Jr',       flag: '🇧🇷' },
-  { name: 'Erling Haaland',    flag: '🇳🇴' },
-  { name: 'Harry Kane',        flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { name: 'Cristiano Ronaldo', flag: '🇵🇹' },
+  { name: 'Rodri',             flag: '🇪🇸' },
+  { name: 'Pedri',             flag: '🇪🇸' },
   { name: 'Lionel Messi',      flag: '🇦🇷' },
+  { name: 'Cristiano Ronaldo', flag: '🇵🇹' },
 ]
 
 // ─── Countdown del cutoff ──────────────────────────────────────────────────
@@ -120,7 +121,7 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked, saving }) {
         <div>
           <p className="text-xs text-stone-500 mb-2">Sugerencias:</p>
           <div className="flex flex-wrap gap-1.5">
-            {TOP_SCORER_SUGGESTIONS.map(s => {
+            {MVP_SUGGESTIONS.map(s => {
               const isCurrent = (value ?? '').trim().toLowerCase() === s.name.toLowerCase()
               return (
                 <button
@@ -266,13 +267,16 @@ export default function Extras() {
   const predictionMode = activeLeague?.prediction_mode ?? 'global'
   const leagueIdForPred = predictionMode === 'per_league' ? activeLeague?.id ?? null : null
 
-  const [questions,   setQuestions]   = useState([])
-  const [predictions, setPredictions] = useState({})  // keyed by question_key
-  const [drafts,      setDrafts]      = useState({})  // free-text drafts
-  const [loading,     setLoading]     = useState(true)
-  const [savingKey,   setSavingKey]   = useState(null)
-  const [cutoffTime,  setCutoffTime]  = useState(null)
-  const [error,       setError]       = useState('')
+  const [questions,      setQuestions]      = useState([])
+  const [predictions,    setPredictions]    = useState({})  // keyed by question_key
+  const [drafts,         setDrafts]         = useState({})  // free-text drafts
+  const [loading,        setLoading]        = useState(true)
+  const [savingKey,      setSavingKey]      = useState(null)
+  const [cutoffTime,     setCutoffTime]     = useState(null)
+  const [error,          setError]          = useState('')
+  const [showResetModal, setShowResetModal] = useState(false)
+  const [resetting,      setResetting]      = useState(false)
+  const [resetDone,      setResetDone]      = useState(false)
 
   // ── Fetch all data ────────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -382,6 +386,49 @@ export default function Extras() {
       setError(e.message ?? 'No se pudo guardar el pronóstico.')
     } finally {
       setSavingKey(null)
+    }
+  }
+
+  // ── Reset de todos los pronósticos ──────────────────────────────────
+  async function handleReset() {
+    if (locked || resetting) return
+    setResetting(true)
+    setError('')
+    try {
+      // Borrar pronósticos de partidos
+      const delPreds = leagueIdForPred
+        ? supabase.from('predictions').delete().eq('user_id', user.id).eq('league_id', leagueIdForPred)
+        : supabase.from('predictions').delete().eq('user_id', user.id).is('league_id', null)
+
+      // Borrar pronósticos especiales
+      const delSpecial = leagueIdForPred
+        ? supabase.from('special_predictions').delete().eq('user_id', user.id).eq('league_id', leagueIdForPred)
+        : supabase.from('special_predictions').delete().eq('user_id', user.id).is('league_id', null)
+
+      // Borrar registro de envío definitivo
+      const delSub = leagueIdForPred
+        ? supabase.from('prediction_submissions').delete().eq('user_id', user.id).eq('league_id', leagueIdForPred)
+        : supabase.from('prediction_submissions').delete().eq('user_id', user.id).is('league_id', null)
+
+      const [r1, r2, r3] = await Promise.all([delPreds, delSpecial, delSub])
+      if (r1.error) throw r1.error
+      if (r2.error) throw r2.error
+      if (r3.error) throw r3.error
+
+      // Invalidar cachés
+      invalidateCache(`preds:${user.id}:`)
+      invalidateCache(`sub:${user.id}:`)
+
+      // Limpiar estado local
+      setPredictions({})
+      setDrafts({})
+      setShowResetModal(false)
+      setResetDone(true)
+      setTimeout(() => setResetDone(false), 4000)
+    } catch (e) {
+      setError(e.message ?? 'No se pudo resetear los pronósticos.')
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -514,6 +561,54 @@ export default function Extras() {
           />
         ))}
       </div>
+
+      {/* Reset section */}
+      {!locked && (
+        <section className="card p-3 sm:p-5 border-red-200 space-y-2">
+          <h3 className="text-sm font-semibold text-stone-700">Zona de peligro</h3>
+          <p className="text-xs text-stone-500 leading-relaxed">
+            Borra <strong>todos tus pronósticos</strong> (partidos y preguntas extra) y te permite volver a empezar desde cero. Esta acción no se puede deshacer.
+          </p>
+          {resetDone && (
+            <p className="text-xs text-green-600 font-medium">Pronósticos eliminados correctamente.</p>
+          )}
+          <button
+            onClick={() => setShowResetModal(true)}
+            className="mt-1 text-sm font-semibold text-red-600 border border-red-300 rounded-lg px-4 py-2 hover:bg-red-50 transition-colors"
+          >
+            Resetear mis pronósticos
+          </button>
+        </section>
+      )}
+
+      {/* Confirmation modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <h2 className="text-lg font-bold text-stone-900">¿Seguro que quieres resetear?</h2>
+            <p className="text-sm text-stone-600 leading-relaxed">
+              Se borrarán <strong>todos tus pronósticos</strong> de partidos, las respuestas a las preguntas extra y el envío definitivo. No se puede deshacer.
+            </p>
+            <div className="flex gap-3 justify-end pt-1">
+              <button
+                onClick={() => setShowResetModal(false)}
+                disabled={resetting}
+                className="px-4 py-2 text-sm font-medium text-stone-700 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleReset}
+                disabled={resetting}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center gap-2"
+              >
+                {resetting ? <Spinner size="sm" /> : null}
+                {resetting ? 'Borrando…' : 'Sí, resetear todo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
