@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { supabase } from '../lib/supabase'
 import PaymentModal from './PaymentModal'
 import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from './Spinner'
@@ -22,7 +24,9 @@ function CopyButton({ text, label }) {
 }
 
 export default function LeagueModal({ onClose }) {
+  const { profile }                     = useAuth()
   const { joinLeague, onLeagueCreated } = useLeague()
+  const isFounder                       = !!profile?.is_founder
   const [tab, setTab]                   = useState('join')
   const [value, setValue]               = useState('')
   const [loading, setLoading]           = useState(false)
@@ -47,9 +51,20 @@ export default function LeagueModal({ onClose }) {
         const name = value.trim()
         if (name.length < 2) throw new Error('El nombre debe tener al menos 2 caracteres.')
         if (name.length > 40) throw new Error('El nombre no puede superar 40 caracteres.')
-        // Abre el modal de pago. La liga se crea server-side tras el pago.
-        setPendingName(name)
-        setShowPayment(true)
+
+        if (isFounder) {
+          // Founder bypass: la edge function valida is_founder y crea gratis.
+          const { data, error: fnErr } = await supabase.functions.invoke('create-league-free', {
+            body: { league_name: name },
+          })
+          if (fnErr) throw new Error(fnErr.message ?? 'No se pudo crear la liga.')
+          if (!data?.league) throw new Error(data?.error ?? 'Respuesta inesperada del servidor.')
+          if (onLeagueCreated) await onLeagueCreated(data.league)
+          setCreated(data.league)
+        } else {
+          setPendingName(name)
+          setShowPayment(true)
+        }
       } else {
         await joinLeague(value)
         onClose()
@@ -190,12 +205,16 @@ export default function LeagueModal({ onClose }) {
                 {loading && <Spinner size="sm" />}
                 {tab === 'join'
                   ? 'Unirme gratis'
-                  : <>Continuar al pago · {LEAGUE_PRICE_LABEL}</>}
+                  : isFounder
+                    ? <>👑 Crear liga (founder)</>
+                    : <>Continuar al pago · {LEAGUE_PRICE_LABEL}</>}
               </button>
 
               {tab === 'create' && (
                 <p className="text-center text-stone-400 text-xs">
-                  Crear una liga cuesta {LEAGUE_PRICE_LABEL} (pago único). Unirse a una liga existente es gratis.
+                  {isFounder
+                    ? 'Como founder creas ligas sin coste.'
+                    : <>Crear una liga cuesta {LEAGUE_PRICE_LABEL} (pago único). Unirse a una liga existente es gratis.</>}
                 </p>
               )}
             </form>

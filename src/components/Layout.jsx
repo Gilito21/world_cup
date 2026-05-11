@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { supabase } from '../lib/supabase'
 import LeagueSwitcher from './LeagueSwitcher'
 import PaymentModal from './PaymentModal'
 
@@ -100,6 +101,26 @@ export default function Layout() {
   const [pendingPaymentName, setPendingPaymentName] = useState(() => {
     try { return sessionStorage.getItem('porra-pending-league-create') } catch { return null }
   })
+
+  // Si el usuario logueado es founder y hay intención pendiente, crea la
+  // liga directo sin pasar por el modal de pago.
+  useEffect(() => {
+    if (!pendingPaymentName) return
+    if (!profile?.is_founder) return
+    let cancelled = false
+    ;(async () => {
+      const { data, error } = await supabase.functions.invoke('create-league-free', {
+        body: { league_name: pendingPaymentName },
+      })
+      if (cancelled) return
+      sessionStorage.removeItem('porra-pending-league-create')
+      setPendingPaymentName(null)
+      if (!error && data?.league && onLeagueCreated) {
+        await onLeagueCreated(data.league)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [pendingPaymentName, profile?.is_founder, onLeagueCreated])
 
   async function handleSignOut() {
     await signOut()
@@ -215,8 +236,10 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* Modal de pago para crear liga (disparado tras signup) */}
-      {pendingPaymentName && (
+      {/* Modal de pago para crear liga (disparado tras signup).
+          Solo se renderiza si el perfil está cargado y NO es founder
+          — para founders el effect de arriba crea la liga gratis. */}
+      {pendingPaymentName && profile && !profile.is_founder && (
         <PaymentModal
           leagueName={pendingPaymentName}
           onSuccess={handlePaymentSuccess}
