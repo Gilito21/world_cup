@@ -3,7 +3,6 @@ import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
-import { invalidateCache } from '../lib/dataCache'
 import Spinner from '../components/Spinner'
 
 // Candidatos al MVP como atajos visuales (el usuario puede escribir libre).
@@ -389,35 +388,18 @@ export default function Extras() {
     }
   }
 
-  // ── Reset de todos los pronósticos ──────────────────────────────────
+  // ── Reset solo de las respuestas extra ──────────────────────────────
   async function handleReset() {
     if (locked || resetting) return
     setResetting(true)
     setError('')
     try {
-      // Borrar pronósticos de partidos
-      const delPreds = leagueIdForPred
-        ? supabase.from('predictions').delete().eq('user_id', user.id).eq('league_id', leagueIdForPred)
-        : supabase.from('predictions').delete().eq('user_id', user.id).is('league_id', null)
-
-      // Borrar pronósticos especiales
       const delSpecial = leagueIdForPred
         ? supabase.from('special_predictions').delete().eq('user_id', user.id).eq('league_id', leagueIdForPred)
         : supabase.from('special_predictions').delete().eq('user_id', user.id).is('league_id', null)
 
-      // Borrar registro de envío definitivo
-      const delSub = leagueIdForPred
-        ? supabase.from('prediction_submissions').delete().eq('user_id', user.id).eq('league_id', leagueIdForPred)
-        : supabase.from('prediction_submissions').delete().eq('user_id', user.id).is('league_id', null)
-
-      const [r1, r2, r3] = await Promise.all([delPreds, delSpecial, delSub])
-      if (r1.error) throw r1.error
-      if (r2.error) throw r2.error
-      if (r3.error) throw r3.error
-
-      // Invalidar cachés
-      invalidateCache(`preds:${user.id}:`)
-      invalidateCache(`sub:${user.id}:`)
+      const { error: delErr } = await delSpecial
+      if (delErr) throw delErr
 
       // Limpiar estado local
       setPredictions({})
@@ -426,7 +408,7 @@ export default function Extras() {
       setResetDone(true)
       setTimeout(() => setResetDone(false), 4000)
     } catch (e) {
-      setError(e.message ?? 'No se pudo resetear los pronósticos.')
+      setError(e.message ?? 'No se pudo borrar las respuestas extra.')
     } finally {
       setResetting(false)
     }
@@ -567,16 +549,16 @@ export default function Extras() {
         <section className="card p-3 sm:p-5 border-red-200 space-y-2">
           <h3 className="text-sm font-semibold text-stone-700">Zona de peligro</h3>
           <p className="text-xs text-stone-500 leading-relaxed">
-            Borra <strong>todos tus pronósticos</strong> (partidos y preguntas extra) y te permite volver a empezar desde cero. Esta acción no se puede deshacer.
+            Borra tus respuestas a las preguntas extra y te permite volver a rellenarlas. <strong>Los pronósticos de partidos no se tocan.</strong>
           </p>
           {resetDone && (
-            <p className="text-xs text-green-600 font-medium">Pronósticos eliminados correctamente.</p>
+            <p className="text-xs text-green-600 font-medium">Respuestas extra borradas correctamente.</p>
           )}
           <button
             onClick={() => setShowResetModal(true)}
             className="mt-1 text-sm font-semibold text-red-600 border border-red-300 rounded-lg px-4 py-2 hover:bg-red-50 transition-colors"
           >
-            Resetear mis pronósticos
+            Borrar respuestas extra
           </button>
         </section>
       )}
@@ -585,9 +567,11 @@ export default function Extras() {
       {showResetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
-            <h2 className="text-lg font-bold text-stone-900">¿Seguro que quieres resetear?</h2>
+            <h2 className="text-lg font-bold text-stone-900">¿Borrar respuestas extra?</h2>
             <p className="text-sm text-stone-600 leading-relaxed">
-              Se borrarán <strong>todos tus pronósticos</strong> de partidos, las respuestas a las preguntas extra y el envío definitivo. No se puede deshacer.
+              Se borrarán tus respuestas a las <strong>preguntas extra</strong> (MVP, Mbappé vs Lamine, tarjetas). Podrás volver a contestarlas antes del cierre.
+              <br /><br />
+              Los pronósticos de partidos <strong>no se modifican</strong>.
             </p>
             <div className="flex gap-3 justify-end pt-1">
               <button
@@ -603,7 +587,7 @@ export default function Extras() {
                 className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center gap-2"
               >
                 {resetting ? <Spinner size="sm" /> : null}
-                {resetting ? 'Borrando…' : 'Sí, resetear todo'}
+                {resetting ? 'Borrando…' : 'Sí, borrar respuestas'}
               </button>
             </div>
           </div>
