@@ -316,7 +316,33 @@ function resolveSlot(slot, qualifiers, thirdAssignment) {
   return null
 }
 
-// ─── BUILD ROUND OF 32 ───────────────────────────────────────────────────────
+// ─── COMPLETE-GROUP FILTER ────────────────────────────────────────────────────
+
+/**
+ * Given computed standings and all DB matches, return a copy of the standings
+ * where any group that has not yet had ALL its matches finished is replaced
+ * with an empty array. This prevents alphabetical placeholders from appearing
+ * in the bracket before real results are available.
+ *
+ * Use this instead of raw standings when resolving R32 slots or qualifying thirds.
+ * Raw standings (with partial groups) are still useful for displaying group tables.
+ */
+export function filterCompleteGroups(allStandings, allMatches) {
+  const matchCount    = {}
+  const finishedCount = {}
+  for (const m of allMatches) {
+    if (m.stage !== 'group' || !m.group_name) continue
+    matchCount[m.group_name]    = (matchCount[m.group_name]    ?? 0) + 1
+    if (m.status === 'finished') finishedCount[m.group_name] = (finishedCount[m.group_name] ?? 0) + 1
+  }
+  return Object.fromEntries(
+    Object.entries(allStandings).map(([g, s]) =>
+      [g, matchCount[g] > 0 && matchCount[g] === (finishedCount[g] ?? 0) ? s : []]
+    )
+  )
+}
+
+
 
 /**
  * Build the 16 Round-of-32 matches with team names filled in where known.
@@ -409,25 +435,10 @@ export function advanceKnockoutRound(finishedMatches) {
  */
 export function buildFullBracket(allMatches) {
   // ── Group stage ────────────────────────────────────────────────────────────
-  const standings = computeAllStandings(allMatches)
-
-  // Only resolve a group's bracket slots once all its matches are finished.
-  // Partial groups return [] so R32 slots show TBD instead of alphabetical placeholders.
-  const groupMatchCount    = {}
-  const groupFinishedCount = {}
-  for (const m of allMatches) {
-    if (m.stage !== 'group' || !m.group_name) continue
-    groupMatchCount[m.group_name]    = (groupMatchCount[m.group_name]    ?? 0) + 1
-    if (m.status === 'finished') groupFinishedCount[m.group_name] = (groupFinishedCount[m.group_name] ?? 0) + 1
-  }
-  const resolvedStandings = Object.fromEntries(
-    Object.entries(standings).map(([g, s]) =>
-      [g, groupMatchCount[g] > 0 && groupMatchCount[g] === (groupFinishedCount[g] ?? 0) ? s : []]
-    )
-  )
-
-  const qualifiers = getQualifiers(resolvedStandings)
-  const r32        = buildRoundOf32(resolvedStandings)
+  const standings         = computeAllStandings(allMatches)
+  const resolvedStandings = filterCompleteGroups(standings, allMatches)
+  const qualifiers        = getQualifiers(resolvedStandings)
+  const r32               = buildRoundOf32(resolvedStandings)
 
   // ── Knockout progression ───────────────────────────────────────────────────
   // Collect all finished knockout matches in every stage

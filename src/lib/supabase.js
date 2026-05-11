@@ -5,14 +5,13 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-/**
- * Ejecuta una query de Supabase con un timeout de seguridad.
- * Si la query no responde en `ms` ms devuelve { data: null, error: null }
- * para que los finally blocks liberen el spinner en lugar de colgarse.
- */
+export const TIMEOUT_ERROR = { message: 'Request timeout', code: 'TIMEOUT' }
+
+// Wraps a Supabase query with a safety timeout. Returns a proper error on timeout
+// so callers can distinguish "timed out" from "success with null data".
 export function sq(query, ms = 15000) {
   return Promise.race([
     query,
-    new Promise(resolve => setTimeout(() => resolve({ data: null, error: null }), ms)),
+    new Promise(resolve => setTimeout(() => resolve({ data: null, error: TIMEOUT_ERROR }), ms)),
   ])
 }
