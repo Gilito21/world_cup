@@ -475,8 +475,25 @@ export function computePredictedKnockout(dbMatches, userPredMap) {
 
   const predictedStandings = computeAllStandings(syntheticGroup)
 
+  // Only resolve bracket slots for groups where the user has predicted ALL matches.
+  // Incomplete groups return [] so slots resolve to null (TBD) instead of
+  // spurious alphabetical placeholders derived from 0-point ties.
+  const groupMatchCount = {}
+  const groupPredCount  = {}
+  for (const m of groupMatches) {
+    const g = m.group_name
+    if (!g) continue
+    groupMatchCount[g] = (groupMatchCount[g] ?? 0) + 1
+    if (userPredMap[m.id] != null) groupPredCount[g] = (groupPredCount[g] ?? 0) + 1
+  }
+  const resolvedStandings = Object.fromEntries(
+    Object.entries(predictedStandings).map(([g, s]) =>
+      [g, groupMatchCount[g] > 0 && groupMatchCount[g] === (groupPredCount[g] ?? 0) ? s : []]
+    )
+  )
+
   // ── Step 2: build predicted R32 bracket ───────────────────────────────────
-  const r32Bracket = buildRoundOf32(predictedStandings)  // 16 items in template order
+  const r32Bracket = buildRoundOf32(resolvedStandings)  // 16 items in template order
 
   // ── Step 3: pair DB knockout matches with bracket positions ───────────────
   // For each knockout stage, sort DB matches by date → index = bracket position
