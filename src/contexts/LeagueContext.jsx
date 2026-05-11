@@ -4,6 +4,8 @@ import { useAuth } from './AuthContext'
 
 const LeagueContext = createContext({})
 
+const dlog = (...args) => console.log('[DEBUG][League]', new Date().toISOString().slice(11, 23), ...args)
+
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
@@ -19,7 +21,8 @@ export function LeagueProvider({ children }) {
   useEffect(() => { loadingRef.current = loading }, [loading])
 
   const loadLeagues = useCallback(async () => {
-    if (!user) { setLeagues([]); setActiveLeagueState(null); setLoading(false); return }
+    dlog('loadLeagues START user=', user?.id ?? null)
+    if (!user) { dlog('no user → wipe'); setLeagues([]); setActiveLeagueState(null); setLoading(false); return }
 
     try {
       const { data } = await sq(
@@ -29,6 +32,7 @@ export function LeagueProvider({ children }) {
           .eq('user_id', user.id)
       )
 
+      dlog('loadLeagues data?', !!data, 'count=', data?.length ?? null)
       // On timeout data is null — keep whatever was already loaded rather than wiping leagues
       if (!data) return
 
@@ -47,6 +51,7 @@ export function LeagueProvider({ children }) {
   }, [user?.id])
 
   useEffect(() => {
+    dlog('useEffect[loadLeagues] FIRED → setLoading(true)')
     setLoading(true)
     loadLeagues()
   }, [loadLeagues])
@@ -55,8 +60,9 @@ export function LeagueProvider({ children }) {
   // in case a background network call was throttled or suspended by Chrome.
   useEffect(() => {
     const handleVisibility = () => {
+      dlog('visibility →', document.visibilityState, 'loadingRef=', loadingRef.current)
       if (document.visibilityState === 'visible' && loadingRef.current) {
-        setTimeout(() => { if (loadingRef.current) setLoading(false) }, 5000)
+        setTimeout(() => { if (loadingRef.current) { dlog('safety 5s → setLoading(false)'); setLoading(false) } }, 5000)
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
