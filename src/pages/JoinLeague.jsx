@@ -34,10 +34,10 @@ export default function JoinLeague() {
   if (error) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
-        <div className="card p-8 max-w-sm w-full text-center space-y-4">
-          <div className="text-4xl">⚠️</div>
-          <p className="text-stone-900 font-semibold">No se pudo unir a la liga</p>
-          <p className="text-stone-500 text-sm">{error}</p>
+        <div className="card p-6 sm:p-8 max-w-sm w-full text-center space-y-3 sm:space-y-4">
+          <div className="text-3xl sm:text-4xl">⚠️</div>
+          <p className="text-stone-900 font-semibold text-sm sm:text-base">No se pudo unir a la liga</p>
+          <p className="text-stone-500 text-xs sm:text-sm">{error}</p>
           <button onClick={() => navigate('/pronosticos')} className="btn-primary w-full">Ir al inicio</button>
         </div>
       </div>

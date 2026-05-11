@@ -114,7 +114,7 @@ function ProfileModal({ profile, currentUserId, onClose }) {
       onClick={onClose}
     >
       <div
-        className="card p-6 max-w-sm w-full space-y-5 shadow-2xl"
+        className="card p-5 sm:p-6 max-w-sm w-full space-y-4 sm:space-y-5 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -339,26 +339,26 @@ export default function Clasificacion() {
       <>
         {myEntry && (
           <div
-            className="card p-4 border-amber-500/30 bg-amber-500/5 cursor-pointer hover:border-amber-500/50 transition-colors"
+            className="card p-3 sm:p-4 border-amber-500/30 bg-amber-500/5 cursor-pointer hover:border-amber-500/50 transition-colors"
             onClick={() => setSelectedProfile(myEntry)}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <Avatar url={myEntry.avatar_url} username={myEntry.username} size="lg" isMe />
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-stone-900">{myEntry.username}</span>
-                    <span className="text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded">Tú</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-semibold text-stone-900 truncate">{myEntry.username}</span>
+                    <span className="text-[10px] sm:text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded">Tú</span>
                     {myEntry.role === 'admin' && (
-                      <span className="text-xs text-amber-600/80 bg-amber-600/10 px-1.5 rounded">👑 Admin</span>
+                      <span className="text-[10px] sm:text-xs text-amber-600/80 bg-amber-600/10 px-1.5 rounded">👑</span>
                     )}
                   </div>
-                  <div className="text-sm text-stone-400">Posición #{myEntry.position}</div>
+                  <div className="text-xs sm:text-sm text-stone-400">Posición #{myEntry.position}</div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-amber-400">{myEntry.league_points}</div>
-                <div className="text-xs text-stone-500">puntos</div>
+              <div className="text-right flex-shrink-0">
+                <div className="text-xl sm:text-2xl font-bold text-amber-400">{myEntry.league_points}</div>
+                <div className="text-[10px] sm:text-xs text-stone-500">pts</div>
               </div>
             </div>
             {showStats && (
@@ -372,13 +372,13 @@ export default function Clasificacion() {
         )}
 
         {standings.length === 0 ? (
-          <div className="card p-10 text-center">
-            <div className="text-4xl mb-3">🏆</div>
-            <p className="text-stone-400">Nadie ha puntuado todavía. ¡Los partidos empiezan el 11 de junio!</p>
+          <div className="card p-6 sm:p-10 text-center">
+            <div className="text-3xl sm:text-4xl mb-3">🏆</div>
+            <p className="text-stone-400 text-sm">Nadie ha puntuado todavía. ¡Los partidos empiezan el 11 de junio!</p>
           </div>
         ) : (
           <div className="card overflow-hidden">
-            <div className="grid grid-cols-[3rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-4 py-3 border-b border-stone-200 text-xs font-semibold text-stone-500 uppercase tracking-wider">
+            <div className="grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-stone-200 text-[11px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider">
               <div>#</div>
               <div>Jugador</div>
               <div className="hidden sm:block text-center">Exactos</div>
@@ -394,8 +394,8 @@ export default function Clasificacion() {
                   <div
                     key={entry.id}
                     onClick={() => setSelectedProfile(entry)}
-                    className={`grid grid-cols-[3rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-4 py-3.5 items-center transition-colors cursor-pointer ${
-                      isMe ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-stone-100/60'
+                    className={`grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3.5 items-center transition-colors cursor-pointer ${
+                      isMe ? 'bg-amber-500/5 hover:bg-amber-500/10 active:bg-amber-500/15' : 'hover:bg-stone-100/60 active:bg-stone-100'
                     }`}
                   >
                     <div className="font-bold text-base">
@@ -444,18 +444,18 @@ export default function Clasificacion() {
   // ── Main render ───────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-stone-900">Clasificación</h2>
-          <p className="text-stone-400 text-sm mt-1">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Clasificación</h2>
+          <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
             Exacto = 3 pts · Correcto = 1 pt
           </p>
         </div>
         {tab === 'league' && activeLeague?.role === 'admin' && (
-          <div className="flex-shrink-0 card p-3 text-center min-w-[140px]">
-            <p className="text-xs text-stone-500 mb-1">Código para invitar</p>
-            <p className="font-mono font-bold text-amber-400 tracking-widest text-lg">{activeLeague.invite_code}</p>
+          <div className="flex-shrink-0 card p-2.5 sm:p-3 text-center min-w-[110px] sm:min-w-[140px]">
+            <p className="text-[10px] sm:text-xs text-stone-500 mb-0.5 sm:mb-1">Código liga</p>
+            <p className="font-mono font-bold text-amber-400 tracking-widest text-sm sm:text-lg">{activeLeague.invite_code}</p>
           </div>
         )}
       </div>
@@ -496,10 +496,10 @@ export default function Clasificacion() {
           {tab === 'league' && (
             <>
               {leagues.length === 0 ? (
-                <div className="card p-10 text-center space-y-4">
-                  <div className="text-4xl">🏆</div>
-                  <p className="text-stone-700 font-medium">No estás en ninguna liga</p>
-                  <p className="text-stone-500 text-sm">Crea o únete a una liga para ver su clasificación.</p>
+                <div className="card p-6 sm:p-10 text-center space-y-3 sm:space-y-4">
+                  <div className="text-3xl sm:text-4xl">🏆</div>
+                  <p className="text-stone-700 font-medium text-sm sm:text-base">No estás en ninguna liga</p>
+                  <p className="text-stone-500 text-xs sm:text-sm">Crea o únete a una liga para ver su clasificación.</p>
                   <button onClick={() => setShowModal(true)} className="btn-primary">Crear o unirme a una liga</button>
                 </div>
               ) : (
@@ -540,17 +540,17 @@ export default function Clasificacion() {
                 Media de puntos por empleado · {companyStandings.length} empresa{companyStandings.length !== 1 ? 's' : ''}
               </p>
               {companyStandings.length === 0 ? (
-                <div className="card p-10 text-center">
-                  <div className="text-4xl mb-3">🏢</div>
-                  <p className="text-stone-400">Ningún usuario ha indicado su empresa todavía.</p>
+                <div className="card p-6 sm:p-10 text-center">
+                  <div className="text-3xl sm:text-4xl mb-3">🏢</div>
+                  <p className="text-stone-400 text-sm">Ningún usuario ha indicado su empresa todavía.</p>
                 </div>
               ) : (
                 <div className="card overflow-hidden">
-                  <div className="grid grid-cols-[3rem_1fr_6rem_5rem] gap-2 px-4 py-3 border-b border-stone-200 text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                  <div className="grid grid-cols-[2rem_1fr_3.5rem_3.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-stone-200 text-[11px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider">
                     <div>#</div>
                     <div>Empresa</div>
                     <div className="text-center">Miembros</div>
-                    <div className="text-right">Media pts</div>
+                    <div className="text-right">Media</div>
                   </div>
                   <div className="divide-y divide-stone-200">
                     {companyStandings.map(entry => {
@@ -559,7 +559,7 @@ export default function Clasificacion() {
                       return (
                         <div
                           key={entry.name}
-                          className={`grid grid-cols-[3rem_1fr_6rem_5rem] gap-2 px-4 py-3.5 items-center transition-colors ${
+                          className={`grid grid-cols-[2rem_1fr_3.5rem_3.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3.5 items-center transition-colors ${
                             isMyCompany ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-stone-100/60'
                           }`}
                         >
@@ -570,27 +570,26 @@ export default function Clasificacion() {
                             }
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`font-medium truncate ${isMyCompany ? 'text-amber-500' : 'text-stone-900'}`}>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`font-medium truncate text-sm ${isMyCompany ? 'text-amber-500' : 'text-stone-900'}`}>
                                 {entry.name}
                               </span>
                               {isMyCompany && (
-                                <span className="text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded flex-shrink-0">Tu empresa</span>
+                                <span className="text-[10px] sm:text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded flex-shrink-0">Tu emp.</span>
                               )}
                             </div>
-                            <div className="text-xs text-stone-400 mt-0.5 truncate">
-                              Mejor: {entry.top?.username ?? '—'}
+                            <div className="text-[11px] sm:text-xs text-stone-400 mt-0.5 truncate">
+                              Top: {entry.top?.username ?? '—'}
                               {(entry.top?.total_points ?? 0) > 0 && ` · ${entry.top.total_points} pts`}
                             </div>
                           </div>
-                          <div className="text-center text-stone-500 text-sm">
-                            {entry.count} {entry.count === 1 ? 'persona' : 'personas'}
+                          <div className="text-center text-stone-500 text-xs sm:text-sm tabular-nums">
+                            {entry.count}
                           </div>
                           <div className="text-right">
-                            <span className={`text-lg font-bold ${isTop ? 'text-amber-400' : 'text-stone-900'}`}>
+                            <span className={`text-base sm:text-lg font-bold ${isTop ? 'text-amber-400' : 'text-stone-900'}`}>
                               {entry.avg % 1 === 0 ? entry.avg : entry.avg.toFixed(1)}
                             </span>
-                            <span className="text-stone-400 text-xs ml-0.5">pts</span>
                           </div>
                         </div>
                       )

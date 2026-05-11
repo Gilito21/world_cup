@@ -310,36 +310,39 @@ export default function Resultados() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-stone-900">Resultados</h2>
-        <p className="text-stone-400 text-sm mt-1">
-          Partidos finalizados · Despliega cada partido para ver los pronósticos de todos
+        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Resultados</h2>
+        <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
+          Partidos finalizados · Toca un partido para ver los pronósticos de todos
         </p>
       </div>
 
       {matches.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 gap-2 sm:gap-3">
           {[
-            { label: 'Puntos obtenidos', value: stats.points, color: 'text-amber-400', icon: '⭐' },
-            { label: 'Exactos (×3pts)',  value: stats.exact,  color: 'text-amber-300', icon: '🎯' },
-            { label: 'Correctos (×1pt)', value: stats.correct, color: 'text-blue-400', icon: '✓' },
-            { label: 'Fallados',         value: stats.wrong,  color: 'text-stone-400', icon: '✗' },
-          ].map(({ label, value, color, icon }) => (
-            <div key={label} className="card p-4 text-center">
-              <div className="text-lg mb-0.5">{icon}</div>
-              <div className={`text-2xl font-bold ${color}`}>{value}</div>
-              <div className="text-xs text-stone-500 mt-0.5">{label}</div>
+            { label: 'Puntos',    short: 'Pts',  value: stats.points,  color: 'text-amber-400', icon: '⭐' },
+            { label: 'Exactos',   short: 'Ex.',  value: stats.exact,   color: 'text-amber-300', icon: '🎯' },
+            { label: 'Correctos', short: 'Cor.', value: stats.correct, color: 'text-blue-400',  icon: '✓' },
+            { label: 'Fallados',  short: 'Fal.', value: stats.wrong,   color: 'text-stone-400', icon: '✗' },
+          ].map(({ label, short, value, color, icon }) => (
+            <div key={label} className="card p-2.5 sm:p-4 text-center">
+              <div className="text-sm sm:text-lg mb-0.5">{icon}</div>
+              <div className={`text-lg sm:text-2xl font-bold ${color}`}>{value}</div>
+              <div className="text-[10px] sm:text-xs text-stone-500 mt-0.5">
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{short}</span>
+              </div>
             </div>
           ))}
         </div>
       )}
 
       {matches.length === 0 ? (
-        <div className="card p-10 text-center">
-          <div className="text-4xl mb-3">⏳</div>
-          <p className="text-stone-400">Aún no hay partidos finalizados.</p>
-          <p className="text-stone-400 text-sm mt-1">El Mundial empieza el 11 de junio de 2026. ¡Prepara tus pronósticos!</p>
+        <div className="card p-6 sm:p-10 text-center">
+          <div className="text-3xl sm:text-4xl mb-3">⏳</div>
+          <p className="text-stone-400 text-sm">Aún no hay partidos finalizados.</p>
+          <p className="text-stone-400 text-xs sm:text-sm mt-1">El Mundial empieza el 11 de junio. ¡Prepara tus pronósticos!</p>
         </div>
       ) : (
         <>

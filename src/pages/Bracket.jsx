@@ -83,16 +83,16 @@ function GroupTable({ group, standings, qualifyingThirds }) {
         <span className="text-sm font-semibold text-stone-700">Grupo {group}</span>
       </div>
 
-      <table className="w-full text-xs">
+      <table className="w-full text-xs table-fixed">
         <thead>
           <tr className="text-stone-400 border-b border-stone-100">
-            <th className="text-left px-3 py-2 font-medium">Equipo</th>
-            <th className="text-center px-1 py-2 font-medium" title="Partidos jugados">PJ</th>
-            <th className="text-center px-1 py-2 font-medium" title="Ganados">G</th>
-            <th className="text-center px-1 py-2 font-medium" title="Empatados">E</th>
-            <th className="text-center px-1 py-2 font-medium" title="Perdidos">P</th>
-            <th className="text-center px-1 py-2 font-medium" title="Diferencia de goles">DG</th>
-            <th className="text-center px-1 py-2 font-medium" title="Puntos">Pts</th>
+            <th className="text-left pl-2 pr-1 py-2 font-medium">Equipo</th>
+            <th className="w-7 text-center py-2 font-medium" title="Partidos jugados">PJ</th>
+            <th className="w-6 text-center py-2 font-medium" title="Ganados">G</th>
+            <th className="w-6 text-center py-2 font-medium" title="Empatados">E</th>
+            <th className="w-6 text-center py-2 font-medium" title="Perdidos">P</th>
+            <th className="w-9 text-center py-2 font-medium" title="Diferencia de goles">DG</th>
+            <th className="w-9 text-center pr-2 py-2 font-medium" title="Puntos">Pts</th>
           </tr>
         </thead>
         <tbody>
@@ -109,27 +109,27 @@ function GroupTable({ group, standings, qualifyingThirds }) {
                   :           ''
                 }`}
               >
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-bold w-4 ${
+                <td className="pl-2 pr-1 py-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className={`text-[11px] font-bold flex-shrink-0 w-3.5 ${
                       qualifies ? 'text-green-500' : thirdQ ? 'text-amber-500' : 'text-stone-300'
                     }`}>
                       {i + 1}
                     </span>
                     <Flag team={s.team} />
-                    <span className="font-medium text-stone-800 truncate">{teamName(s.team)}</span>
+                    <span className="font-medium text-stone-800 truncate text-[11px] sm:text-xs">{teamName(s.team)}</span>
                   </div>
                 </td>
-                <td className="text-center px-1 py-2 text-stone-500">{s.played}</td>
-                <td className="text-center px-1 py-2 text-stone-500">{s.won}</td>
-                <td className="text-center px-1 py-2 text-stone-500">{s.drawn}</td>
-                <td className="text-center px-1 py-2 text-stone-500">{s.lost}</td>
-                <td className={`text-center px-1 py-2 font-medium ${
+                <td className="text-center py-2 text-stone-500 tabular-nums">{s.played}</td>
+                <td className="text-center py-2 text-stone-500 tabular-nums">{s.won}</td>
+                <td className="text-center py-2 text-stone-500 tabular-nums">{s.drawn}</td>
+                <td className="text-center py-2 text-stone-500 tabular-nums">{s.lost}</td>
+                <td className={`text-center py-2 font-medium tabular-nums ${
                   s.gd > 0 ? 'text-green-500' : s.gd < 0 ? 'text-red-400' : 'text-stone-400'
                 }`}>
                   {s.gd > 0 ? `+${s.gd}` : s.gd}
                 </td>
-                <td className="text-center px-1 py-2 font-bold text-stone-800">{s.points}</td>
+                <td className="text-center pr-2 py-2 font-bold text-stone-800 tabular-nums">{s.points}</td>
               </tr>
             )
           })}
@@ -393,12 +393,12 @@ export default function Bracket() {
   ]
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-stone-900">Bracket Mundial 2026</h2>
-        <p className="text-stone-400 text-sm mt-1">
-          Clasificación en tiempo real · {groupsComplete} de 12 grupos completados
+        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Bracket Mundial 2026</h2>
+        <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
+          Tiempo real · {groupsComplete}/12 grupos completados
         </p>
       </div>
 

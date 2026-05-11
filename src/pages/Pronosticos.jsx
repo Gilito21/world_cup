@@ -101,7 +101,7 @@ function ScoreInput({ value, onChange, disabled }) {
       onFocus={e => e.target.select()}
       onChange={e => onChange(Math.max(0, Math.min(99, parseInt(e.target.value) || 0)))}
       disabled={disabled}
-      className="w-14 h-14 sm:w-12 sm:h-12 text-center text-2xl sm:text-xl font-bold bg-white border border-stone-300 rounded-xl text-stone-900
+      className="w-11 h-11 sm:w-12 sm:h-12 text-center text-xl sm:text-xl font-bold bg-white border border-stone-300 rounded-lg sm:rounded-xl text-stone-900
                  focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500
                  disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm
                  touch-manipulation"
@@ -119,18 +119,18 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
 
   if (isSubmitted) {
     return (
-      <div className="card p-4 bg-green-50/80 border-green-200 flex items-center gap-4">
-        <span className="text-3xl flex-shrink-0">✅</span>
+      <div className="card p-3 sm:p-4 bg-green-50/80 border-green-200 flex items-center gap-3">
+        <span className="text-2xl sm:text-3xl flex-shrink-0">✅</span>
         <div className="min-w-0">
-          <p className="font-bold text-green-700">Pronóstico enviado definitivamente</p>
-          <p className="text-xs text-green-600 mt-0.5">
+          <p className="font-bold text-green-700 text-sm sm:text-base">Pronóstico enviado</p>
+          <p className="text-[11px] sm:text-xs text-green-600 mt-0.5">
             {submittedAt
               ? new Date(submittedAt).toLocaleDateString('es-ES', {
-                  day: 'numeric', month: 'long', year: 'numeric',
+                  day: 'numeric', month: 'short',
                   hour: '2-digit', minute: '2-digit',
                 })
               : ''}
-            {' · '}{totalCount} partidos · Ya no es posible modificar
+            {' · '}{totalCount} partidos · No modificable
           </p>
         </div>
       </div>
@@ -138,13 +138,13 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
   }
 
   return (
-    <div className="card p-4 space-y-3">
+    <div className="card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
       {/* Progress bar */}
       <div>
-        <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="text-stone-500 font-medium">Progreso del pronóstico completo</span>
-          <span className={`font-bold tabular-nums ${isComplete ? 'text-green-500' : 'text-stone-600'}`}>
-            {filledCount} / {totalCount} partidos
+        <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
+          <span className="text-stone-500 font-medium truncate">Progreso del pronóstico</span>
+          <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-stone-600'}`}>
+            {filledCount} / {totalCount}
           </span>
         </div>
         <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
@@ -275,28 +275,28 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
   const badge = STATUS_BADGE[match.status]
 
   return (
-    <div className={`card p-4 transition-all duration-200 ${
+    <div className={`card p-3 sm:p-4 transition-all duration-200 ${
       isFinished ? 'opacity-80' : submitted ? '' : 'hover:border-stone-300 hover:shadow-sm'
     }`}>
       {/* Header row */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-stone-500">{formatDate(match.match_date)}</span>
+      <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-3">
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+          <span className="text-[11px] sm:text-xs text-stone-500 truncate">{formatDate(match.match_date)}</span>
           {match.group_name && (
-            <span className="text-xs text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
-              Grupo {match.group_name}
+            <span className="text-[11px] sm:text-xs text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
+              {match.group_name}
             </span>
           )}
           {hasPredictedTeams && !isFinished && (
-            <span className="text-xs text-violet-500 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded">
-              🔮 según tus pronósticos
+            <span className="text-[11px] sm:text-xs text-violet-500 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded">
+              🔮
             </span>
           )}
           {match.status === 'scheduled' && !submitted && <Countdown matchDate={match.match_date} />}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           {badge && (
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>{badge.label}</span>
+            <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full border ${badge.cls}`}>{badge.label}</span>
           )}
           {/* Points badge after results come in */}
           {isFinished && prediction && (() => {
@@ -305,8 +305,8 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
                       : pts === 1 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                       :             'bg-stone-200 text-stone-500 border-stone-300'
             return (
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${cfg}`}>
-                {pts === 3 ? '🎯 +3' : pts === 1 ? '✓ +1' : '✗ 0'} pts
+              <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full border ${cfg}`}>
+                {pts === 3 ? '+3' : pts === 1 ? '+1' : '0'}
               </span>
             )
           })()}
@@ -314,8 +314,8 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
       </div>
 
       {/* Teams + score */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex-1 flex items-center justify-end gap-1.5 sm:gap-2 min-w-0">
           <span className={`text-sm font-semibold truncate text-right ${
             isTbd(match.home_team) && predictedHome ? 'text-violet-600' : 'text-stone-900'
           }`}>
@@ -324,7 +324,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           <Flag team={displayHome} />
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {isFinished ? (
             <div className="flex items-center gap-2 bg-stone-100 rounded-xl px-3 py-1.5">
               <span className="text-xl font-bold text-stone-900">{match.home_score}</span>
@@ -346,7 +346,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           )}
         </div>
 
-        <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
+        <div className="flex-1 flex items-center justify-start gap-1.5 sm:gap-2 min-w-0">
           <Flag team={displayAway} />
           <span className={`text-sm font-semibold truncate ${
             isTbd(match.away_team) && predictedAway ? 'text-violet-600' : 'text-stone-900'
@@ -854,10 +854,9 @@ export default function Pronosticos() {
 
       {/* Page header */}
       <div>
-        <h2 className="text-2xl font-bold text-stone-900">Mis pronósticos</h2>
-        <p className="text-stone-400 text-sm mt-1">
-          Rellena <strong>todos los partidos</strong> (grupos + eliminatorias) y envía tu pronóstico completo de una vez.
-          Una vez enviado no se puede modificar.
+        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Mis pronósticos</h2>
+        <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
+          Rellena todos los partidos (grupos + eliminatorias) y envía el pronóstico completo de una vez.
         </p>
       </div>
 
@@ -910,10 +909,10 @@ export default function Pronosticos() {
       )}
 
       {matches.length === 0 ? (
-        <div className="card p-10 text-center">
-          <div className="text-4xl mb-3">📅</div>
-          <p className="text-stone-500">Los partidos se cargarán próximamente.</p>
-          <p className="text-stone-400 text-sm mt-1">
+        <div className="card p-6 sm:p-10 text-center">
+          <div className="text-3xl sm:text-4xl mb-3">📅</div>
+          <p className="text-stone-500 text-sm">Los partidos se cargarán próximamente.</p>
+          <p className="text-stone-400 text-xs mt-1">
             Ejecuta <code className="bg-stone-100 px-1 rounded">npm run seed-matches</code> para importarlos.
           </p>
         </div>
