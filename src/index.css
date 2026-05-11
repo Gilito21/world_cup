@@ -4,17 +4,17 @@
 
 @layer base {
   html {
-    /* Evita el bounce horizontal en iOS al hacer overflow lateral. */
-    overflow-x: hidden;
     -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply bg-stone-50 text-stone-900 antialiased;
     font-family: 'Inter', system-ui, sans-serif;
-    overflow-x: hidden;
-    overscroll-behavior-y: none;
     -webkit-tap-highlight-color: transparent;
+    /* No tocar overflow ni overscroll-behavior aquí — combinarlos con
+       <html> y elementos position:sticky rompe el wheel scroll vertical
+       en Chrome desktop. Si algún elemento concreto desborda lateral-
+       mente, se controla con min-w-0/truncate en ese elemento. */
   }
 
   /* iOS no debe hacer zoom al focus de un input → fuente mínima 16px. */

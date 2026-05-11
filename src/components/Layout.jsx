@@ -237,9 +237,12 @@ export default function Layout() {
       </main>
 
       {/* Modal de pago para crear liga (disparado tras signup).
-          Solo se renderiza si el perfil está cargado y NO es founder
-          — para founders el effect de arriba crea la liga gratis. */}
-      {pendingPaymentName && profile && !profile.is_founder && (
+          Se renderiza salvo que el perfil esté cargado y sea founder
+          — para founders el effect de arriba crea la liga gratis.
+          Si profile aún no cargó, mostramos el modal igualmente: el
+          peor caso para un founder es que el modal aparezca un instante
+          antes de que el effect del bypass lo cierre. */}
+      {pendingPaymentName && !profile?.is_founder && (
         <PaymentModal
           leagueName={pendingPaymentName}
           onSuccess={handlePaymentSuccess}
