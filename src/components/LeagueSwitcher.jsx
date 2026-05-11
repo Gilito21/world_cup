@@ -2,12 +2,30 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useLeague } from '../contexts/LeagueContext'
 import LeagueModal from './LeagueModal'
+import PaymentModal from './PaymentModal'
+import LeagueCreatedModal from './LeagueCreatedModal'
 
 export default function LeagueSwitcher() {
-  const { leagues, activeLeague, setActiveLeague } = useLeague()
-  const [open, setOpen]           = useState(false)
-  const [showModal, setShowModal] = useState(false)
+  const { leagues, activeLeague, setActiveLeague, onLeagueCreated } = useLeague()
+  const [open, setOpen]               = useState(false)
+  const [showModal, setShowModal]     = useState(false)
+  // Cuando LeagueModal pide pasar al pago, sube el nombre aquí:
+  const [paymentName, setPaymentName] = useState(null)
+  // Liga recién creada (founder bypass o tras pago) — muestra el código.
+  const [createdLeague, setCreatedLeague] = useState(null)
   const ref = useRef(null)
+
+  async function handlePaymentSuccess(league) {
+    setPaymentName(null)
+    if (onLeagueCreated) await onLeagueCreated(league)
+    setCreatedLeague(league)
+  }
+
+  async function handleFounderCreated(league) {
+    setShowModal(false)
+    if (onLeagueCreated) await onLeagueCreated(league)
+    setCreatedLeague(league)
+  }
 
   // Cerrar al hacer click fuera o pulsar Escape
   useEffect(() => {
@@ -32,7 +50,27 @@ export default function LeagueSwitcher() {
           <span>Unirse</span>
           <span className="hidden sm:inline">a liga</span>
         </button>
-        {showModal && createPortal(<LeagueModal onClose={() => setShowModal(false)} />, document.body)}
+        {showModal && createPortal(
+          <LeagueModal
+            onClose={() => setShowModal(false)}
+            onPaymentRequested={(name) => { setShowModal(false); setPaymentName(name) }}
+            onFounderCreated={handleFounderCreated}
+          />,
+          document.body
+        )}
+        {paymentName && (
+          <PaymentModal
+            leagueName={paymentName}
+            onClose={() => setPaymentName(null)}
+            onSuccess={handlePaymentSuccess}
+          />
+        )}
+        {createdLeague && (
+          <LeagueCreatedModal
+            league={createdLeague}
+            onClose={() => setCreatedLeague(null)}
+          />
+        )}
       </>
     )
   }
