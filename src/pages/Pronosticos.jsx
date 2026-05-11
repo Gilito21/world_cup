@@ -225,10 +225,9 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
 
 // ─── MATCH CARD ───────────────────────────────────────────────────────────────
 
-function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, submitted }) {
-  // When the overall bracket is submitted, all inputs are locked regardless of match status
+function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, submitted, isPastCutoff }) {
   const isFinished  = match.status === 'finished'
-  const isLocked    = submitted || isFinished ||
+  const isLocked    = submitted || isPastCutoff || isFinished ||
                       match.status !== 'scheduled' ||
                       Date.now() >= new Date(match.match_date).getTime() - 30 * 60 * 1000
 
@@ -660,10 +659,16 @@ export default function Pronosticos() {
         league_id:  destLeagueId,
       }))
 
-      const { data, error: err } = await supabase
-        .from('predictions')
-        .upsert(rows, { onConflict: 'user_id,match_id,league_id' })
-        .select()
+      // Delete existing predictions for this context before inserting.
+      // Upsert with onConflict doesn't reliably handle partial unique indexes
+      // (especially when league_id IS NULL), so delete+insert is safer.
+      const deleteQ = destLeagueId
+        ? supabase.from('predictions').delete().eq('user_id', user.id).eq('league_id', destLeagueId)
+        : supabase.from('predictions').delete().eq('user_id', user.id).is('league_id', null)
+      const { error: delErr } = await deleteQ
+      if (delErr) throw delErr
+
+      const { data, error: err } = await supabase.from('predictions').insert(rows).select()
 
       if (err) throw err
 
@@ -921,6 +926,7 @@ export default function Pronosticos() {
                       predictedHome={predictedOverlay[m.id]?.homeTeam}
                       predictedAway={predictedOverlay[m.id]?.awayTeam}
                       submitted={isSubmitted}
+                      isPastCutoff={isPastCutoff}
                     />
                   ))}
                 </div>

@@ -8,6 +8,8 @@ import Spinner from '../components/Spinner'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
+// ─── STAT BADGE ──────────────────────────────────────────────────────────────
+
 function StatBadge({ label, value, color }) {
   return (
     <div className="text-center px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-300">
@@ -17,10 +19,157 @@ function StatBadge({ label, value, color }) {
   )
 }
 
+// ─── AVATAR ──────────────────────────────────────────────────────────────────
+
+function Avatar({ url, username, size = 'md', isMe = false }) {
+  const sz = {
+    sm: 'w-7 h-7 text-xs',
+    md: 'w-8 h-8 text-sm',
+    lg: 'w-10 h-10 text-base',
+    xl: 'w-16 h-16 text-2xl',
+  }[size] ?? 'w-8 h-8 text-sm'
+
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={username}
+        className={`${sz} rounded-full object-cover flex-shrink-0 ${
+          isMe ? 'border-2 border-amber-500/50' : 'border border-stone-200'
+        }`}
+      />
+    )
+  }
+  return (
+    <div className={`${sz} rounded-full flex items-center justify-center font-bold flex-shrink-0 ${
+      isMe
+        ? 'bg-amber-500/20 border-2 border-amber-500/50 text-amber-400'
+        : 'bg-stone-100 border border-stone-300 text-stone-700'
+    }`}>
+      {username?.[0]?.toUpperCase()}
+    </div>
+  )
+}
+
+// ─── PROFILE MODAL ───────────────────────────────────────────────────────────
+
+function ProfileModal({ profile, currentUserId, onClose }) {
+  const [stats,   setStats]   = useState(null)
+  const [loading, setLoading] = useState(true)
+  const isMe = profile.id === currentUserId
+
+  useEffect(() => {
+    async function loadBestLeagueStats() {
+      const { data: preds } = await sq(
+        supabase.from('predictions')
+          .select('league_id, points_earned')
+          .eq('user_id', profile.id)
+      )
+
+      if (!preds || preds.length === 0) {
+        setStats({ points: 0, exact: 0, correct: 0, total: 0, leagueName: null })
+        setLoading(false)
+        return
+      }
+
+      // Group predictions by league context
+      const groups = {}
+      for (const p of preds) {
+        const key = p.league_id ?? '__global__'
+        if (!groups[key]) groups[key] = []
+        groups[key].push(p)
+      }
+
+      // Find the league with highest total points
+      let bestKey    = '__global__'
+      let bestPoints = -1
+      for (const [key, group] of Object.entries(groups)) {
+        const pts = group.reduce((s, p) => s + (p.points_earned ?? 0), 0)
+        if (pts > bestPoints) { bestPoints = pts; bestKey = key }
+      }
+
+      const bestGroup = groups[bestKey] ?? []
+      const exact   = bestGroup.filter(p => p.points_earned === 3).length
+      const correct = bestGroup.filter(p => p.points_earned === 1).length
+
+      let leagueName = null
+      if (bestKey !== '__global__') {
+        const { data: league } = await sq(
+          supabase.from('leagues').select('name').eq('id', bestKey).maybeSingle()
+        )
+        leagueName = league?.name ?? null
+      }
+
+      setStats({ points: bestPoints, exact, correct, total: bestGroup.length, leagueName })
+      setLoading(false)
+    }
+
+    loadBestLeagueStats()
+  }, [profile.id])
+
+  return (
+    <div
+      className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="card p-6 max-w-sm w-full space-y-5 shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <Avatar url={profile.avatar_url} username={profile.username} size="xl" isMe={isMe} />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-lg font-bold text-stone-900 truncate">{profile.username}</h3>
+                {isMe && (
+                  <span className="text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded flex-shrink-0">Tú</span>
+                )}
+              </div>
+              {profile.company && (
+                <p className="text-sm text-stone-500 mt-0.5 truncate">🏢 {profile.company}</p>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-stone-400 hover:text-stone-600 transition-colors text-2xl leading-none flex-shrink-0 mt-0.5"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Best league stats */}
+        <div>
+          <p className="text-xs text-stone-400 mb-3 font-medium uppercase tracking-wider">
+            {loading
+              ? 'Cargando...'
+              : stats?.leagueName
+                ? `Mejor liga · ${stats.leagueName}`
+                : 'Pronósticos globales'}
+          </p>
+          {loading ? (
+            <div className="flex justify-center py-4"><Spinner size="sm" /></div>
+          ) : (
+            <div className="grid grid-cols-4 gap-2">
+              <StatBadge label="Puntos"   value={stats.points}  color="text-amber-400" />
+              <StatBadge label="Exactos"  value={stats.exact}   color="text-amber-400" />
+              <StatBadge label="Correct." value={stats.correct} color="text-blue-400" />
+              <StatBadge label="Total"    value={stats.total}   color="text-stone-600" />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function Clasificacion() {
-  const { user }                                      = useAuth()
-  const { activeLeague, leagues, setActiveLeague }    = useLeague()
+  const { user }                                   = useAuth()
+  const { activeLeague, leagues, setActiveLeague } = useLeague()
   const [tab, setTab]                   = useState('global')
   const [globalStandings, setGlobalStandings]   = useState([])
   const [leagueStandings, setLeagueStandings]   = useState([])
@@ -28,6 +177,7 @@ export default function Clasificacion() {
   const [myLeagueStats, setMyLeagueStats]       = useState({ exact: 0, correct: 0, total: 0 })
   const [loading, setLoading]           = useState(true)
   const [showModal, setShowModal]       = useState(false)
+  const [selectedProfile, setSelectedProfile] = useState(null)
 
   useEffect(() => { if (tab === 'global')    loadGlobal()    }, [tab])
   useEffect(() => { if (tab === 'league')    loadLeague()    }, [tab, activeLeague?.id])
@@ -39,7 +189,9 @@ export default function Clasificacion() {
     setLoading(true)
     try {
       const { data: profiles } = await sq(
-        supabase.from('profiles').select('id, username, total_points').order('total_points', { ascending: false })
+        supabase.from('profiles')
+          .select('id, username, total_points, avatar_url, company')
+          .order('total_points', { ascending: false })
       )
 
       setGlobalStandings(
@@ -73,7 +225,7 @@ export default function Clasificacion() {
       const memberIds = members.map(m => m.user_id)
 
       const [{ data: profiles }, { data: leaguePreds }] = await Promise.all([
-        sq(supabase.from('profiles').select('id, username').in('id', memberIds)),
+        sq(supabase.from('profiles').select('id, username, avatar_url, company').in('id', memberIds)),
         sq(supabase.from('predictions').select('user_id, points_earned')
           .eq('league_id', activeLeague.id).in('user_id', memberIds)),
       ])
@@ -96,6 +248,8 @@ export default function Clasificacion() {
           return {
             id:            member.user_id,
             username:      profile.username,
+            avatar_url:    profile.avatar_url ?? null,
+            company:       profile.company ?? null,
             role:          member.role,
             league_points: pointsMap[member.user_id] ?? 0,
             stats:         statsMap[member.user_id] ?? { exact: 0, correct: 0, total: 0 },
@@ -118,7 +272,7 @@ export default function Clasificacion() {
     setLoading(true)
     try {
       const { data: profiles } = await sq(
-        supabase.from('profiles').select('id, username, company, total_points')
+        supabase.from('profiles').select('id, username, company, total_points, avatar_url')
           .not('company', 'is', null).neq('company', '')
       )
 
@@ -146,9 +300,7 @@ export default function Clasificacion() {
 
   // ── Render helpers ────────────────────────────────────────────────────────
 
-  function handleTabChange(newTab) {
-    setTab(newTab)
-  }
+  function handleTabChange(newTab) { setTab(newTab) }
 
   const tabs = [
     { id: 'global',    label: 'Global',   icon: '🌐' },
@@ -156,7 +308,7 @@ export default function Clasificacion() {
     { id: 'companies', label: 'Empresas', icon: '🏢' },
   ]
 
-  // ── Shared table header ───────────────────────────────────────────────────
+  // ── Individual table ──────────────────────────────────────────────────────
 
   const IndividualTable = useCallback(({ standings, showStats = false }) => {
     const myEntry = standings.find(s => s.id === user.id)
@@ -164,12 +316,13 @@ export default function Clasificacion() {
     return (
       <>
         {myEntry && (
-          <div className="card p-4 border-amber-500/30 bg-amber-500/5">
+          <div
+            className="card p-4 border-amber-500/30 bg-amber-500/5 cursor-pointer hover:border-amber-500/50 transition-colors"
+            onClick={() => setSelectedProfile(myEntry)}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-500/20 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 font-bold">
-                  {myEntry.username?.[0]?.toUpperCase()}
-                </div>
+                <Avatar url={myEntry.avatar_url} username={myEntry.username} size="lg" isMe />
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-stone-900">{myEntry.username}</span>
@@ -218,7 +371,8 @@ export default function Clasificacion() {
                 return (
                   <div
                     key={entry.id}
-                    className={`grid grid-cols-[3rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-4 py-3.5 items-center transition-colors ${
+                    onClick={() => setSelectedProfile(entry)}
+                    className={`grid grid-cols-[3rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-4 py-3.5 items-center transition-colors cursor-pointer ${
                       isMe ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-stone-100/60'
                     }`}
                   >
@@ -229,13 +383,7 @@ export default function Clasificacion() {
                       }
                     </div>
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                        isMe
-                          ? 'bg-amber-500/20 border border-amber-500/40 text-amber-400'
-                          : 'bg-stone-100 border border-stone-300 text-stone-700'
-                      }`}>
-                        {entry.username?.[0]?.toUpperCase()}
-                      </div>
+                      <Avatar url={entry.avatar_url} username={entry.username} size="md" isMe={isMe} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {entry.role === 'admin' && <span className="text-xs flex-shrink-0">👑</span>}
@@ -269,7 +417,7 @@ export default function Clasificacion() {
         )}
       </>
     )
-  }, [user.id, myLeagueStats])
+  }, [user.id, myLeagueStats, setSelectedProfile])
 
   // ── Main render ───────────────────────────────────────────────────────────
 
@@ -334,7 +482,6 @@ export default function Clasificacion() {
                 </div>
               ) : (
                 <>
-                  {/* Selector de liga si hay más de una */}
                   {leagues.length > 1 && (
                     <div className="flex gap-2 flex-wrap -mt-2">
                       {leagues.map(l => (
@@ -385,7 +532,7 @@ export default function Clasificacion() {
                   </div>
                   <div className="divide-y divide-stone-200">
                     {companyStandings.map(entry => {
-                      const isTop  = entry.position <= 3
+                      const isTop       = entry.position <= 3
                       const isMyCompany = entry.hasMe
                       return (
                         <div
@@ -438,6 +585,15 @@ export default function Clasificacion() {
       )}
 
       {showModal && createPortal(<LeagueModal onClose={() => setShowModal(false)} />, document.body)}
+
+      {selectedProfile && createPortal(
+        <ProfileModal
+          profile={selectedProfile}
+          currentUserId={user.id}
+          onClose={() => setSelectedProfile(null)}
+        />,
+        document.body
+      )}
     </div>
   )
 }
