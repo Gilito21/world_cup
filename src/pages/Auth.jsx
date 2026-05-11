@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
@@ -39,6 +39,28 @@ function expandAliases(query) {
   return [...new Set(terms)]
 }
 
+// ── Shared dark background ──────────────────────────────────────────────────
+function AuthBg({ children }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 flex items-center justify-center px-4 py-8">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-amber-500/8 rounded-full blur-[100px]" />
+        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-amber-600/5 rounded-full blur-3xl" />
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+      </div>
+      {children}
+    </div>
+  )
+}
+
+// ── ForgotPassword ─────────────────────────────────────────────────────────
 function ForgotPassword({ onBack }) {
   const [email, setEmail]     = useState('')
   const [loading, setLoading] = useState(false)
@@ -57,30 +79,26 @@ function ForgotPassword({ onBack }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 flex items-center justify-center px-4">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-orange-500/8 rounded-full blur-3xl" />
-      </div>
-      <div className="relative w-full max-w-md animate-slide-up">
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="text-4xl sm:text-5xl mb-3 sm:mb-5">⚽</div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">
-            Porra <span className="text-amber-400">Mundial 2026</span>
-          </h1>
-        </div>
-        <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 p-6">
-          {sent ? (
-            <div className="text-center space-y-3 py-4">
-              <div className="text-4xl">📧</div>
-              <p className="text-stone-900 font-semibold">Email enviado</p>
-              <p className="text-stone-400 text-sm">Revisa tu bandeja de entrada. El enlace caduca en 1 hora.</p>
-              <button onClick={onBack} className="btn-secondary w-full mt-2">Volver al inicio de sesión</button>
-            </div>
-          ) : (
-            <>
-              <h2 className="text-lg font-semibold text-stone-900 mb-1">Recuperar contraseña</h2>
-              <p className="text-stone-400 text-sm mb-5">Te enviamos un enlace para crear una nueva contraseña.</p>
+    <AuthBg>
+      <div className="relative w-full max-w-sm animate-slide-up">
+        <Link to="/" className="flex items-center justify-center gap-2 mb-6 text-stone-400 hover:text-white transition-colors text-sm">
+          <span>⚽</span>
+          <span className="font-bold">Porra <span className="text-amber-400">Mundial 2026</span></span>
+        </Link>
+        <div className="bg-white rounded-3xl shadow-2xl shadow-black/40 overflow-hidden">
+          <div className="bg-gradient-to-br from-stone-900 to-stone-950 px-6 py-6 border-b border-white/8">
+            <h2 className="text-lg font-bold text-white">Recuperar contraseña</h2>
+            <p className="text-stone-400 text-sm mt-1">Te enviamos un enlace para crear una nueva.</p>
+          </div>
+          <div className="p-6">
+            {sent ? (
+              <div className="text-center space-y-3 py-4">
+                <div className="text-4xl">📧</div>
+                <p className="text-stone-900 font-semibold">Email enviado</p>
+                <p className="text-stone-400 text-sm">Revisa tu bandeja de entrada. El enlace caduca en 1 hora.</p>
+                <button onClick={onBack} className="btn-secondary w-full mt-2">Volver al inicio de sesión</button>
+              </div>
+            ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1.5">Tu email</label>
@@ -89,23 +107,22 @@ function ForgotPassword({ onBack }) {
                     required autoFocus autoComplete="email" />
                 </div>
                 {error && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">{error}</div>
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-500 text-sm">{error}</div>
                 )}
                 <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
                   {loading && <Spinner size="sm" />} Enviar enlace
                 </button>
+                <button type="button" onClick={onBack} className="w-full text-center text-stone-400 text-sm hover:text-stone-700 transition-colors">
+                  ← Volver
+                </button>
               </form>
-              <button onClick={onBack} className="w-full text-center text-stone-500 text-sm mt-4 hover:text-stone-700 transition-colors">
-                ← Volver
-              </button>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </AuthBg>
   )
 }
-
 
 function CopyLinkButton({ text }) {
   const [copied, setCopied] = useState(false)
@@ -251,12 +268,6 @@ export default function Auth() {
         if (leagueMode === 'create' && leagueName.trim().length < 2) throw new Error('El nombre de liga debe tener al menos 2 caracteres.')
         if (leagueMode === 'join' && joinCode.trim().length !== 8) throw new Error('El código de liga debe tener 8 caracteres.')
 
-        // Guardar la intención de crear liga ANTES de signUp. Si la dejamos
-        // para después, el listener de auth state en AuthContext habrá
-        // disparado un re-render (set user) durante el await, App.jsx
-        // redirige a /pronosticos y Layout monta leyendo sessionStorage
-        // antes de que esta línea se ejecute → la key llega tarde y el
-        // PaymentModal nunca aparece.
         if (leagueMode === 'create') {
           sessionStorage.setItem('porra-pending-league-create', leagueName.trim())
         }
@@ -265,7 +276,6 @@ export default function Auth() {
         try {
           ;({ data: authData } = await signUp(form.email, form.password, form.username.trim(), company.trim()))
         } catch (signUpErr) {
-          // Si el signup falla, no dejamos la intención huérfana.
           sessionStorage.removeItem('porra-pending-league-create')
           throw signUpErr
         }
@@ -291,7 +301,6 @@ export default function Auth() {
     }
   }
 
-  // Solo gestiona el caso "join" (gratis). "create" pasa por PaymentModal.
   async function setupLeague(userId) {
     if (leagueMode !== 'join') return
     const { data: league, error: findError } = await supabase
@@ -317,69 +326,94 @@ export default function Auth() {
   if (createdCode) {
     const inviteLink = `${window.location.origin}/join/${createdCode}`
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 flex items-center justify-center px-4">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-3xl" />
-        </div>
-        <div className="relative w-full max-w-md space-y-4 sm:space-y-5 animate-slide-up">
-          <div className="text-center space-y-2">
-            <div className="text-4xl sm:text-5xl mb-1">🎉</div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">¡Liga creada!</h2>
-            <p className="text-stone-400 text-xs sm:text-sm">Comparte el código o el link con tus amigos:</p>
+      <AuthBg>
+        <div className="relative w-full max-w-sm animate-slide-up space-y-4">
+          <div className="text-center">
+            <div className="text-5xl mb-2">🎉</div>
+            <h2 className="text-2xl font-bold text-white">¡Liga creada!</h2>
+            <p className="text-stone-400 text-sm mt-1">Comparte el código o el link con tus amigos:</p>
           </div>
-          <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 p-4 sm:p-5 space-y-4">
-            <div className="text-center">
-              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">Código</p>
-              <p className="text-3xl sm:text-4xl font-bold tracking-[0.3em] sm:tracking-[0.35em] text-amber-500 font-mono break-all">{createdCode}</p>
+          <div className="bg-white rounded-3xl shadow-2xl shadow-black/40 overflow-hidden">
+            <div className="bg-gradient-to-br from-stone-900 to-stone-950 px-6 py-5 border-b border-white/8">
+              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 text-center">Código de invitación</p>
+              <p className="text-4xl font-black tracking-[0.4em] text-amber-400 font-mono text-center break-all">{createdCode}</p>
             </div>
-            <div className="border-t border-stone-100 pt-4 space-y-2">
-              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Link directo</p>
-              <div className="flex items-center gap-2">
-                <p className="flex-1 text-xs text-stone-500 bg-stone-100 rounded-xl px-3 py-2 font-mono truncate">
-                  {inviteLink}
-                </p>
-                <CopyLinkButton text={inviteLink} />
+            <div className="p-5 space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Link directo</p>
+                <div className="flex items-center gap-2">
+                  <p className="flex-1 text-xs text-stone-500 bg-stone-100 rounded-xl px-3 py-2 font-mono truncate">
+                    {inviteLink}
+                  </p>
+                  <CopyLinkButton text={inviteLink} />
+                </div>
               </div>
+              <p className="text-stone-400 text-xs text-center">Tu cuenta está lista. Inicia sesión para empezar.</p>
+              <button onClick={() => switchMode('login')} className="btn-primary w-full">Iniciar sesión</button>
             </div>
           </div>
-          <p className="text-stone-500 text-xs text-center">Tu cuenta está lista. Inicia sesión para empezar.</p>
-          <button onClick={() => switchMode('login')} className="btn-primary w-full">Iniciar sesión</button>
         </div>
-      </div>
+      </AuthBg>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 flex items-center justify-center px-4 py-8">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-2/3 left-1/4 w-80 h-80 bg-orange-500/8 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-amber-600/8 rounded-full blur-3xl" />
-      </div>
-
+    <AuthBg>
       <div className="relative w-full max-w-md animate-slide-up">
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="text-4xl sm:text-5xl mb-3 sm:mb-5">⚽</div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">
-            Porra <span className="text-amber-400">Mundial 2026</span>
-          </h1>
-          <p className="text-stone-400 text-xs sm:text-sm mt-1.5">México vs Sudáfrica · 11 jun</p>
+
+        {/* Back to landing */}
+        <div className="text-center mb-5">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-300 text-sm transition-colors">
+            ← Volver al inicio
+          </Link>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 overflow-hidden p-1.5">
-          <div className="flex rounded-xl overflow-hidden bg-stone-100 p-1 mb-5">
-            {[['login', 'Iniciar sesión'], ['register', 'Registrarse']].map(([m, label]) => (
-              <button key={m} onClick={() => switchMode(m)}
-                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
-                  mode === m ? 'bg-amber-500 text-stone-950 shadow-sm' : 'text-stone-500 hover:text-stone-800'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+        {/* Card */}
+        <div className="bg-white rounded-3xl shadow-2xl shadow-black/50 overflow-hidden">
+
+          {/* ── Dark header ──────────────────────────────────── */}
+          <div className="bg-gradient-to-br from-stone-900 via-stone-900 to-stone-950 px-6 pt-7 pb-5">
+            {/* Logo */}
+            <div className="flex flex-col items-center text-center mb-5">
+              <div className="text-4xl mb-2.5">⚽</div>
+              <h1 className="text-xl font-bold text-white">
+                Porra <span className="text-amber-400">Mundial 2026</span>
+              </h1>
+              <p className="text-stone-500 text-xs mt-1">México vs Sudáfrica · 11 jun 2026</p>
+            </div>
+
+            {/* Stats pills */}
+            <div className="flex justify-center gap-2 mb-5">
+              {['48 equipos', '104 partidos', '1 ganador'].map(s => (
+                <span
+                  key={s}
+                  className="text-[10px] sm:text-xs text-stone-400 bg-white/6 border border-white/10 px-2.5 py-1 rounded-full"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+
+            {/* Tab switcher */}
+            <div className="flex rounded-xl overflow-hidden bg-white/8 p-1">
+              {[['login', 'Iniciar sesión'], ['register', 'Registrarse']].map(([m, label]) => (
+                <button
+                  key={m}
+                  onClick={() => switchMode(m)}
+                  className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-150 ${
+                    mode === m
+                      ? 'bg-amber-500 text-stone-950 shadow-sm'
+                      : 'text-stone-400 hover:text-stone-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="px-5 pb-6 space-y-4">
+          {/* ── White form body ───────────────────────────────── */}
+          <form onSubmit={handleSubmit} className="px-6 py-6 space-y-4">
 
             {/* Username */}
             {mode === 'register' && (
@@ -388,10 +422,11 @@ export default function Auth() {
                   Nombre de usuario <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
-                  <input type="text"
+                  <input
+                    type="text"
                     className={`input pr-9 transition-colors ${
-                      usernameStatus === 'available' ? 'border-green-500 focus:border-green-500 focus:ring-green-500' :
-                      usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                      usernameStatus === 'available' ? 'border-green-500 focus:border-green-500 focus:ring-green-500/15' :
+                      usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : ''
                     }`}
                     placeholder="ej. ElCrack7"
                     value={form.username} onChange={update('username')}
@@ -457,8 +492,11 @@ export default function Auth() {
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Email</label>
-              <input type="email" className="input" placeholder="tu@email.com"
-                value={form.email} onChange={update('email')} required autoComplete="email" />
+              <input
+                type="email" className="input" placeholder="tu@email.com"
+                value={form.email} onChange={update('email')}
+                required autoComplete="email"
+              />
             </div>
 
             {/* Contraseña */}
@@ -466,29 +504,37 @@ export default function Auth() {
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm font-medium text-stone-700">Contraseña</label>
                 {mode === 'login' && (
-                  <button type="button" onClick={() => setShowForgot(true)}
-                    className="text-xs text-amber-500 hover:text-amber-400 hover:underline underline-offset-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgot(true)}
+                    className="text-xs text-amber-600 hover:text-amber-500 hover:underline underline-offset-2"
+                  >
                     ¿Olvidaste la contraseña?
                   </button>
                 )}
               </div>
-              <input type="password" className="input"
+              <input
+                type="password" className="input"
                 placeholder={mode === 'register' ? 'Mínimo 6 caracteres' : '••••••••'}
                 value={form.password} onChange={update('password')}
                 required minLength={6}
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              />
             </div>
 
             {/* Liga (registro) */}
             {mode === 'register' && (
               <div className="space-y-3 pt-1">
-                <p className="text-sm font-medium text-stone-700">Liga <span className="text-stone-400 font-normal text-xs">(opcional)</span></p>
+                <p className="text-sm font-medium text-stone-700">
+                  Liga <span className="text-stone-400 font-normal text-xs">(opcional)</span>
+                </p>
                 <div className="grid grid-cols-3 gap-2">
                   {[['none','👋','Después'],['join','🔗','Unirme'],['create','👑','Crear']].map(([val, icon, label]) => (
-                    <button key={val} type="button" onClick={() => setLeagueMode(val)}
+                    <button
+                      key={val} type="button" onClick={() => setLeagueMode(val)}
                       className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                         leagueMode === val
-                          ? 'bg-amber-500/10 border-amber-500/50 text-amber-500'
+                          ? 'bg-amber-500/10 border-amber-500/40 text-amber-600'
                           : 'bg-stone-50 border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700'
                       }`}
                     >
@@ -500,8 +546,12 @@ export default function Auth() {
                 {leagueMode === 'create' && (
                   <div>
                     <label className="block text-xs text-stone-500 mb-1.5">Nombre de la liga</label>
-                    <input type="text" className="input" placeholder="ej. Los Cracks del Trabajo"
-                      value={leagueName} onChange={e => setLeagueName(e.target.value)} maxLength={40} required />
+                    <input
+                      type="text" className="input"
+                      placeholder="ej. Los Cracks del Trabajo"
+                      value={leagueName} onChange={e => setLeagueName(e.target.value)}
+                      maxLength={40} required
+                    />
                     <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1.5">
                       <span>💳</span>
                       Crear una liga cuesta {LEAGUE_PRICE_LABEL} (pago único). Tras pagar recibirás un código para invitar a tus amigos.
@@ -511,43 +561,52 @@ export default function Auth() {
                 {leagueMode === 'join' && (
                   <div>
                     <label className="block text-xs text-stone-500 mb-1.5">Código de invitación</label>
-                    <input type="text" className="input uppercase tracking-widest font-mono text-center text-lg"
+                    <input
+                      type="text"
+                      className="input uppercase tracking-widest font-mono text-center text-lg"
                       placeholder="XXXXXXXX" value={joinCode}
-                      onChange={e => setJoinCode(e.target.value.toUpperCase())} maxLength={8} required />
+                      onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                      maxLength={8} required
+                    />
                   </div>
                 )}
                 {leagueMode === 'none' && (
-                  <p className="text-xs text-stone-400 text-center">Podrás crear o unirte a ligas desde el menú una vez dentro.</p>
+                  <p className="text-xs text-stone-400 text-center">
+                    Podrás crear o unirte a ligas desde el menú una vez dentro.
+                  </p>
                 )}
               </div>
             )}
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">{error}</div>
+              <div className="bg-red-500/8 border border-red-500/25 rounded-xl px-4 py-3 text-red-500 text-sm">{error}</div>
             )}
             {success && (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 text-green-500 text-sm">{success}</div>
+              <div className="bg-green-500/8 border border-green-500/25 rounded-xl px-4 py-3 text-green-600 text-sm">{success}</div>
             )}
 
             <button
               type="submit"
               disabled={loading || (mode === 'register' && (usernameStatus === 'taken' || usernameStatus === 'checking' || usernameStatus === 'invalid'))}
-              className="btn-primary w-full flex items-center justify-center gap-2 mt-2"
+              className="btn-primary w-full flex items-center justify-center gap-2 text-base"
             >
               {loading && <Spinner size="sm" />}
-              {mode === 'login' ? 'Entrar' : 'Crear cuenta'}
+              {mode === 'login' ? 'Entrar a la app' : 'Crear cuenta gratis'}
             </button>
+
+            <p className="text-center text-stone-400 text-xs pt-1">
+              {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
+              <button
+                type="button"
+                onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
+                className="text-amber-600 hover:text-amber-500 hover:underline underline-offset-2 font-medium"
+              >
+                {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
+              </button>
+            </p>
           </form>
         </div>
-
-        <p className="text-center text-stone-500 text-xs mt-5">
-          {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
-          <button onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
-            className="text-amber-400 hover:text-amber-300 hover:underline underline-offset-2 font-medium">
-            {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
-          </button>
-        </p>
       </div>
-    </div>
+    </AuthBg>
   )
 }
