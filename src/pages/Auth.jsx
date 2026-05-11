@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from '../components/Spinner'
 
 // Aliases de empresa: abreviatura → nombre(s) canónico(s)
@@ -105,10 +106,6 @@ function ForgotPassword({ onBack }) {
   )
 }
 
-function generateCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-}
 
 function CopyLinkButton({ text }) {
   const [copied, setCopied] = useState(false)
@@ -256,18 +253,22 @@ export default function Auth() {
 
         const { data: authData } = await signUp(form.email, form.password, form.username.trim(), company.trim())
 
-        if (authData?.session && leagueMode !== 'none') {
+        if (authData?.session && leagueMode === 'join') {
           await setupLeague(authData.user.id)
-        } else if (!authData?.session && leagueMode !== 'none') {
-          localStorage.setItem('porra-league-intent', JSON.stringify({
-            mode: leagueMode,
-            leagueName: leagueName.trim(),
-            joinCode: joinCode.trim().toUpperCase(),
-          }))
+        } else if (authData?.session && leagueMode === 'create') {
+          // El AuthContext detectará la nueva sesión y App.jsx redirigirá
+          // a /pronosticos. Dejamos la "intención de crear liga" en
+          // sessionStorage para que Layout dispare el PaymentModal al
+          // montarse autenticado.
+          sessionStorage.setItem('porra-pending-league-create', leagueName.trim())
+        } else if (!authData?.session && leagueMode === 'create') {
+          // Signup con email confirmation: guardamos también la intención;
+          // la activamos en cuanto inicie sesión por primera vez.
+          sessionStorage.setItem('porra-pending-league-create', leagueName.trim())
         }
 
         if (!authData?.session) {
-          setSuccess('¡Cuenta creada! Ya puedes iniciar sesión.')
+          setSuccess('¡Cuenta creada! Revisa tu email para confirmar y después inicia sesión.')
         }
       }
     } catch (err) {
@@ -283,22 +284,13 @@ export default function Auth() {
     }
   }
 
+  // Solo gestiona el caso "join" (gratis). "create" pasa por PaymentModal.
   async function setupLeague(userId) {
-    if (leagueMode === 'create') {
-      const code = generateCode()
-      const { data: league, error: leagueError } = await supabase
-        .from('leagues')
-        .insert({ name: leagueName.trim(), invite_code: code, created_by: userId })
-        .select().single()
-      if (leagueError) throw leagueError
-      await supabase.from('league_members').insert({ league_id: league.id, user_id: userId, role: 'admin' })
-      setCreatedCode(code)
-    } else if (leagueMode === 'join') {
-      const { data: league, error: findError } = await supabase
-        .from('leagues').select('id').eq('invite_code', joinCode.trim().toUpperCase()).single()
-      if (findError || !league) throw new Error('Código de liga inválido. Comprueba que esté bien escrito.')
-      await supabase.from('league_members').insert({ league_id: league.id, user_id: userId, role: 'member' })
-    }
+    if (leagueMode !== 'join') return
+    const { data: league, error: findError } = await supabase
+      .from('leagues').select('id').eq('invite_code', joinCode.trim().toUpperCase()).single()
+    if (findError || !league) throw new Error('Código de liga inválido. Comprueba que esté bien escrito.')
+    await supabase.from('league_members').insert({ league_id: league.id, user_id: userId, role: 'member' })
   }
 
   function switchMode(newMode) {
@@ -503,7 +495,10 @@ export default function Auth() {
                     <label className="block text-xs text-stone-500 mb-1.5">Nombre de la liga</label>
                     <input type="text" className="input" placeholder="ej. Los Cracks del Trabajo"
                       value={leagueName} onChange={e => setLeagueName(e.target.value)} maxLength={40} required />
-                    <p className="text-xs text-stone-400 mt-1">Recibirás un código para invitar a tus amigos.</p>
+                    <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1.5">
+                      <span>💳</span>
+                      Crear una liga cuesta {LEAGUE_PRICE_LABEL} (pago único). Tras pagar recibirás un código para invitar a tus amigos.
+                    </p>
                   </div>
                 )}
                 {leagueMode === 'join' && (

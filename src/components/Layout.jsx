@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom'
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { supabase } from '../lib/supabase'
 import LeagueSwitcher from './LeagueSwitcher'
+import PaymentModal from './PaymentModal'
 
 // Pestañas principales. En móvil mostramos las 5 que también aparecen
 // en MOBILE_NAV; "Reglas" se accede desde el menú del avatar para no
@@ -90,12 +92,52 @@ function MobileUserMenu({ profile, onSignOut }) {
 
 export default function Layout() {
   const { profile, signOut } = useAuth()
-  const { activeLeague }     = useLeague()
+  const { activeLeague, onLeagueCreated } = useLeague()
   const navigate = useNavigate()
+
+  // Pending payment intent: si el usuario eligió "Crear liga" durante el
+  // signup, Auth.jsx dejó el nombre en sessionStorage y aquí abrimos el
+  // modal de pago una vez ya está autenticado.
+  const [pendingPaymentName, setPendingPaymentName] = useState(() => {
+    try { return sessionStorage.getItem('porra-pending-league-create') } catch { return null }
+  })
+
+  // Si el usuario logueado es founder y hay intención pendiente, crea la
+  // liga directo sin pasar por el modal de pago.
+  useEffect(() => {
+    if (!pendingPaymentName) return
+    if (!profile?.is_founder) return
+    let cancelled = false
+    ;(async () => {
+      const { data, error } = await supabase.functions.invoke('create-league-free', {
+        body: { league_name: pendingPaymentName },
+      })
+      if (cancelled) return
+      sessionStorage.removeItem('porra-pending-league-create')
+      setPendingPaymentName(null)
+      if (!error && data?.league && onLeagueCreated) {
+        await onLeagueCreated(data.league)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [pendingPaymentName, profile?.is_founder, onLeagueCreated])
 
   async function handleSignOut() {
     await signOut()
     navigate('/auth')
+  }
+
+  async function handlePaymentSuccess(league) {
+    sessionStorage.removeItem('porra-pending-league-create')
+    setPendingPaymentName(null)
+    if (onLeagueCreated) await onLeagueCreated(league)
+  }
+
+  function handlePaymentClose() {
+    // Si cancelan, limpiamos la intención para que no reaparezca
+    // en cada recarga. Pueden volver a intentar desde el menú de ligas.
+    sessionStorage.removeItem('porra-pending-league-create')
+    setPendingPaymentName(null)
   }
 
   return (
@@ -193,6 +235,17 @@ export default function Layout() {
       <main className="flex-1 max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6 pb-mobile-nav animate-fade-in">
         <Outlet />
       </main>
+
+      {/* Modal de pago para crear liga (disparado tras signup).
+          Solo se renderiza si el perfil está cargado y NO es founder
+          — para founders el effect de arriba crea la liga gratis. */}
+      {pendingPaymentName && profile && !profile.is_founder && (
+        <PaymentModal
+          leagueName={pendingPaymentName}
+          onSuccess={handlePaymentSuccess}
+          onClose={handlePaymentClose}
+        />
+      )}
 
       {/* ── BOTTOM NAV (solo móvil) ──────────────────────────── */}
       <nav
