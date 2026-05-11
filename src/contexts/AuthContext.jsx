@@ -12,6 +12,10 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const loadingRef   = useRef(true)
   const fetchingRef  = useRef(false)
+  // Trackea el último user.id que vimos. onAuthStateChange dispara SIGNED_IN
+  // en cada visibilitychange aunque el usuario sea el mismo; usamos esta
+  // ref para evitar refetchear profile en cada return de pestaña.
+  const userIdRef    = useRef(null)
 
   useEffect(() => {
     loadingRef.current = loading
@@ -25,7 +29,16 @@ export function AuthProvider({ children }) {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       clearTimeout(timeout)
-      dlog('getSession resolved, user=', session?.user?.id ?? null)
+      const nextId = session?.user?.id ?? null
+      dlog('getSession resolved, user=', nextId)
+      if (userIdRef.current === nextId) {
+        // Ya nos enteramos antes por onAuthStateChange (Supabase fire SIGNED_IN
+        // restaurando la sesión de localStorage casi al instante). Nada que hacer.
+        dlog('getSession → SKIP (already known)')
+        if (!session?.user) setLoading(false)
+        return
+      }
+      userIdRef.current = nextId
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
       else setLoading(false)
@@ -43,17 +56,23 @@ export function AuthProvider({ children }) {
       // la referencia evita re-renders en toda la app cada vez que Supabase
       // refresca el token (cada ~50 min y también al volver a la pestaña).
       if (event === 'TOKEN_REFRESHED') return
+
       const nextUser = session?.user ?? null
-      // Idempotencia: si el id no cambia no tocamos la referencia para no
-      // forzar re-renders innecesarios en los consumidores del contexto.
-      setUser(prev => {
-        if (prev?.id === nextUser?.id) {
-          dlog('setUser SKIP (same id)')
-          return prev
-        }
-        dlog('setUser CHANGE', prev?.id, '→', nextUser?.id)
-        return nextUser
-      })
+      const nextId   = nextUser?.id ?? null
+      const sameUser = userIdRef.current === nextId
+
+      if (sameUser) {
+        // Supabase dispara SIGNED_IN en cada visibilitychange aunque el
+        // user sea idéntico al que ya teníamos. No refetcheamos profile
+        // — eso es lo que estaba colgando 8s en cada return de pestaña.
+        dlog('onAuthStateChange SKIP (same user)')
+        return
+      }
+
+      dlog('onAuthStateChange USER CHANGED', userIdRef.current, '→', nextId)
+      userIdRef.current = nextId
+      setUser(nextUser)
+
       if (nextUser) {
         await fetchProfile(nextUser.id)
       } else {
