@@ -89,25 +89,12 @@ export function LeagueProvider({ children }) {
     }
   }
 
-  async function createLeague(name) {
-    const code = generateCode()
-    const { data: league, error } = await supabase
-      .from('leagues')
-      .insert({ name: name.trim(), invite_code: code, created_by: user.id })
-      .select()
-      .single()
-    if (error) throw error
-
-    const { error: memberError } = await supabase
-      .from('league_members')
-      .insert({ league_id: league.id, user_id: user.id, role: 'admin' })
-    if (memberError) throw memberError
-
+  // Llamado por PaymentModal después de que la edge function haya creado
+  // la liga server-side. Refresca el contexto y deja la nueva como activa.
+  async function onLeagueCreated(league) {
     await loadLeagues()
-    // Activar la liga recién creada
-    const newLeague = { ...league, role: 'admin' }
-    setActiveLeague(newLeague)
-    return newLeague
+    setActiveLeague({ ...league, role: 'admin' })
+    return league
   }
 
   async function setPredictionMode(mode) {
@@ -158,7 +145,7 @@ export function LeagueProvider({ children }) {
       activeLeague,
       loading,
       setActiveLeague,
-      createLeague,
+      onLeagueCreated,
       joinLeague,
       setPredictionMode,
       reloadLeagues: loadLeagues,

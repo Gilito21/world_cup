@@ -4,6 +4,7 @@ import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import LeagueSwitcher from './LeagueSwitcher'
+import PaymentModal from './PaymentModal'
 
 // Pestañas principales. En móvil mostramos las 5 que también aparecen
 // en MOBILE_NAV; "Reglas" se accede desde el menú del avatar para no
@@ -90,12 +91,32 @@ function MobileUserMenu({ profile, onSignOut }) {
 
 export default function Layout() {
   const { profile, signOut } = useAuth()
-  const { activeLeague }     = useLeague()
+  const { activeLeague, onLeagueCreated } = useLeague()
   const navigate = useNavigate()
+
+  // Pending payment intent: si el usuario eligió "Crear liga" durante el
+  // signup, Auth.jsx dejó el nombre en sessionStorage y aquí abrimos el
+  // modal de pago una vez ya está autenticado.
+  const [pendingPaymentName, setPendingPaymentName] = useState(() => {
+    try { return sessionStorage.getItem('porra-pending-league-create') } catch { return null }
+  })
 
   async function handleSignOut() {
     await signOut()
     navigate('/auth')
+  }
+
+  async function handlePaymentSuccess(league) {
+    sessionStorage.removeItem('porra-pending-league-create')
+    setPendingPaymentName(null)
+    if (onLeagueCreated) await onLeagueCreated(league)
+  }
+
+  function handlePaymentClose() {
+    // Si cancelan, limpiamos la intención para que no reaparezca
+    // en cada recarga. Pueden volver a intentar desde el menú de ligas.
+    sessionStorage.removeItem('porra-pending-league-create')
+    setPendingPaymentName(null)
   }
 
   return (
@@ -193,6 +214,15 @@ export default function Layout() {
       <main className="flex-1 max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6 pb-mobile-nav animate-fade-in">
         <Outlet />
       </main>
+
+      {/* Modal de pago para crear liga (disparado tras signup) */}
+      {pendingPaymentName && (
+        <PaymentModal
+          leagueName={pendingPaymentName}
+          onSuccess={handlePaymentSuccess}
+          onClose={handlePaymentClose}
+        />
+      )}
 
       {/* ── BOTTOM NAV (solo móvil) ──────────────────────────── */}
       <nav

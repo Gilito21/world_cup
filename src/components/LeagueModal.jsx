@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLeague } from '../contexts/LeagueContext'
+import PaymentModal from './PaymentModal'
+import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from './Spinner'
 
 function CopyButton({ text, label }) {
@@ -20,19 +22,21 @@ function CopyButton({ text, label }) {
 }
 
 export default function LeagueModal({ onClose }) {
-  const { createLeague, joinLeague } = useLeague()
-  const [tab, setTab]         = useState('join')
-  const [value, setValue]     = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [created, setCreated] = useState(null)
+  const { joinLeague, onLeagueCreated } = useLeague()
+  const [tab, setTab]                   = useState('join')
+  const [value, setValue]               = useState('')
+  const [loading, setLoading]           = useState(false)
+  const [error, setError]               = useState('')
+  const [created, setCreated]           = useState(null)
+  const [showPayment, setShowPayment]   = useState(false)
+  const [pendingName, setPendingName]   = useState('')
 
   // Cerrar con Escape
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    const handler = (e) => { if (e.key === 'Escape' && !showPayment) onClose() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
+  }, [onClose, showPayment])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -40,9 +44,12 @@ export default function LeagueModal({ onClose }) {
     setLoading(true)
     try {
       if (tab === 'create') {
-        if (value.trim().length < 2) throw new Error('El nombre debe tener al menos 2 caracteres.')
-        const league = await createLeague(value)
-        setCreated(league)
+        const name = value.trim()
+        if (name.length < 2) throw new Error('El nombre debe tener al menos 2 caracteres.')
+        if (name.length > 40) throw new Error('El nombre no puede superar 40 caracteres.')
+        // Abre el modal de pago. La liga se crea server-side tras el pago.
+        setPendingName(name)
+        setShowPayment(true)
       } else {
         await joinLeague(value)
         onClose()
@@ -52,6 +59,14 @@ export default function LeagueModal({ onClose }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handlePaymentSuccess(league) {
+    // El edge function ya creó la liga + admin membership.
+    // Refrescar el contexto y dejarla activa.
+    if (onLeagueCreated) await onLeagueCreated(league)
+    setShowPayment(false)
+    setCreated(league)
   }
 
   function switchTab(t) {
@@ -173,12 +188,28 @@ export default function LeagueModal({ onClose }) {
 
               <button type="submit" disabled={loading || !value.trim()} className="btn-primary w-full flex items-center justify-center gap-2">
                 {loading && <Spinner size="sm" />}
-                {tab === 'join' ? 'Unirme' : 'Crear liga'}
+                {tab === 'join'
+                  ? 'Unirme gratis'
+                  : <>Continuar al pago · {LEAGUE_PRICE_LABEL}</>}
               </button>
+
+              {tab === 'create' && (
+                <p className="text-center text-stone-400 text-xs">
+                  Crear una liga cuesta {LEAGUE_PRICE_LABEL} (pago único). Unirse a una liga existente es gratis.
+                </p>
+              )}
             </form>
           )}
         </div>
       </div>
+
+      {showPayment && (
+        <PaymentModal
+          leagueName={pendingName}
+          onClose={() => setShowPayment(false)}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   )
 }
