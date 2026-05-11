@@ -103,7 +103,7 @@ export default function Layout() {
       {/* ── HEADER ───────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/80 shadow-sm pt-safe">
         <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-amber-500 via-orange-400 to-amber-500" />
-        <div className="max-w-5xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
           {/* Logo */}
           <Link to="/pronosticos" className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xl sm:text-2xl">⚽</span>
@@ -154,7 +154,7 @@ export default function Layout() {
         </div>
 
         {/* Tabs (solo desktop, en móvil hay bottom nav) */}
-        <div className="hidden sm:block max-w-5xl mx-auto px-4">
+        <div className="hidden sm:block max-w-5xl mx-auto px-3 sm:px-4">
           <nav className="flex gap-1">
             {NAV.map(({ to, label, icon }) => (
               <NavLink
@@ -177,12 +177,12 @@ export default function Layout() {
       {/* Banda de contexto de liga activa */}
       {activeLeague && (
         <div className="bg-gradient-to-r from-amber-500/8 via-amber-500/5 to-transparent border-b border-amber-500/15">
-          <div className="max-w-5xl mx-auto px-4 py-1.5 flex items-center gap-2 overflow-hidden">
-            {activeLeague.role === 'admin' && <span className="text-xs">👑</span>}
-            <span className="text-xs text-amber-500/70 font-medium truncate">{activeLeague.name}</span>
+          <div className="max-w-5xl mx-auto px-3 sm:px-4 py-1 sm:py-1.5 flex items-center gap-2 overflow-hidden">
+            {activeLeague.role === 'admin' && <span className="text-[11px] sm:text-xs">👑</span>}
+            <span className="text-[11px] sm:text-xs text-amber-500/70 font-medium truncate">{activeLeague.name}</span>
             {activeLeague.role === 'admin' && (
-              <span className="text-xs text-stone-400 truncate">
-                · Código: <span className="font-mono text-amber-500/60 tracking-wider">{activeLeague.invite_code}</span>
+              <span className="text-[11px] sm:text-xs text-stone-400 truncate hidden min-[420px]:inline">
+                · <span className="font-mono text-amber-500/60 tracking-wider">{activeLeague.invite_code}</span>
               </span>
             )}
           </div>
@@ -190,7 +190,7 @@ export default function Layout() {
       )}
 
       {/* Content */}
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 pb-mobile-nav animate-fade-in">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6 pb-mobile-nav animate-fade-in">
         <Outlet />
       </main>
 

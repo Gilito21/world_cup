@@ -62,9 +62,9 @@ function ForgotPassword({ onBack }) {
         <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-orange-500/8 rounded-full blur-3xl" />
       </div>
       <div className="relative w-full max-w-md animate-slide-up">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-5">⚽</div>
-          <h1 className="text-3xl font-bold text-white">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="text-4xl sm:text-5xl mb-3 sm:mb-5">⚽</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">
             Porra <span className="text-amber-400">Mundial 2026</span>
           </h1>
         </div>
@@ -322,16 +322,16 @@ export default function Auth() {
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-3xl" />
         </div>
-        <div className="relative w-full max-w-md space-y-5 animate-slide-up">
+        <div className="relative w-full max-w-md space-y-4 sm:space-y-5 animate-slide-up">
           <div className="text-center space-y-2">
-            <div className="text-5xl mb-1">🎉</div>
-            <h2 className="text-2xl font-bold text-white">¡Liga creada!</h2>
-            <p className="text-stone-400 text-sm">Comparte el código o el link con tus amigos:</p>
+            <div className="text-4xl sm:text-5xl mb-1">🎉</div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">¡Liga creada!</h2>
+            <p className="text-stone-400 text-xs sm:text-sm">Comparte el código o el link con tus amigos:</p>
           </div>
-          <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 p-5 space-y-4">
+          <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 p-4 sm:p-5 space-y-4">
             <div className="text-center">
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">Código</p>
-              <p className="text-4xl font-bold tracking-[0.35em] text-amber-500 font-mono">{createdCode}</p>
+              <p className="text-3xl sm:text-4xl font-bold tracking-[0.3em] sm:tracking-[0.35em] text-amber-500 font-mono break-all">{createdCode}</p>
             </div>
             <div className="border-t border-stone-100 pt-4 space-y-2">
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Link directo</p>
@@ -359,12 +359,12 @@ export default function Auth() {
       </div>
 
       <div className="relative w-full max-w-md animate-slide-up">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-5">⚽</div>
-          <h1 className="text-3xl font-bold text-white">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="text-4xl sm:text-5xl mb-3 sm:mb-5">⚽</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">
             Porra <span className="text-amber-400">Mundial 2026</span>
           </h1>
-          <p className="text-stone-400 text-sm mt-1.5">México vs Sudáfrica</p>
+          <p className="text-stone-400 text-xs sm:text-sm mt-1.5">México vs Sudáfrica · 11 jun</p>
         </div>
 
         <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 overflow-hidden p-1.5">

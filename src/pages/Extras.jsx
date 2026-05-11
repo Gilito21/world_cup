@@ -50,7 +50,7 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
   const opts = question.options ?? []
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-2 sm:gap-3">
       {opts.map(opt => {
         const isActive = value === opt.value
         return (
@@ -58,25 +58,25 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
             key={opt.value}
             onClick={() => !locked && onSelect(opt.value)}
             disabled={locked}
-            className={`relative rounded-2xl border-2 p-4 sm:p-5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${
+            className={`relative rounded-xl sm:rounded-2xl border-2 p-3 sm:p-5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${
               isActive
                 ? 'border-amber-500 bg-amber-50 shadow-md shadow-amber-500/20'
                 : 'border-stone-200 bg-white hover:border-stone-300'
             } ${locked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
           >
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-4xl sm:text-5xl">{opt.emoji}</span>
-              <div className="text-center">
-                <div className={`font-bold text-base sm:text-lg ${isActive ? 'text-amber-700' : 'text-stone-800'}`}>
+            <div className="flex flex-col items-center gap-1.5 sm:gap-2">
+              <span className="text-3xl sm:text-5xl">{opt.emoji}</span>
+              <div className="text-center min-w-0 w-full">
+                <div className={`font-bold text-sm sm:text-lg truncate ${isActive ? 'text-amber-700' : 'text-stone-800'}`}>
                   {opt.label}
                 </div>
                 {opt.team && (
-                  <div className="text-xs text-stone-500 mt-0.5">{opt.team}</div>
+                  <div className="text-[11px] sm:text-xs text-stone-500 mt-0.5">{opt.team}</div>
                 )}
               </div>
             </div>
             {isActive && (
-              <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold">
+              <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] sm:text-xs font-bold">
                 ✓
               </span>
             )}
@@ -213,19 +213,19 @@ function QuestionCard({
     : prediction?.answer_number
 
   return (
-    <article className="card p-4 sm:p-5 space-y-4">
+    <article className="card p-3 sm:p-5 space-y-3 sm:space-y-4">
       <header className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-base sm:text-lg font-bold text-stone-900 leading-tight">
+            <h3 className="text-sm sm:text-lg font-bold text-stone-900 leading-tight">
               {question.prompt}
             </h3>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 border border-amber-500/30">
+            <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 border border-amber-500/30 flex-shrink-0">
               +{question.points} pts
             </span>
           </div>
           {question.description && (
-            <p className="text-xs sm:text-sm text-stone-500 mt-1 leading-relaxed">
+            <p className="text-[11px] sm:text-sm text-stone-500 mt-1 leading-relaxed">
               {question.description}
             </p>
           )}
@@ -440,10 +440,10 @@ export default function Extras() {
 
   if (!activeLeague) {
     return (
-      <div className="card p-8 text-center space-y-2">
-        <span className="text-4xl">🎲</span>
-        <h2 className="text-lg font-bold text-stone-900">Únete a una liga primero</h2>
-        <p className="text-stone-500 text-sm">
+      <div className="card p-6 sm:p-8 text-center space-y-2">
+        <span className="text-3xl sm:text-4xl">🎲</span>
+        <h2 className="text-base sm:text-lg font-bold text-stone-900">Únete a una liga primero</h2>
+        <p className="text-stone-500 text-xs sm:text-sm">
           Las preguntas extra están vinculadas a tu liga (o al modo global).
         </p>
       </div>
@@ -451,15 +451,15 @@ export default function Extras() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Hero */}
-      <section className="card p-4 sm:p-5">
-        <div className="flex items-start gap-3">
-          <span className="text-2xl sm:text-3xl">🎲</span>
+      <section className="card p-3 sm:p-5">
+        <div className="flex items-start gap-2.5 sm:gap-3">
+          <span className="text-xl sm:text-3xl">🎲</span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg sm:text-xl font-bold text-stone-900">Preguntas extra</h1>
-            <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
-              Predicciones a largo plazo. Se cierran <strong>1 hora antes del primer partido</strong>.
+            <h1 className="text-base sm:text-xl font-bold text-stone-900">Preguntas extra</h1>
+            <p className="text-[11px] sm:text-sm text-stone-500 mt-0.5">
+              Predicciones a largo plazo. Cierran <strong>1h antes del primer partido</strong>.
             </p>
           </div>
         </div>

@@ -85,14 +85,14 @@ export default function Perfil() {
   }
 
   return (
-    <div className="space-y-6 max-w-lg">
+    <div className="space-y-4 sm:space-y-6 max-w-lg">
       <div>
-        <h2 className="text-2xl font-bold text-stone-900">Mi perfil</h2>
-        <p className="text-stone-400 text-sm mt-1">Tu cuenta y estadísticas</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Mi perfil</h2>
+        <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">Tu cuenta y estadísticas</p>
       </div>
 
       {/* Tarjeta de identidad */}
-      <div className="card p-5">
+      <div className="card p-4 sm:p-5">
         <div className="flex items-center gap-4">
           {/* Avatar con upload */}
           <div className="relative flex-shrink-0">
