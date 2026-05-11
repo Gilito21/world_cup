@@ -16,18 +16,15 @@ import JoinLeague from './pages/JoinLeague'
 import Spinner from './components/Spinner'
 import NotFound from './pages/NotFound'
 
-const dlog = (...args) => console.log('[DEBUG][App]', new Date().toISOString().slice(11, 23), ...args)
-
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) { dlog('ProtectedRoute → SPINNER (loading=true)'); return <div className="flex items-center justify-center h-screen"><Spinner /></div> }
-  if (!user) { dlog('ProtectedRoute → /auth (no user)'); return <Navigate to="/auth" replace /> }
+  if (loading) return <div className="flex items-center justify-center h-screen"><Spinner /></div>
+  if (!user) return <Navigate to="/auth" replace />
   return children
 }
 
 export default function App() {
   const { user, loading } = useAuth()
-  dlog('render loading=', loading, 'user=', user?.id ?? null)
 
   // LeagueProvider lives outside the auth-loading guard so that league data
   // starts fetching as soon as user?.id is known (set before fetchProfile
