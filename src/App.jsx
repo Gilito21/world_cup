@@ -41,22 +41,21 @@ export default function App() {
           <Route path="/"               element={user ? <Navigate to="/pronosticos" replace /> : <Landing />} />
           <Route path="/auth"           element={user ? <Navigate to="/pronosticos" replace /> : <Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          {/* Layout sin path para no competir con el route "/" de Landing */}
           <Route
-            path="/"
             element={
               <ProtectedRoute>
                 <Layout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/pronosticos" replace />} />
-            <Route path="pronosticos"   element={<Pronosticos />} />
-            <Route path="extras"        element={<Extras />} />
-            <Route path="clasificacion" element={<Clasificacion />} />
-            <Route path="resultados"    element={<Resultados />} />
-            <Route path="bracket"       element={<Bracket />} />
-            <Route path="reglas"        element={<Reglas />} />
-            <Route path="perfil"        element={<Perfil />} />
+            <Route path="/pronosticos"   element={<Pronosticos />} />
+            <Route path="/extras"        element={<Extras />} />
+            <Route path="/clasificacion" element={<Clasificacion />} />
+            <Route path="/resultados"    element={<Resultados />} />
+            <Route path="/bracket"       element={<Bracket />} />
+            <Route path="/reglas"        element={<Reglas />} />
+            <Route path="/perfil"        element={<Perfil />} />
           </Route>
           <Route path="/join/:code" element={<JoinLeague />} />
           <Route path="*" element={<NotFound />} />
