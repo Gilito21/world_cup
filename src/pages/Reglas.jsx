@@ -69,7 +69,7 @@ export default function Reglas() {
           </div>
         </div>
 
-        <p className="mt-4 text-sm text-stone-600">Cada liga tiene su propia clasificación. Los pronósticos son los mismos para todas tus ligas (un único envío los cubre a todas).</p>
+        <p className="mt-4 text-sm text-stone-600">Cada liga tiene su propia clasificación. Puedes enviar un pronóstico diferente para cada liga, o reusar el mismo en varias si lo prefieres.</p>
 
         <Callout type="info">
           Puedes cambiar de liga en cualquier momento desde el selector de la barra superior. La clasificación, resultados y pronósticos se muestran siempre en el contexto de la liga activa.
