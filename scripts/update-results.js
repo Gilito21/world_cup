@@ -56,10 +56,12 @@ async function updateMatches(matches) {
 
   for (const m of matches) {
     const newStatus    = mapStatus(m.status)
-    // extraTime holds the cumulative score after 120min for knockout matches;
-    // fall back to fullTime (90min) for group stage or matches decided in regulation.
-    const newHomeScore = m.score?.extraTime?.home ?? m.score?.fullTime?.home ?? null
-    const newAwayScore = m.score?.extraTime?.away ?? m.score?.fullTime?.away ?? null
+    // Scores are always the 90-minute result; predictions are based on regulation time.
+    const newHomeScore = m.score?.fullTime?.home ?? null
+    const newAwayScore = m.score?.fullTime?.away ?? null
+    // winner reflects who actually advanced (including ET and penalties for knockout matches).
+    const rawWinner    = m.score?.winner  // 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW' | null
+    const newWinner    = rawWinner === 'HOME_TEAM' ? 'home' : rawWinner === 'AWAY_TEAM' ? 'away' : null
 
     // Solo actualizar si hay datos relevantes que cambiar
     if (newStatus === 'scheduled' && newHomeScore === null) continue
@@ -70,6 +72,7 @@ async function updateMatches(matches) {
         status:     newStatus,
         home_score: newHomeScore,
         away_score: newAwayScore,
+        winner:     newWinner,
         updated_at: new Date().toISOString(),
       })
       .eq('external_id', m.id)
