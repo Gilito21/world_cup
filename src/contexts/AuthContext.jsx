@@ -7,7 +7,8 @@ export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const loadingRef = useRef(true)
+  const loadingRef   = useRef(true)
+  const fetchingRef  = useRef(false)
 
   useEffect(() => { loadingRef.current = loading }, [loading])
 
@@ -45,7 +46,7 @@ export function AuthProvider({ children }) {
     // after 2s to avoid the infinite spinner.
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && loadingRef.current) {
-        setTimeout(() => { if (loadingRef.current) setLoading(false) }, 2000)
+        setTimeout(() => { if (loadingRef.current) setLoading(false) }, 5000)
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
@@ -58,12 +59,17 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchProfile(userId) {
+    // Prevent concurrent fetches (e.g. getSession + onAuthStateChange firing simultaneously)
+    if (fetchingRef.current) return
+    fetchingRef.current = true
     try {
-      const { data } = await sq(
+      const { data, error } = await sq(
         supabase.from('profiles').select('*').eq('id', userId).single()
       )
-      setProfile(data)
+      // Only update profile when we got real data — never reset to null on timeout/error
+      if (data) setProfile(data)
     } finally {
+      fetchingRef.current = false
       setLoading(false)
     }
   }

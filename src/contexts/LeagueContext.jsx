@@ -29,7 +29,10 @@ export function LeagueProvider({ children }) {
           .eq('user_id', user.id)
       )
 
-      const list = (data ?? []).map(m => ({ ...m.leagues, role: m.role, prediction_mode: m.prediction_mode ?? 'global' }))
+      // On timeout data is null — keep whatever was already loaded rather than wiping leagues
+      if (!data) return
+
+      const list = data.map(m => ({ ...m.leagues, role: m.role, prediction_mode: m.prediction_mode ?? 'global' }))
       setLeagues(list)
 
       const savedId = localStorage.getItem(`porra-league-${user.id}`)
@@ -53,7 +56,7 @@ export function LeagueProvider({ children }) {
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && loadingRef.current) {
-        setTimeout(() => { if (loadingRef.current) setLoading(false) }, 3000)
+        setTimeout(() => { if (loadingRef.current) setLoading(false) }, 5000)
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
