@@ -251,20 +251,27 @@ export default function Auth() {
         if (leagueMode === 'create' && leagueName.trim().length < 2) throw new Error('El nombre de liga debe tener al menos 2 caracteres.')
         if (leagueMode === 'join' && joinCode.trim().length !== 8) throw new Error('El código de liga debe tener 8 caracteres.')
 
-        const { data: authData } = await signUp(form.email, form.password, form.username.trim(), company.trim())
+        // Guardar la intención de crear liga ANTES de signUp. Si la dejamos
+        // para después, el listener de auth state en AuthContext habrá
+        // disparado un re-render (set user) durante el await, App.jsx
+        // redirige a /pronosticos y Layout monta leyendo sessionStorage
+        // antes de que esta línea se ejecute → la key llega tarde y el
+        // PaymentModal nunca aparece.
+        if (leagueMode === 'create') {
+          sessionStorage.setItem('porra-pending-league-create', leagueName.trim())
+        }
+
+        let authData
+        try {
+          ;({ data: authData } = await signUp(form.email, form.password, form.username.trim(), company.trim()))
+        } catch (signUpErr) {
+          // Si el signup falla, no dejamos la intención huérfana.
+          sessionStorage.removeItem('porra-pending-league-create')
+          throw signUpErr
+        }
 
         if (authData?.session && leagueMode === 'join') {
           await setupLeague(authData.user.id)
-        } else if (authData?.session && leagueMode === 'create') {
-          // El AuthContext detectará la nueva sesión y App.jsx redirigirá
-          // a /pronosticos. Dejamos la "intención de crear liga" en
-          // sessionStorage para que Layout dispare el PaymentModal al
-          // montarse autenticado.
-          sessionStorage.setItem('porra-pending-league-create', leagueName.trim())
-        } else if (!authData?.session && leagueMode === 'create') {
-          // Signup con email confirmation: guardamos también la intención;
-          // la activamos en cuanto inicie sesión por primera vez.
-          sessionStorage.setItem('porra-pending-league-create', leagueName.trim())
         }
 
         if (!authData?.session) {

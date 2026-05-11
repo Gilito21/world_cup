@@ -24,22 +24,11 @@ export function sq(query, ms = 8000) {
   ])
 }
 
-// When a browser tab is in the background, Chrome throttles WebSocket / fetch
-// activity. The Supabase auth client can be left in a state where the next
-// query hangs until the JWT is refreshed. Proactively refreshing the session
-// the moment the tab becomes visible again avoids this.
-let lastHiddenAt = 0
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      lastHiddenAt = Date.now()
-      return
-    }
-    // Only refresh if the tab was actually away for a while (>20s).
-    // Brief alt-tabs don't need a refresh and would just add latency.
-    if (Date.now() - lastHiddenAt < 20_000) return
-    // Fire-and-forget: refreshSession resolves quickly with the new token,
-    // unblocking any subsequent queries that would otherwise hang.
-    supabase.auth.refreshSession().catch(() => {})
-  })
-}
+// NOTE: Antes hacíamos un refreshSession() agresivo en visibilitychange para
+// "despertar" la auth tras throttling de Chrome. Pero si esa llamada fallaba
+// (red lenta, token de refresco caducado…), Supabase dispara SIGNED_OUT
+// internamente y se carga la sesión → el usuario aparecía sin ligas al
+// volver a la pestaña. Con autoRefreshToken=true y persistSession=true,
+// Supabase ya gestiona los refrescos por sí mismo cuando hace falta. Si
+// alguna query queda colgada por throttling, el wrapper sq() la corta a
+// los 8s y preserva el estado existente.
