@@ -32,9 +32,3 @@ export function sq(query, ms = 8000) {
 // Supabase ya gestiona los refrescos por sí mismo cuando hace falta. Si
 // alguna query queda colgada por throttling, el wrapper sq() la corta a
 // los 8s y preserva el estado existente.
-
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    console.log('[DEBUG][SB]', new Date().toISOString().slice(11, 23), 'visibility →', document.visibilityState)
-  })
-}

@@ -3,9 +3,6 @@ import { supabase, sq } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
-// Helper de logging (visible en DevTools → Console, filtrar por "[DEBUG]")
-const dlog = (...args) => console.log('[DEBUG][Auth]', new Date().toISOString().slice(11, 23), ...args)
-
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null)
   const [profile, setProfile] = useState(null)
@@ -17,24 +14,18 @@ export function AuthProvider({ children }) {
   // ref para evitar refetchear profile en cada return de pestaña.
   const userIdRef    = useRef(null)
 
-  useEffect(() => {
-    loadingRef.current = loading
-    dlog('loading →', loading)
-  }, [loading])
+  useEffect(() => { loadingRef.current = loading }, [loading])
 
   useEffect(() => {
-    dlog('mount')
     // Timeout de seguridad: si Supabase no responde en 15s, desbloquear la UI
-    const timeout = setTimeout(() => { dlog('15s timeout → setLoading(false)'); setLoading(false) }, 15000)
+    const timeout = setTimeout(() => setLoading(false), 15000)
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       clearTimeout(timeout)
       const nextId = session?.user?.id ?? null
-      dlog('getSession resolved, user=', nextId)
       if (userIdRef.current === nextId) {
-        // Ya nos enteramos antes por onAuthStateChange (Supabase fire SIGNED_IN
-        // restaurando la sesión de localStorage casi al instante). Nada que hacer.
-        dlog('getSession → SKIP (already known)')
+        // Ya nos enteramos antes por onAuthStateChange (Supabase dispara
+        // SIGNED_IN restaurando la sesión de localStorage casi al instante).
         if (!session?.user) setLoading(false)
         return
       }
@@ -42,34 +33,26 @@ export function AuthProvider({ children }) {
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
       else setLoading(false)
-    }).catch((err) => {
+    }).catch(() => {
       clearTimeout(timeout)
-      dlog('getSession ERROR', err)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      dlog('onAuthStateChange event=', event, 'user=', session?.user?.id ?? null)
       // INITIAL_SESSION duplicates what getSession() already handles above
       if (event === 'INITIAL_SESSION') return
-      // TOKEN_REFRESHED solo renueva el JWT — el user es el mismo. No reemplazar
-      // la referencia evita re-renders en toda la app cada vez que Supabase
-      // refresca el token (cada ~50 min y también al volver a la pestaña).
+      // TOKEN_REFRESHED solo renueva el JWT — el user es el mismo.
       if (event === 'TOKEN_REFRESHED') return
 
       const nextUser = session?.user ?? null
       const nextId   = nextUser?.id ?? null
-      const sameUser = userIdRef.current === nextId
 
-      if (sameUser) {
-        // Supabase dispara SIGNED_IN en cada visibilitychange aunque el
-        // user sea idéntico al que ya teníamos. No refetcheamos profile
-        // — eso es lo que estaba colgando 8s en cada return de pestaña.
-        dlog('onAuthStateChange SKIP (same user)')
-        return
-      }
+      // Supabase dispara SIGNED_IN en cada visibilitychange aunque el user
+      // sea el mismo que ya teníamos. Si el id coincide no refetcheamos —
+      // eso es lo que provocaba que cada return de pestaña tardase 8s y se
+      // viera spinner / "no estás en ninguna liga".
+      if (userIdRef.current === nextId) return
 
-      dlog('onAuthStateChange USER CHANGED', userIdRef.current, '→', nextId)
       userIdRef.current = nextId
       setUser(nextUser)
 
@@ -81,13 +64,11 @@ export function AuthProvider({ children }) {
       }
     })
 
-    // Safety: when the user returns to this tab, if loading is somehow still
-    // true (e.g. a background network call was throttled by Chrome), unblock
-    // after 2s to avoid the infinite spinner.
+    // Safety: si por lo que sea loading sigue en true cuando vuelves a la
+    // pestaña, desbloquear tras 5s para evitar spinner infinito.
     const handleVisibility = () => {
-      dlog('visibility →', document.visibilityState, 'loadingRef=', loadingRef.current)
       if (document.visibilityState === 'visible' && loadingRef.current) {
-        setTimeout(() => { if (loadingRef.current) { dlog('safety 5s → setLoading(false)'); setLoading(false) } }, 5000)
+        setTimeout(() => { if (loadingRef.current) setLoading(false) }, 5000)
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
@@ -100,16 +81,15 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchProfile(userId) {
-    // Prevent concurrent fetches (e.g. getSession + onAuthStateChange firing simultaneously)
-    if (fetchingRef.current) { dlog('fetchProfile SKIP (already fetching)'); return }
+    // Evita fetches concurrentes (e.g. getSession + onAuthStateChange a la vez)
+    if (fetchingRef.current) return
     fetchingRef.current = true
-    dlog('fetchProfile START', userId)
     try {
-      const { data, error } = await sq(
+      const { data } = await sq(
         supabase.from('profiles').select('*').eq('id', userId).single()
       )
-      dlog('fetchProfile END data?', !!data, 'error?', error?.code ?? error?.message ?? null)
-      // Only update profile when we got real data — never reset to null on timeout/error
+      // Solo actualizamos profile si llegan datos reales — nunca lo
+      // reseteamos a null en timeouts/errores.
       if (data) setProfile(data)
     } finally {
       fetchingRef.current = false
