@@ -2,45 +2,28 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { supabase } from '../lib/supabase'
-import PaymentModal from './PaymentModal'
 import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from './Spinner'
 
-function CopyButton({ text, label }) {
-  const [copied, setCopied] = useState(false)
-  async function handleCopy() {
-    await navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-  return (
-    <button
-      onClick={handleCopy}
-      className="btn-secondary text-xs px-3 py-1.5 flex-shrink-0 flex items-center gap-1.5"
-    >
-      {copied ? '✓ Copiado' : label}
-    </button>
-  )
-}
-
-export default function LeagueModal({ onClose }) {
-  const { profile }                     = useAuth()
-  const { joinLeague, onLeagueCreated } = useLeague()
-  const isFounder                       = !!profile?.is_founder
-  const [tab, setTab]                   = useState('join')
-  const [value, setValue]               = useState('')
-  const [loading, setLoading]           = useState(false)
-  const [error, setError]               = useState('')
-  const [created, setCreated]           = useState(null)
-  const [showPayment, setShowPayment]   = useState(false)
-  const [pendingName, setPendingName]   = useState('')
+// LeagueModal — "Unirme a liga" (gratis) o "Crear liga" (paywall salvo founders).
+// Para crear, NO renderiza el PaymentModal aquí: emite onPaymentRequested(name)
+// y deja que el padre (LeagueSwitcher) gestione el modal de pago como hermano,
+// para evitar portales anidados y bugs de stacking.
+export default function LeagueModal({ onClose, onPaymentRequested, onFounderCreated }) {
+  const { profile }           = useAuth()
+  const { joinLeague }        = useLeague()
+  const isFounder             = !!profile?.is_founder
+  const [tab, setTab]         = useState('join')
+  const [value, setValue]     = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
 
   // Cerrar con Escape
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape' && !showPayment) onClose() }
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [onClose, showPayment])
+  }, [onClose])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -59,11 +42,12 @@ export default function LeagueModal({ onClose }) {
           })
           if (fnErr) throw new Error(fnErr.message ?? 'No se pudo crear la liga.')
           if (!data?.league) throw new Error(data?.error ?? 'Respuesta inesperada del servidor.')
-          if (onLeagueCreated) await onLeagueCreated(data.league)
-          setCreated(data.league)
+          // Delegamos la pantalla de "Liga creada" al padre.
+          if (onFounderCreated) await onFounderCreated(data.league)
         } else {
-          setPendingName(name)
-          setShowPayment(true)
+          // Salimos del modal y pedimos al padre que abra el PaymentModal.
+          if (onPaymentRequested) onPaymentRequested(name)
+          else onClose()
         }
       } else {
         await joinLeague(value)
@@ -76,19 +60,10 @@ export default function LeagueModal({ onClose }) {
     }
   }
 
-  async function handlePaymentSuccess(league) {
-    // El edge function ya creó la liga + admin membership.
-    // Refrescar el contexto y dejarla activa.
-    if (onLeagueCreated) await onLeagueCreated(league)
-    setShowPayment(false)
-    setCreated(league)
-  }
-
   function switchTab(t) {
     setTab(t)
     setValue('')
     setError('')
-    setCreated(null)
   }
 
   return (
@@ -123,44 +98,7 @@ export default function LeagueModal({ onClose }) {
         </div>
 
         <div className="p-5">
-          {created ? (
-            // Liga creada — mostrar código y link
-            <div className="space-y-4">
-              <div className="text-center">
-                <div className="text-3xl mb-2">🎉</div>
-                <p className="text-stone-700 font-medium">Liga <span className="text-amber-400">"{created.name}"</span> creada</p>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Código de invitación</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-stone-100 border border-amber-500/30 rounded-xl p-3 text-center">
-                    <p className="text-2xl font-bold tracking-[0.3em] text-amber-400 font-mono">{created.invite_code}</p>
-                  </div>
-                  <CopyButton text={created.invite_code} label="Copiar" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Link directo</p>
-                <div className="flex items-center gap-2">
-                  <p className="flex-1 text-xs text-stone-500 bg-stone-100 rounded-xl px-3 py-2.5 font-mono truncate">
-                    {`${window.location.origin}/join/${created.invite_code}`}
-                  </p>
-                  <CopyButton
-                    text={`${window.location.origin}/join/${created.invite_code}`}
-                    label="Copiar"
-                  />
-                </div>
-                <p className="text-xs text-stone-400">
-                  Tus amigos hacen click y se unen directamente al registrarse.
-                </p>
-              </div>
-
-              <button onClick={onClose} className="btn-primary w-full">Perfecto</button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
               {tab === 'join' ? (
                 <>
                   <p className="text-stone-500 text-sm">
@@ -217,18 +155,9 @@ export default function LeagueModal({ onClose }) {
                     : <>Crear una liga cuesta {LEAGUE_PRICE_LABEL} (pago único). Unirse a una liga existente es gratis.</>}
                 </p>
               )}
-            </form>
-          )}
+          </form>
         </div>
       </div>
-
-      {showPayment && (
-        <PaymentModal
-          leagueName={pendingName}
-          onClose={() => setShowPayment(false)}
-          onSuccess={handlePaymentSuccess}
-        />
-      )}
     </div>
   )
 }
