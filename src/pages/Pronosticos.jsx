@@ -92,14 +92,19 @@ function ScoreInput({ value, onChange, disabled }) {
   return (
     <input
       type="number"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      enterKeyHint="next"
       min="0"
       max="99"
       value={value}
+      onFocus={e => e.target.select()}
       onChange={e => onChange(Math.max(0, Math.min(99, parseInt(e.target.value) || 0)))}
       disabled={disabled}
-      className="w-12 h-12 text-center text-xl font-bold bg-white border border-stone-300 rounded-xl text-stone-900
+      className="w-14 h-14 sm:w-12 sm:h-12 text-center text-2xl sm:text-xl font-bold bg-white border border-stone-300 rounded-xl text-stone-900
                  focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500
-                 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm
+                 touch-manipulation"
     />
   )
 }

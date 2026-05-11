@@ -11,6 +11,7 @@ import Clasificacion from './pages/Clasificacion'
 import Resultados from './pages/Resultados'
 import Bracket from './pages/Bracket'
 import Reglas from './pages/Reglas'
+import Extras from './pages/Extras'
 import JoinLeague from './pages/JoinLeague'
 import Spinner from './components/Spinner'
 import NotFound from './pages/NotFound'
@@ -50,6 +51,7 @@ export default function App() {
           >
             <Route index element={<Navigate to="/pronosticos" replace />} />
             <Route path="pronosticos"   element={<Pronosticos />} />
+            <Route path="extras"        element={<Extras />} />
             <Route path="clasificacion" element={<Clasificacion />} />
             <Route path="resultados"    element={<Resultados />} />
             <Route path="bracket"       element={<Bracket />} />
