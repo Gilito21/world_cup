@@ -29,12 +29,16 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       // INITIAL_SESSION duplicates what getSession() already handles above
       if (event === 'INITIAL_SESSION') return
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        // TOKEN_REFRESHED solo renueva el JWT, no hace falta recargar el perfil
-        if (event !== 'TOKEN_REFRESHED') {
-          await fetchProfile(session.user.id)
-        }
+      // TOKEN_REFRESHED solo renueva el JWT — el user es el mismo. No reemplazar
+      // la referencia evita re-renders en toda la app cada vez que Supabase
+      // refresca el token (cada ~50 min y también al volver a la pestaña).
+      if (event === 'TOKEN_REFRESHED') return
+      const nextUser = session?.user ?? null
+      // Idempotencia: si el id no cambia no tocamos la referencia para no
+      // forzar re-renders innecesarios en los consumidores del contexto.
+      setUser(prev => (prev?.id === nextUser?.id ? prev : nextUser))
+      if (nextUser) {
+        await fetchProfile(nextUser.id)
       } else {
         setProfile(null)
         setLoading(false)
