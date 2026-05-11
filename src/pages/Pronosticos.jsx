@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase, sq } from '../lib/supabase'
+import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
@@ -508,7 +509,7 @@ export default function Pronosticos() {
   const { activeLeague, leagues, loading: leagueLoading } = useLeague()
   const predictionMode = activeLeague?.prediction_mode ?? 'global'
 
-  const [matches,     setMatches]     = useState([])
+  const [matches,     setMatches]     = useState(() => getMatchCache() ?? [])
   const [predictions, setPredictions] = useState({})
   const [drafts,      setDrafts]      = useState({})
   const [loading,     setLoading]     = useState(true)
@@ -541,12 +542,15 @@ export default function Pronosticos() {
           ? supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).eq('league_id', activeLeague.id).maybeSingle()
           : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).maybeSingle()
 
+        const cachedMatches = getMatchCache()
         const [
           { data: matchData },
           { data: predData },
           { data: subData },
         ] = await Promise.all([
-          sq(supabase.from('matches').select('*').order('match_date')),
+          cachedMatches
+            ? Promise.resolve({ data: cachedMatches })
+            : sq(supabase.from('matches').select('*').order('match_date')),
           sq(predQuery),
           sq(subQuery),
         ])
@@ -554,6 +558,7 @@ export default function Pronosticos() {
         if (cancelled) return
 
         if (matchData) {
+          setMatchCache(matchData)
           setMatches(matchData)
           // Cutoff = 1 hour before the first group-stage match
           const firstGroup = matchData.find(m => m.stage === 'group') ?? matchData[0]
