@@ -22,7 +22,7 @@ export default function Reglas() {
 
       {/* 2. Fecha límite */}
       <Section icon="⏰" title="Fecha límite de envío">
-        <p>Los pronósticos se cierran <strong>1 hora antes del primer partido del Mundial</strong> (11 de junio de 2026, México vs. ????). A partir de ese momento no se aceptan nuevos envíos ni modificaciones.</p>
+        <p>Los pronósticos se cierran <strong>1 hora antes del primer partido del Mundial</strong> (11 de junio de 2026, México vs. Sudáfrica). A partir de ese momento no se aceptan nuevos envíos ni modificaciones.</p>
         <Callout type="info">
           La cuenta atrás aparece en la parte superior de la pantalla de Pronósticos. Envía con tiempo.
         </Callout>
