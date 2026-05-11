@@ -409,9 +409,25 @@ export function advanceKnockoutRound(finishedMatches) {
  */
 export function buildFullBracket(allMatches) {
   // ── Group stage ────────────────────────────────────────────────────────────
-  const standings  = computeAllStandings(allMatches)
-  const qualifiers = getQualifiers(standings)
-  const r32        = buildRoundOf32(standings)
+  const standings = computeAllStandings(allMatches)
+
+  // Only resolve a group's bracket slots once all its matches are finished.
+  // Partial groups return [] so R32 slots show TBD instead of alphabetical placeholders.
+  const groupMatchCount    = {}
+  const groupFinishedCount = {}
+  for (const m of allMatches) {
+    if (m.stage !== 'group' || !m.group_name) continue
+    groupMatchCount[m.group_name]    = (groupMatchCount[m.group_name]    ?? 0) + 1
+    if (m.status === 'finished') groupFinishedCount[m.group_name] = (groupFinishedCount[m.group_name] ?? 0) + 1
+  }
+  const resolvedStandings = Object.fromEntries(
+    Object.entries(standings).map(([g, s]) =>
+      [g, groupMatchCount[g] > 0 && groupMatchCount[g] === (groupFinishedCount[g] ?? 0) ? s : []]
+    )
+  )
+
+  const qualifiers = getQualifiers(resolvedStandings)
+  const r32        = buildRoundOf32(resolvedStandings)
 
   // ── Knockout progression ───────────────────────────────────────────────────
   // Collect all finished knockout matches in every stage
