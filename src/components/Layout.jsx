@@ -5,13 +5,20 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import LeagueSwitcher from './LeagueSwitcher'
 
+// Pestañas principales. En móvil mostramos las 5 que también aparecen
+// en MOBILE_NAV; "Reglas" se accede desde el menú del avatar para no
+// saturar la barra inferior con 6 elementos.
 const NAV = [
   { to: '/pronosticos',   label: 'Pronósticos',   short: 'Pronós.',   icon: '🎯' },
+  { to: '/extras',        label: 'Extras',        short: 'Extras',    icon: '🎲' },
   { to: '/clasificacion', label: 'Clasificación', short: 'Ranking',   icon: '🏆' },
   { to: '/resultados',    label: 'Resultados',    short: 'Result.',   icon: '📋' },
   { to: '/bracket',       label: 'Bracket',       short: 'Bracket',   icon: '⚽' },
   { to: '/reglas',        label: 'Cómo funciona', short: 'Reglas',    icon: '📖' },
 ]
+
+// Bottom-bar (móvil): un máximo de 5 ítems para no saturar.
+const MOBILE_NAV = NAV.filter(n => n.to !== '/reglas')
 
 // ── Avatar/menú del usuario para móvil (perfil + salir) ────────────────────
 function MobileUserMenu({ profile, onSignOut }) {
@@ -58,6 +65,14 @@ function MobileUserMenu({ profile, onSignOut }) {
               <div className="text-sm font-semibold text-stone-900 truncate">{profile?.username ?? 'Perfil'}</div>
               <div className="text-xs text-stone-500">{profile?.total_points ?? 0} pts totales</div>
             </div>
+          </Link>
+          <Link
+            to="/reglas"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 hover:bg-stone-100"
+          >
+            <span className="text-base">📖</span>
+            <span className="text-sm text-stone-700">Cómo funciona</span>
           </Link>
           <div className="border-t border-stone-200 my-1" />
           <button
@@ -185,7 +200,7 @@ export default function Layout() {
         aria-label="Navegación principal"
       >
         <div className="grid grid-cols-5">
-          {NAV.map(({ to, short, icon }) => (
+          {MOBILE_NAV.map(({ to, short, icon }) => (
             <NavLink
               key={to}
               to={to}
