@@ -172,6 +172,7 @@ export default function Clasificacion() {
   const { user }                                   = useAuth()
   const { activeLeague, leagues, setActiveLeague } = useLeague()
   const [tab, setTab]                   = useState('global')
+  const [search, setSearch]             = useState('')
   const [globalStandings, setGlobalStandings]   = useState(() => getCache('lb:global') ?? [])
   const [leagueStandings, setLeagueStandings]   = useState([])
   const [companyStandings, setCompanyStandings] = useState(() => getCache('lb:companies') ?? [])
@@ -322,13 +323,36 @@ export default function Clasificacion() {
 
   // ── Render helpers ────────────────────────────────────────────────────────
 
-  function handleTabChange(newTab) { setTab(newTab) }
+  function handleTabChange(newTab) {
+    setSearch('')
+    setTab(newTab)
+  }
 
   const tabs = [
     { id: 'global',    label: 'Global',   icon: '🌐' },
     { id: 'league',    label: 'Mi Liga',  icon: '🏆' },
     { id: 'companies', label: 'Empresas', icon: '🏢' },
   ]
+
+  // Filtered views — case-insensitive match on username (or company name)
+  const q = search.trim().toLowerCase()
+  const matchUser = entry =>
+    !q ||
+    entry.username?.toLowerCase().includes(q) ||
+    entry.company?.toLowerCase().includes(q)
+
+  const filteredGlobal    = q ? globalStandings.filter(matchUser)    : globalStandings
+  const filteredLeague    = q ? leagueStandings.filter(matchUser)    : leagueStandings
+  const filteredCompanies = q
+    ? companyStandings.filter(c =>
+        c.name?.toLowerCase().includes(q) ||
+        c.top?.username?.toLowerCase().includes(q)
+      )
+    : companyStandings
+
+  const searchPlaceholder = tab === 'companies'
+    ? 'Buscar empresa…'
+    : 'Buscar jugador por nombre o empresa…'
 
   // ── Individual table ──────────────────────────────────────────────────────
 
@@ -478,6 +502,27 @@ export default function Clasificacion() {
         ))}
       </div>
 
+      {/* Search */}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm pointer-events-none">🔍</span>
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder={searchPlaceholder}
+          className="w-full pl-9 pr-9 py-2 text-sm bg-white border border-stone-200 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 text-lg leading-none"
+            aria-label="Limpiar búsqueda"
+          >
+            ×
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <div className="flex justify-center items-center py-20"><Spinner size="lg" /></div>
       ) : (
@@ -486,9 +531,18 @@ export default function Clasificacion() {
           {tab === 'global' && (
             <>
               <p className="text-stone-400 text-sm -mt-2">
-                {globalStandings.length} participante{globalStandings.length !== 1 ? 's' : ''} en total
+                {q
+                  ? `${filteredGlobal.length} resultado${filteredGlobal.length !== 1 ? 's' : ''} de ${globalStandings.length}`
+                  : `${globalStandings.length} participante${globalStandings.length !== 1 ? 's' : ''} en total`}
               </p>
-              <IndividualTable standings={globalStandings} />
+              {q && filteredGlobal.length === 0 ? (
+                <div className="card p-10 text-center">
+                  <div className="text-4xl mb-3">🔍</div>
+                  <p className="text-stone-400">Sin resultados para "{search}".</p>
+                </div>
+              ) : (
+                <IndividualTable standings={filteredGlobal} />
+              )}
             </>
           )}
 
@@ -522,9 +576,18 @@ export default function Clasificacion() {
                     </div>
                   )}
                   <p className="text-stone-400 text-sm -mt-2">
-                    {activeLeague?.name} · {leagueStandings.length} participante{leagueStandings.length !== 1 ? 's' : ''}
+                    {activeLeague?.name} · {q
+                      ? `${filteredLeague.length} resultado${filteredLeague.length !== 1 ? 's' : ''} de ${leagueStandings.length}`
+                      : `${leagueStandings.length} participante${leagueStandings.length !== 1 ? 's' : ''}`}
                   </p>
-                  <IndividualTable standings={leagueStandings} showStats />
+                  {q && filteredLeague.length === 0 ? (
+                    <div className="card p-10 text-center">
+                      <div className="text-4xl mb-3">🔍</div>
+                      <p className="text-stone-400">Sin resultados para "{search}".</p>
+                    </div>
+                  ) : (
+                    <IndividualTable standings={filteredLeague} showStats />
+                  )}
                   <p className="text-center text-stone-400 text-xs">
                     Los puntos se calculan de los pronósticos de cada jugador en esta liga
                   </p>
@@ -537,12 +600,19 @@ export default function Clasificacion() {
           {tab === 'companies' && (
             <>
               <p className="text-stone-400 text-sm -mt-2">
-                Media de puntos por empleado · {companyStandings.length} empresa{companyStandings.length !== 1 ? 's' : ''}
+                {q
+                  ? `${filteredCompanies.length} resultado${filteredCompanies.length !== 1 ? 's' : ''} de ${companyStandings.length}`
+                  : `Media de puntos por empleado · ${companyStandings.length} empresa${companyStandings.length !== 1 ? 's' : ''}`}
               </p>
               {companyStandings.length === 0 ? (
                 <div className="card p-10 text-center">
                   <div className="text-4xl mb-3">🏢</div>
                   <p className="text-stone-400">Ningún usuario ha indicado su empresa todavía.</p>
+                </div>
+              ) : filteredCompanies.length === 0 ? (
+                <div className="card p-10 text-center">
+                  <div className="text-4xl mb-3">🔍</div>
+                  <p className="text-stone-400">Sin resultados para "{search}".</p>
                 </div>
               ) : (
                 <div className="card overflow-hidden">
@@ -553,7 +623,7 @@ export default function Clasificacion() {
                     <div className="text-right">Media pts</div>
                   </div>
                   <div className="divide-y divide-stone-200">
-                    {companyStandings.map(entry => {
+                    {filteredCompanies.map(entry => {
                       const isTop       = entry.position <= 3
                       const isMyCompany = entry.hasMe
                       return (
