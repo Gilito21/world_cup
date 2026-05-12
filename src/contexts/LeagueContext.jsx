@@ -124,12 +124,20 @@ export function LeagueProvider({ children }) {
     const already = leagues.find(l => l.id === league.id)
     if (already) throw new Error('Ya eres miembro de esta liga.')
 
+    // Comprobar aforo antes de insertar
+    const { count } = await supabase
+      .from('league_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('league_id', league.id)
+    if (count >= 40) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
+
     const { error: memberError } = await supabase
       .from('league_members')
       .insert({ league_id: league.id, user_id: user.id, role: 'member' })
 
     if (memberError) {
-      if (memberError.code === '23505') throw new Error('Ya eres miembro de esta liga.')
+      if (memberError.code === '23505')  throw new Error('Ya eres miembro de esta liga.')
+      if (memberError.message?.includes('league_full')) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
       throw memberError
     }
 
