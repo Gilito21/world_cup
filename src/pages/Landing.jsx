@@ -289,9 +289,12 @@ export default function Landing() {
       </section>
 
       {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="border-t border-stone-100 bg-stone-50 px-5 py-6 text-center">
+      <footer className="border-t border-stone-100 bg-stone-50 px-5 py-6 text-center space-y-1">
         <p className="text-stone-400 text-xs">
           ⚽ Porra Mundial 2026 · Hecho con pasión por el fútbol
+        </p>
+        <p className="text-stone-400 text-xs">
+          <Link to="/privacidad" className="hover:text-stone-600 underline underline-offset-2">Política de privacidad</Link>
         </p>
       </footer>
 

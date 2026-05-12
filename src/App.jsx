@@ -13,6 +13,7 @@ import Bracket from './pages/Bracket'
 import Reglas from './pages/Reglas'
 import Extras from './pages/Extras'
 import JoinLeague from './pages/JoinLeague'
+import Privacidad from './pages/Privacidad'
 import Spinner from './components/Spinner'
 import NotFound from './pages/NotFound'
 
@@ -57,8 +58,9 @@ export default function App() {
             <Route path="/reglas"        element={<Reglas />} />
             <Route path="/perfil"        element={<Perfil />} />
           </Route>
-          <Route path="/join/:code" element={<JoinLeague />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="/join/:code"  element={<JoinLeague />} />
+          <Route path="/privacidad" element={<Privacidad />} />
+          <Route path="*"           element={<NotFound />} />
         </Routes>
       )}
     </LeagueProvider>

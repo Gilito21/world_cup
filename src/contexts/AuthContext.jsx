@@ -107,7 +107,7 @@ export function AuthProvider({ children }) {
     // Notificar al admin en background — no bloqueamos ni lanzamos error si falla
     supabase.functions.invoke('notify-new-user', {
       body: { email, username, company: company || '' },
-    }).catch(() => {})
+    }).catch(err => console.error('notify-new-user failed:', err))
     return data
   }
 
