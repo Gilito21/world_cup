@@ -7,9 +7,11 @@ export default function Perfil() {
   const { user, profile, refreshProfile } = useAuth()
   const [stats, setStats]               = useState(null)
   const [loadingStats, setLoadingStats] = useState(true)
-  const [uploading, setUploading]       = useState(false)
-  const [uploadError, setUploadError]   = useState('')
-  const [avatarUrl, setAvatarUrl]       = useState(profile?.avatar_url ?? null)
+  const [uploading, setUploading]             = useState(false)
+  const [uploadError, setUploadError]         = useState('')
+  const [avatarUrl, setAvatarUrl]             = useState(profile?.avatar_url ?? null)
+  const [emailReminders, setEmailReminders]   = useState(profile?.email_reminders ?? false)
+  const [savingReminders, setSavingReminders] = useState(false)
   const fileInputRef = useRef(null)
 
   useEffect(() => {
@@ -18,7 +20,16 @@ export default function Perfil() {
 
   useEffect(() => {
     setAvatarUrl(profile?.avatar_url ?? null)
-  }, [profile?.avatar_url])
+    setEmailReminders(profile?.email_reminders ?? false)
+  }, [profile?.avatar_url, profile?.email_reminders])
+
+  async function handleToggleReminders() {
+    setSavingReminders(true)
+    const newVal = !emailReminders
+    setEmailReminders(newVal)
+    await supabase.from('profiles').update({ email_reminders: newVal }).eq('id', user.id)
+    setSavingReminders(false)
+  }
 
   async function loadStats() {
     const { data } = await supabase
@@ -152,6 +163,32 @@ export default function Perfil() {
         <p className="mt-3 text-xs text-stone-400">
           Haz clic en la foto para cambiarla · Máx. 2 MB
         </p>
+      </div>
+
+      {/* Notificaciones */}
+      <div>
+        <h3 className="text-sm font-semibold text-stone-400 uppercase tracking-wider mb-3">Notificaciones</h3>
+        <div className="card p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-stone-900">Recordatorios por email</p>
+              <p className="text-xs text-stone-400 mt-0.5 leading-relaxed">
+                Recibe un aviso cuando un partido empiece en menos de 2 horas y no hayas pronosticado.
+              </p>
+            </div>
+            <button
+              onClick={handleToggleReminders}
+              disabled={savingReminders}
+              className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
+                emailReminders ? 'bg-amber-500' : 'bg-stone-200'
+              }`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                emailReminders ? 'translate-x-5' : 'translate-x-0'
+              }`} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Estadísticas */}
