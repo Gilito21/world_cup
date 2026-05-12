@@ -24,7 +24,7 @@ export default function Privacidad() {
           <section>
             <h2 className="text-lg font-semibold text-stone-900 mb-3">1. Responsable del tratamiento</h2>
             <p>
-              El responsable del tratamiento de los datos personales recogidos en esta aplicación es <strong>BlueBull Partners</strong>,
+              El responsable del tratamiento de los datos personales recogidos en esta aplicación es <strong>Porra de Empresas</strong>,
               con dirección de contacto en <a href="mailto:porra@porradeempresas.com" className="text-amber-600 hover:underline">porra@porradeempresas.com</a>.
             </p>
           </section>
