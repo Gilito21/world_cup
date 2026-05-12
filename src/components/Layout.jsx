@@ -6,6 +6,7 @@ import { useLeague } from '../contexts/LeagueContext'
 import { supabase } from '../lib/supabase'
 import LeagueSwitcher from './LeagueSwitcher'
 import PaymentModal from './PaymentModal'
+import ReportButton from './ReportButton'
 
 // Pestañas principales. En móvil mostramos las 5 que también aparecen
 // en MOBILE_NAV; "Reglas" se accede desde el menú del avatar para no
@@ -91,7 +92,7 @@ function MobileUserMenu({ profile, onSignOut }) {
 }
 
 export default function Layout() {
-  const { profile, signOut } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const { activeLeague, onLeagueCreated } = useLeague()
   const navigate = useNavigate()
 
@@ -249,6 +250,8 @@ export default function Layout() {
           onClose={handlePaymentClose}
         />
       )}
+
+      <ReportButton username={profile?.username} userEmail={user?.email} />
 
       {/* ── BOTTOM NAV (solo móvil) ──────────────────────────── */}
       <nav
