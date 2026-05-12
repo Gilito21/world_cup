@@ -108,6 +108,14 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'payment_not_completed', stripe_status: intent.status }, 402)
   }
 
+  // ── Comprobar que no existe ya una liga con ese nombre (case-insensitive) ──
+  const { data: existingLeagueName } = await admin
+    .from('leagues')
+    .select('id')
+    .ilike('name', existingPay.league_name)
+    .maybeSingle()
+  if (existingLeagueName) return json({ error: 'league_name_taken' }, 409)
+
   // ── Crea la liga + admin membership ──
   // Genera invite_code único — reintenta en colisión (muy raro).
   let inviteCode = generateInviteCode()
