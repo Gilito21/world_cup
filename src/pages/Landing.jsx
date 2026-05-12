@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import ReportButton from '../components/ReportButton'
 
 const WORLD_CUP_TS = new Date('2026-06-11T21:00:00Z').getTime()
 
@@ -298,6 +299,8 @@ export default function Landing() {
       <div className="fixed bottom-5 left-4 sm:left-6 z-30 pointer-events-none">
         <ActivityToast />
       </div>
+
+      <ReportButton />
 
     </div>
   )

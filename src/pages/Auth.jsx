@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from '../components/Spinner'
+import ReportButton from '../components/ReportButton'
 
 // Aliases de empresa: abreviatura → nombre(s) canónico(s)
 const COMPANY_ALIASES = {
@@ -79,6 +80,7 @@ function ForgotPassword({ onBack }) {
 
   return (
     <AuthBg>
+      <ReportButton />
       <div className="relative w-full max-w-sm animate-slide-up">
         <Link to="/" className="flex items-center justify-center gap-2 mb-6 text-stone-600 hover:text-stone-900 transition-colors text-sm font-medium">
           <span>⚽</span>
@@ -326,6 +328,7 @@ export default function Auth() {
     const inviteLink = `${window.location.origin}/join/${createdCode}`
     return (
       <AuthBg>
+        <ReportButton />
         <div className="relative w-full max-w-sm animate-slide-up space-y-4">
           <div className="text-center">
             <div className="text-5xl mb-2">🎉</div>
@@ -358,6 +361,7 @@ export default function Auth() {
 
   return (
     <AuthBg>
+      <ReportButton />
       <div className="relative w-full max-w-md animate-slide-up">
 
         {/* Back to landing */}
