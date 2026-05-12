@@ -25,7 +25,7 @@ export default function Privacidad() {
             <h2 className="text-lg font-semibold text-stone-900 mb-3">1. Responsable del tratamiento</h2>
             <p>
               El responsable del tratamiento de los datos personales recogidos en esta aplicación es <strong>BlueBull Partners</strong>,
-              con dirección de contacto en <a href="mailto:jpelaez@bluebullpartners.com" className="text-amber-600 hover:underline">jpelaez@bluebullpartners.com</a>.
+              con dirección de contacto en <a href="mailto:porra@porradeempresas.com" className="text-amber-600 hover:underline">porra@porradeempresas.com</a>.
             </p>
           </section>
 
@@ -82,7 +82,7 @@ export default function Privacidad() {
             </ul>
             <p className="mt-3">
               Para ejercer cualquiera de estos derechos, escríbenos a{' '}
-              <a href="mailto:jpelaez@bluebullpartners.com" className="text-amber-600 hover:underline">jpelaez@bluebullpartners.com</a>.
+              <a href="mailto:porra@porradeempresas.com" className="text-amber-600 hover:underline">porra@porradeempresas.com</a>.
               Responderemos en un plazo máximo de 30 días.
             </p>
           </section>
@@ -99,7 +99,7 @@ export default function Privacidad() {
             <h2 className="text-lg font-semibold text-stone-900 mb-3">8. Contacto</h2>
             <p>
               Para cualquier consulta sobre privacidad, puedes contactarnos en{' '}
-              <a href="mailto:jpelaez@bluebullpartners.com" className="text-amber-600 hover:underline">jpelaez@bluebullpartners.com</a>.
+              <a href="mailto:porra@porradeempresas.com" className="text-amber-600 hover:underline">porra@porradeempresas.com</a>.
             </p>
           </section>
 
