@@ -581,8 +581,8 @@ export default function Pronosticos() {
           : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
 
         const subQuery = (predictionMode === 'per_league' && activeLeague)
-          ? supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).eq('league_id', activeLeague.id).maybeSingle()
-          : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).maybeSingle()
+          ? supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).eq('league_id', activeLeague.id).eq('source', 'matches').maybeSingle()
+          : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).eq('source', 'matches').maybeSingle()
 
         const cachedMatches = getMatchCache()
         const [
@@ -781,7 +781,7 @@ export default function Pronosticos() {
       const leagueId = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : null
       const { error: err } = await supabase
         .from('prediction_submissions')
-        .insert({ user_id: user.id, league_id: leagueId })
+        .insert({ user_id: user.id, league_id: leagueId, source: 'matches' })
 
       if (err) throw err
 

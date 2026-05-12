@@ -45,10 +45,128 @@ function CutoffCountdown({ cutoffTime }) {
   )
 }
 
-// ─── Pregunta tipo "choice" (Mbappé vs Lamine) ─────────────────────────────
+// ─── Panel de envío ────────────────────────────────────────────────────────
+function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submittedAt, onSubmit, submitting }) {
+  const [, force] = useState(0)
+  useEffect(() => {
+    if (!cutoffTime) return
+    const t = setInterval(() => force(n => n + 1), 1000)
+    return () => clearInterval(t)
+  }, [cutoffTime])
+
+  const isPastCutoff = !!(cutoffTime && Date.now() >= cutoffTime)
+  const isComplete   = answeredCount === totalCount && totalCount > 0
+  const canSubmit    = isComplete && !isPastCutoff && !isSubmitted
+  const pct          = totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0
+
+  if (isSubmitted) {
+    return (
+      <div className="card p-3 sm:p-4 bg-green-50/80 border-green-200 flex items-center gap-3">
+        <span className="text-2xl sm:text-3xl flex-shrink-0">✅</span>
+        <div className="min-w-0">
+          <p className="font-bold text-green-700 text-sm sm:text-base">Respuestas extra enviadas</p>
+          <p className="text-[11px] sm:text-xs text-green-600 mt-0.5">
+            {submittedAt
+              ? new Date(submittedAt).toLocaleDateString('es-ES', {
+                  day: 'numeric', month: 'short',
+                  hour: '2-digit', minute: '2-digit',
+                })
+              : ''}
+            {' · '}{totalCount} preguntas · No modificable
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
+      {/* Progress bar */}
+      <div>
+        <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
+          <span className="text-stone-500 font-medium">Progreso de las respuestas</span>
+          <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-stone-600'}`}>
+            {answeredCount} / {totalCount}
+          </span>
+        </div>
+        <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-amber-500'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+
+      {cutoffTime && !isPastCutoff && (
+        <p className="text-xs text-stone-400 flex items-center gap-1.5 flex-wrap">
+          <span>⏰ El plazo cierra 1 hora antes del primer partido:</span>
+          <CutoffCountdown cutoffTime={cutoffTime} />
+        </p>
+      )}
+
+      {isPastCutoff && (
+        <div className="flex items-center gap-2 text-sm text-red-500 font-medium">
+          <span>🔒</span>
+          <span>El período de pronósticos extra ha cerrado.</span>
+        </div>
+      )}
+
+      {!isPastCutoff && (
+        <button
+          onClick={onSubmit}
+          disabled={!canSubmit || submitting}
+          className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-3"
+        >
+          {submitting ? <Spinner size="sm" /> : <span>🎲</span>}
+          {isComplete
+            ? 'Enviar respuestas extra'
+            : `Falta${totalCount - answeredCount !== 1 ? 'n' : ''} ${totalCount - answeredCount} pregunta${totalCount - answeredCount !== 1 ? 's' : ''} por responder`}
+        </button>
+      )}
+
+      {!isComplete && !isPastCutoff && (
+        <p className="text-xs text-center text-stone-400">
+          Responde todas las preguntas antes de poder enviar.
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ─── Modal de confirmación ─────────────────────────────────────────────────
+function ConfirmModal({ onConfirm, onCancel, submitting }) {
+  return (
+    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 animate-slide-up">
+        <h3 className="text-xl font-bold text-stone-900">¿Enviar respuestas extra?</h3>
+        <p className="text-stone-500 text-sm leading-relaxed">
+          Una vez enviadas <strong className="text-stone-800">no podrás modificarlas</strong>. Comprueba que estás conforme antes de confirmar.
+        </p>
+        <div className="flex gap-3 pt-1">
+          <button
+            onClick={onCancel}
+            disabled={submitting}
+            className="flex-1 btn-secondary text-sm"
+          >
+            Revisar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={submitting}
+            className="flex-1 btn-primary flex items-center justify-center gap-2 text-sm"
+          >
+            {submitting && <Spinner size="sm" />}
+            Enviar definitivamente
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Pregunta tipo "choice" ────────────────────────────────────────────────
 function ChoiceQuestion({ question, value, onSelect, locked }) {
   const opts = question.options ?? []
-
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-3">
       {opts.map(opt => {
@@ -87,8 +205,8 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
   )
 }
 
-// ─── Pregunta tipo "player" (Pichichi) ─────────────────────────────────────
-function PlayerQuestion({ value, draft, onDraft, onSave, locked, saving }) {
+// ─── Pregunta tipo "player" ────────────────────────────────────────────────
+function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
   const trimmed   = (draft ?? '').trim()
   const isDirty   = trimmed !== (value ?? '')
   const canSubmit = !!trimmed && isDirty && !locked
@@ -112,7 +230,7 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked, saving }) {
           disabled={!canSubmit}
           className="btn-primary text-sm px-4"
         >
-          {saving ? <Spinner size="sm" /> : value && !isDirty ? '✓' : 'Guardar'}
+          {value && !isDirty ? '✓' : 'Guardar'}
         </button>
       </div>
 
@@ -142,14 +260,14 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked, saving }) {
       )}
 
       {value && !isDirty && (
-        <p className="text-xs text-green-600">Guardado: <strong>{value}</strong></p>
+        <p className="text-xs text-green-600">Guardado en borrador: <strong>{value}</strong></p>
       )}
     </div>
   )
 }
 
-// ─── Pregunta tipo "number" (total tarjetas) ───────────────────────────────
-function NumberQuestion({ value, draft, onDraft, onSave, locked, saving }) {
+// ─── Pregunta tipo "number" ────────────────────────────────────────────────
+function NumberQuestion({ value, draft, onDraft, onSave, locked }) {
   const parsed    = draft === '' || draft == null ? null : parseInt(draft, 10)
   const isValid   = parsed !== null && Number.isFinite(parsed) && parsed >= 0 && parsed <= 9999
   const isDirty   = parsed !== value
@@ -178,7 +296,7 @@ function NumberQuestion({ value, draft, onDraft, onSave, locked, saving }) {
           disabled={!canSubmit}
           className="btn-primary text-sm px-4"
         >
-          {saving ? <Spinner size="sm" /> : value != null && !isDirty ? '✓' : 'Guardar'}
+          {value != null && !isDirty ? '✓' : 'Guardar'}
         </button>
       </div>
 
@@ -190,27 +308,18 @@ function NumberQuestion({ value, draft, onDraft, onSave, locked, saving }) {
       )}
 
       {value != null && !isDirty && (
-        <p className="text-xs text-green-600">Guardado: <strong className="tabular-nums">{value}</strong></p>
+        <p className="text-xs text-green-600">Guardado en borrador: <strong className="tabular-nums">{value}</strong></p>
       )}
     </div>
   )
 }
 
 // ─── Card de una pregunta ──────────────────────────────────────────────────
-function QuestionCard({
-  question,
-  prediction,
-  draft,
-  onDraft,
-  onSelect,
-  onSave,
-  locked,
-  saving,
-}) {
+function QuestionCard({ question, answer, draft, onDraft, onSelect, onSave, locked }) {
   const value =
-    question.kind === 'choice' ? prediction?.answer_choice
-    : question.kind === 'player' ? prediction?.answer_player
-    : prediction?.answer_number
+    question.kind === 'choice' ? answer?.answer_choice
+    : question.kind === 'player' ? answer?.answer_player
+    : answer?.answer_number
 
   return (
     <article className="card p-3 sm:p-5 space-y-3 sm:space-y-4">
@@ -236,99 +345,88 @@ function QuestionCard({
         <ChoiceQuestion question={question} value={value} onSelect={onSelect} locked={locked} />
       )}
       {question.kind === 'player' && (
-        <PlayerQuestion
-          value={value}
-          draft={draft}
-          onDraft={onDraft}
-          onSave={onSave}
-          locked={locked}
-          saving={saving}
-        />
+        <PlayerQuestion value={value} draft={draft} onDraft={onDraft} onSave={onSave} locked={locked} />
       )}
       {question.kind === 'number' && (
-        <NumberQuestion
-          value={value}
-          draft={draft}
-          onDraft={onDraft}
-          onSave={onSave}
-          locked={locked}
-          saving={saving}
-        />
+        <NumberQuestion value={value} draft={draft} onDraft={onDraft} onSave={onSave} locked={locked} />
       )}
     </article>
   )
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────
+// ─── Página principal ──────────────────────────────────────────────────────
 export default function Extras() {
-  const { user }                  = useAuth()
+  const { user }         = useAuth()
   const { activeLeague, loading: leagueLoading } = useLeague()
-  const predictionMode = activeLeague?.prediction_mode ?? 'global'
-  const leagueIdForPred = predictionMode === 'per_league' ? activeLeague?.id ?? null : null
+  const predictionMode   = activeLeague?.prediction_mode ?? 'global'
+  const leagueIdForPred  = predictionMode === 'per_league' ? activeLeague?.id ?? null : null
 
-  const [questions,      setQuestions]      = useState([])
-  const [predictions,    setPredictions]    = useState({})  // keyed by question_key
-  const [drafts,         setDrafts]         = useState({})  // free-text drafts
-  const [loading,        setLoading]        = useState(true)
-  const [savingKey,      setSavingKey]      = useState(null)
-  const [cutoffTime,     setCutoffTime]     = useState(null)
-  const [error,          setError]          = useState('')
-  const [showResetModal, setShowResetModal] = useState(false)
-  const [resetting,      setResetting]      = useState(false)
-  const [resetDone,      setResetDone]      = useState(false)
+  const [questions,    setQuestions]    = useState([])
+  // Respuestas locales (borrador). Se escriben en BD solo al enviar.
+  const [answers,      setAnswers]      = useState({})  // { [key]: { answer_choice, answer_player, answer_number } }
+  const [textDrafts,   setTextDrafts]   = useState({})  // valores de los inputs de texto
+  const [loading,      setLoading]      = useState(true)
+  const [cutoffTime,   setCutoffTime]   = useState(null)
+  const [isSubmitted,  setIsSubmitted]  = useState(false)
+  const [submittedAt,  setSubmittedAt]  = useState(null)
+  const [submitting,   setSubmitting]   = useState(false)
+  const [showConfirm,  setShowConfirm]  = useState(false)
+  const [error,        setError]        = useState('')
 
-  // ── Fetch all data ────────────────────────────────────────────────────
+  // ── Fetch all data ──────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
     if (!user || leagueLoading) return
     setLoading(true)
     setError('')
-
     try {
-      // Matches: usar el caché si lo hay (Pronosticos ya los habrá cargado).
-      const cachedMatches = getMatchCache()
+      const cachedMatches  = getMatchCache()
       const matchesPromise = cachedMatches
         ? Promise.resolve({ data: cachedMatches })
         : sq(supabase.from('matches').select('match_date, stage').order('match_date'))
 
       const qPromise = sq(
-        supabase.from('special_questions')
-          .select('*')
-          .order('display_order')
+        supabase.from('special_questions').select('*').order('display_order')
       )
 
       const predQuery = leagueIdForPred
-        ? supabase.from('special_predictions')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('league_id', leagueIdForPred)
-        : supabase.from('special_predictions')
-            .select('*')
-            .eq('user_id', user.id)
-            .is('league_id', null)
-      const pPromise = sq(predQuery)
+        ? supabase.from('special_predictions').select('*').eq('user_id', user.id).eq('league_id', leagueIdForPred)
+        : supabase.from('special_predictions').select('*').eq('user_id', user.id).is('league_id', null)
 
-      const [matchRes, qRes, pRes] = await Promise.all([matchesPromise, qPromise, pPromise])
+      const subQuery = leagueIdForPred
+        ? supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).eq('league_id', leagueIdForPred).eq('source', 'extras').maybeSingle()
+        : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).eq('source', 'extras').maybeSingle()
+
+      const [matchRes, qRes, pRes, subRes] = await Promise.all([
+        matchesPromise, qPromise, sq(predQuery), sq(subQuery),
+      ])
 
       if (matchRes?.data?.length) {
         if (!cachedMatches) setMatchCache(matchRes.data)
         const firstGroup = matchRes.data.find(m => m.stage === 'group') ?? matchRes.data[0]
-        if (firstGroup) {
-          setCutoffTime(new Date(firstGroup.match_date).getTime() - 60 * 60 * 1000)
-        }
+        if (firstGroup) setCutoffTime(new Date(firstGroup.match_date).getTime() - 60 * 60 * 1000)
       }
 
       if (qRes?.data) setQuestions(qRes.data)
 
       if (pRes?.data) {
-        const map = {}
+        const answerMap     = {}
         const initialDrafts = {}
         pRes.data.forEach(p => {
-          map[p.question_key] = p
+          answerMap[p.question_key] = {
+            answer_choice: p.answer_choice,
+            answer_player: p.answer_player,
+            answer_number: p.answer_number,
+          }
           if (p.answer_player != null) initialDrafts[p.question_key] = p.answer_player
           if (p.answer_number != null) initialDrafts[p.question_key] = String(p.answer_number)
         })
-        setPredictions(map)
-        setDrafts(initialDrafts)
+        setAnswers(answerMap)
+        setTextDrafts(initialDrafts)
+      }
+
+      if (subRes?.data) {
+        setIsSubmitted(true)
+        setSubmittedAt(subRes.data.submitted_at)
       }
     } finally {
       setLoading(false)
@@ -337,131 +435,100 @@ export default function Extras() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  const locked = !!(cutoffTime && Date.now() >= cutoffTime)
+  const locked = isSubmitted || !!(cutoffTime && Date.now() >= cutoffTime)
 
-  // ── Tick para refrescar el bloqueo cuando llega el cutoff ────────────
-  const [, force] = useState(0)
-  useEffect(() => {
-    if (!cutoffTime || locked) return
-    const t = setInterval(() => force(n => n + 1), 1000)
-    return () => clearInterval(t)
-  }, [cutoffTime, locked])
-
-  // ── Upsert helper ────────────────────────────────────────────────────
-  async function upsert(question_key, payload) {
+  // ── Handlers de borrador (solo actualizan estado local, sin BD) ─────
+  function handleSelectChoice(key, val) {
     if (locked) return
-    setSavingKey(question_key)
-    setError('')
-
-    const existing = predictions[question_key]
-    try {
-      let result
-      if (existing) {
-        result = await supabase
-          .from('special_predictions')
-          .update({ ...payload, updated_at: new Date().toISOString() })
-          .eq('id', existing.id)
-          .select()
-          .single()
-      } else {
-        result = await supabase
-          .from('special_predictions')
-          .insert({
-            user_id: user.id,
-            league_id: leagueIdForPred,
-            question_key,
-            answer_choice: null,
-            answer_player: null,
-            answer_number: null,
-            ...payload,
-          })
-          .select()
-          .single()
-      }
-
-      if (result.error) throw result.error
-      setPredictions(prev => ({ ...prev, [question_key]: result.data }))
-    } catch (e) {
-      setError(e.message ?? 'No se pudo guardar el pronóstico.')
-    } finally {
-      setSavingKey(null)
-    }
+    setAnswers(prev => ({
+      ...prev,
+      [key]: { answer_choice: val, answer_player: null, answer_number: null },
+    }))
   }
 
-  // ── Reset solo de las respuestas extra ──────────────────────────────
-  async function handleReset() {
-    if (locked || resetting) return
-    setResetting(true)
-    setError('')
-    try {
-      const delSpecial = leagueIdForPred
-        ? supabase.from('special_predictions').delete().eq('user_id', user.id).eq('league_id', leagueIdForPred)
-        : supabase.from('special_predictions').delete().eq('user_id', user.id).is('league_id', null)
-
-      const { error: delErr } = await delSpecial
-      if (delErr) throw delErr
-
-      // Limpiar estado local
-      setPredictions({})
-      setDrafts({})
-      setShowResetModal(false)
-      setResetDone(true)
-      setTimeout(() => setResetDone(false), 4000)
-    } catch (e) {
-      setError(e.message ?? 'No se pudo borrar las respuestas extra.')
-    } finally {
-      setResetting(false)
-    }
-  }
-
-  // ── Handlers por tipo ────────────────────────────────────────────────
-  function handleSelectChoice(question_key, value) {
-    // Para choice: el guardado es inmediato al tocar.
-    if (predictions[question_key]?.answer_choice === value) return
-    upsert(question_key, {
-      answer_choice: value,
-      answer_player: null,
-      answer_number: null,
-    })
-  }
-
-  function handleSaveDraft(question_key, kind) {
-    const d = drafts[question_key] ?? ''
+  function handleSaveDraft(key, kind) {
+    if (locked) return
+    const d = textDrafts[key] ?? ''
     if (kind === 'player') {
       const v = d.trim()
       if (!v) return
-      upsert(question_key, {
-        answer_choice: null,
-        answer_player: v,
-        answer_number: null,
-      })
+      setAnswers(prev => ({
+        ...prev,
+        [key]: { answer_choice: null, answer_player: v, answer_number: null },
+      }))
     } else if (kind === 'number') {
       const n = parseInt(d, 10)
       if (!Number.isFinite(n) || n < 0) return
-      upsert(question_key, {
-        answer_choice: null,
-        answer_player: null,
-        answer_number: n,
-      })
+      setAnswers(prev => ({
+        ...prev,
+        [key]: { answer_choice: null, answer_player: null, answer_number: n },
+      }))
     }
   }
 
-  function setDraft(question_key, value) {
-    setDrafts(prev => ({ ...prev, [question_key]: value }))
+  function setTextDraft(key, val) {
+    setTextDrafts(prev => ({ ...prev, [key]: val }))
   }
 
-  // ── Resumen de progreso ──────────────────────────────────────────────
+  // ── Envío definitivo: escribe todo en BD de una vez ─────────────────
+  async function handleSubmit() {
+    if (locked || submitting) return
+    setSubmitting(true)
+    setError('')
+    try {
+      // 1. Borrar respuestas previas y reinsertar todas
+      const delQuery = leagueIdForPred
+        ? supabase.from('special_predictions').delete().eq('user_id', user.id).eq('league_id', leagueIdForPred)
+        : supabase.from('special_predictions').delete().eq('user_id', user.id).is('league_id', null)
+      const { error: delErr } = await delQuery
+      if (delErr) throw delErr
+
+      const rows = questions
+        .filter(q => answers[q.key])
+        .map(q => ({
+          user_id:       user.id,
+          league_id:     leagueIdForPred,
+          question_key:  q.key,
+          answer_choice: answers[q.key]?.answer_choice ?? null,
+          answer_player: answers[q.key]?.answer_player ?? null,
+          answer_number: answers[q.key]?.answer_number ?? null,
+        }))
+
+      if (rows.length > 0) {
+        const { error: insErr } = await supabase.from('special_predictions').insert(rows)
+        if (insErr) throw insErr
+      }
+
+      // 2. Registrar el envío
+      const { error: subErr } = await supabase
+        .from('prediction_submissions')
+        .insert({ user_id: user.id, league_id: leagueIdForPred, source: 'extras' })
+      if (subErr) throw subErr
+
+      const now = new Date().toISOString()
+      setIsSubmitted(true)
+      setSubmittedAt(now)
+      setShowConfirm(false)
+    } catch (e) {
+      setError(e.message ?? 'Error al enviar las respuestas.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // ── Progreso ────────────────────────────────────────────────────────
   const answeredCount = useMemo(
     () => questions.filter(q => {
-      const p = predictions[q.key]
-      return p && (p.answer_choice != null || (p.answer_player ?? '').trim() !== '' || p.answer_number != null)
+      const a = answers[q.key]
+      if (!a) return false
+      return a.answer_choice != null
+        || (a.answer_player ?? '').trim() !== ''
+        || a.answer_number != null
     }).length,
-    [questions, predictions]
+    [questions, answers]
   )
-  const totalPoints = useMemo(
-    () => questions.reduce((s, q) => s + q.points, 0),
-    [questions]
-  )
+
+  const totalPoints = useMemo(() => questions.reduce((s, q) => s + q.points, 0), [questions])
 
   if (loading) {
     return <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>
@@ -481,19 +548,19 @@ export default function Extras() {
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      {/* Hero */}
+
+      {/* ── Hero ──────────────────────────────────────────────── */}
       <section className="card p-3 sm:p-5">
         <div className="flex items-start gap-2.5 sm:gap-3">
           <span className="text-xl sm:text-3xl">🎲</span>
           <div className="flex-1 min-w-0">
             <h1 className="text-base sm:text-xl font-bold text-stone-900">Preguntas extra</h1>
             <p className="text-[11px] sm:text-sm text-stone-500 mt-0.5">
-              Predicciones a largo plazo. Cierran <strong>1h antes del primer partido</strong>.
+              Responde el borrador y envíalo cuando estés listo. <strong>Una vez enviado no se puede cambiar.</strong>
             </p>
           </div>
         </div>
 
-        {/* Cutoff + progreso */}
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <div className="flex items-center gap-2">
             <span className="text-stone-500">Cierre:</span>
@@ -502,96 +569,53 @@ export default function Extras() {
               : <span className="text-stone-400">—</span>}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-stone-500">Respondidas:</span>
-            <span className="font-semibold tabular-nums text-stone-800">
-              {answeredCount} / {questions.length}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
             <span className="text-stone-500">Máx puntos:</span>
             <span className="font-bold text-amber-600">+{totalPoints}</span>
           </div>
         </div>
-
-        {locked && (
-          <div className="mt-3 px-3 py-2 rounded-lg bg-stone-100 text-stone-600 text-xs">
-            🔒 El plazo ha cerrado. No se pueden modificar las respuestas.
-          </div>
-        )}
       </section>
 
-      {/* Error */}
+      {/* ── Submit panel ──────────────────────────────────────── */}
+      <SubmitPanel
+        answeredCount={answeredCount}
+        totalCount={questions.length}
+        cutoffTime={cutoffTime}
+        isSubmitted={isSubmitted}
+        submittedAt={submittedAt}
+        onSubmit={() => setShowConfirm(true)}
+        submitting={submitting}
+      />
+
+      {/* ── Error ─────────────────────────────────────────────── */}
       {error && (
         <div className="card p-3 text-sm text-red-600 bg-red-50 border-red-200">
           {error}
         </div>
       )}
 
-      {/* Questions */}
+      {/* ── Questions ─────────────────────────────────────────── */}
       <div className="space-y-3">
         {questions.map(q => (
           <QuestionCard
             key={q.key}
             question={q}
-            prediction={predictions[q.key]}
-            draft={drafts[q.key]}
-            onDraft={(v)    => setDraft(q.key, v)}
-            onSelect={(v)   => handleSelectChoice(q.key, v)}
-            onSave={()      => handleSaveDraft(q.key, q.kind)}
-            locked={locked || savingKey === q.key}
-            saving={savingKey === q.key}
+            answer={answers[q.key]}
+            draft={textDrafts[q.key]}
+            onDraft={v   => setTextDraft(q.key, v)}
+            onSelect={v  => handleSelectChoice(q.key, v)}
+            onSave={() => handleSaveDraft(q.key, q.kind)}
+            locked={locked}
           />
         ))}
       </div>
 
-      {/* Reset section */}
-      {!locked && (
-        <section className="card p-3 sm:p-5 border-red-200 space-y-2">
-          <h3 className="text-sm font-semibold text-stone-700">Zona de peligro</h3>
-          <p className="text-xs text-stone-500 leading-relaxed">
-            Borra tus respuestas a las preguntas extra y te permite volver a rellenarlas. <strong>Los pronósticos de partidos no se tocan.</strong>
-          </p>
-          {resetDone && (
-            <p className="text-xs text-green-600 font-medium">Respuestas extra borradas correctamente.</p>
-          )}
-          <button
-            onClick={() => setShowResetModal(true)}
-            className="mt-1 text-sm font-semibold text-red-600 border border-red-300 rounded-lg px-4 py-2 hover:bg-red-50 transition-colors"
-          >
-            Borrar respuestas extra
-          </button>
-        </section>
-      )}
-
-      {/* Confirmation modal */}
-      {showResetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
-            <h2 className="text-lg font-bold text-stone-900">¿Borrar respuestas extra?</h2>
-            <p className="text-sm text-stone-600 leading-relaxed">
-              Se borrarán tus respuestas a las <strong>preguntas extra</strong> (MVP, Mbappé vs Lamine, tarjetas). Podrás volver a contestarlas antes del cierre.
-              <br /><br />
-              Los pronósticos de partidos <strong>no se modifican</strong>.
-            </p>
-            <div className="flex gap-3 justify-end pt-1">
-              <button
-                onClick={() => setShowResetModal(false)}
-                disabled={resetting}
-                className="px-4 py-2 text-sm font-medium text-stone-700 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleReset}
-                disabled={resetting}
-                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center gap-2"
-              >
-                {resetting ? <Spinner size="sm" /> : null}
-                {resetting ? 'Borrando…' : 'Sí, borrar respuestas'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* ── Confirm modal ─────────────────────────────────────── */}
+      {showConfirm && (
+        <ConfirmModal
+          onConfirm={handleSubmit}
+          onCancel={() => setShowConfirm(false)}
+          submitting={submitting}
+        />
       )}
     </div>
   )
