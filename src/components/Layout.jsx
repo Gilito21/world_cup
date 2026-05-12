@@ -141,7 +141,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50">
+    <div className="h-dvh flex flex-col bg-stone-50 overflow-hidden">
       {/* ── HEADER ───────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/80 shadow-sm pt-safe">
         <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-amber-500 via-orange-400 to-amber-500" />
@@ -232,7 +232,7 @@ export default function Layout() {
       )}
 
       {/* Content */}
-      <main className="flex-1 max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6 pb-mobile-nav animate-fade-in">
+      <main className="flex-1 overflow-y-auto max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6 pb-mobile-nav animate-fade-in">
         <Outlet />
       </main>
 
@@ -252,7 +252,7 @@ export default function Layout() {
 
       {/* ── BOTTOM NAV (solo móvil) ──────────────────────────── */}
       <nav
-        className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 pb-safe"
+        className="sm:hidden shrink-0 bg-white/95 backdrop-blur-md border-t border-stone-200 pb-safe"
         aria-label="Navegación principal"
       >
         <div className="grid grid-cols-5">
