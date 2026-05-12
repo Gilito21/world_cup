@@ -141,7 +141,27 @@ export default function LeagueSwitcher() {
         )}
       </div>
 
-      {showModal && createPortal(<LeagueModal onClose={() => setShowModal(false)} />, document.body)}
+      {showModal && createPortal(
+        <LeagueModal
+          onClose={() => setShowModal(false)}
+          onPaymentRequested={(name) => { setShowModal(false); setPaymentName(name) }}
+          onFounderCreated={handleFounderCreated}
+        />,
+        document.body
+      )}
+      {paymentName && (
+        <PaymentModal
+          leagueName={paymentName}
+          onClose={() => setPaymentName(null)}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
+      {createdLeague && (
+        <LeagueCreatedModal
+          league={createdLeague}
+          onClose={() => setCreatedLeague(null)}
+        />
+      )}
     </>
   )
 }
