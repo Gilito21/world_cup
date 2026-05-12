@@ -614,6 +614,14 @@ export default function Auth() {
                 {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
               </button>
             </p>
+            {mode === 'register' && (
+              <p className="text-center text-stone-400 text-xs">
+                Al registrarte aceptas nuestra{' '}
+                <Link to="/privacidad" className="text-stone-500 hover:text-stone-700 underline underline-offset-2">
+                  política de privacidad
+                </Link>
+              </p>
+            )}
           </form>
         </div>
       </div>
