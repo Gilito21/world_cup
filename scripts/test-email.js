@@ -38,9 +38,9 @@ const html = `<!DOCTYPE html>
         Este es un email de prueba. Los recordatorios de partidos se enviarán automáticamente
         cuando el Mundial 2026 empiece y haya partidos próximos sin pronosticar.
       </p>
-      <a href="${APP_URL}/pronosticos"
+      <a href="${APP_URL}/auth"
          style="display:block;background:#f59e0b;color:#0c0a09;text-decoration:none;text-align:center;padding:13px 24px;border-radius:12px;font-weight:700;font-size:15px;">
-        Ir a la app →
+        Entrar y pronosticar →
       </a>
     </div>
     <p style="text-align:center;color:#44403c;font-size:12px;margin-top:20px;">
