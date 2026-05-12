@@ -250,8 +250,14 @@ export default function Landing() {
               </div>
             ))}
           </div>
-          <p className="text-center text-stone-400 text-xs mt-7">
-            Los pronósticos se cierran cuando el árbitro pita el inicio de cada partido.
+          <div className="mt-5 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+            <span className="text-lg flex-shrink-0">🎲</span>
+            <p className="text-amber-700 text-xs leading-relaxed">
+              <strong>Puntos extra</strong> por preguntas como el MVP del Mundial, quién marcará más goles o el total de tarjetas del torneo.
+            </p>
+          </div>
+          <p className="text-center text-stone-400 text-xs mt-5">
+            Los pronósticos se cierran 1 hora antes del primer partido del Mundial.
           </p>
         </div>
       </section>
