@@ -5,16 +5,25 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
 
+// Twemoji CDN URL for a 2-letter ISO country code (works on all browsers/OS)
+function flagSrc(cc) {
+  const pts = [...cc.toUpperCase()].map(c => (c.codePointAt(0) + 0x1F1A5).toString(16))
+  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${pts.join('-')}.svg`
+}
+function FlagImg({ cc, className = 'w-4 h-4' }) {
+  return <img src={flagSrc(cc)} alt={cc} className={`inline-block ${className}`} loading="lazy" />
+}
+
 // Candidatos al MVP como atajos visuales (el usuario puede escribir libre).
 const MVP_SUGGESTIONS = [
-  { name: 'Kylian Mbappé',     flag: '🇫🇷' },
-  { name: 'Lamine Yamal',      flag: '🇪🇸' },
-  { name: 'Jude Bellingham',   flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { name: 'Vinícius Jr',       flag: '🇧🇷' },
-  { name: 'Rodri',             flag: '🇪🇸' },
-  { name: 'Pedri',             flag: '🇪🇸' },
-  { name: 'Lionel Messi',      flag: '🇦🇷' },
-  { name: 'Cristiano Ronaldo', flag: '🇵🇹' },
+  { name: 'Kylian Mbappé',     cc: 'FR' },
+  { name: 'Lamine Yamal',      cc: 'ES' },
+  { name: 'Jude Bellingham',   cc: 'GB' },
+  { name: 'Vinícius Jr',       cc: 'BR' },
+  { name: 'Rodri',             cc: 'ES' },
+  { name: 'Pedri',             cc: 'ES' },
+  { name: 'Lionel Messi',      cc: 'AR' },
+  { name: 'Cristiano Ronaldo', cc: 'PT' },
 ]
 
 // ─── Countdown del cutoff ──────────────────────────────────────────────────
@@ -250,7 +259,7 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
                       : 'bg-stone-100 border-stone-200 text-stone-700 hover:bg-stone-200'
                   }`}
                 >
-                  <span>{s.flag}</span>
+                  <FlagImg cc={s.cc} />
                   <span>{s.name}</span>
                 </button>
               )
