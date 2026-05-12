@@ -53,13 +53,13 @@ export default function Privacidad() {
 
           <section>
             <h2 className="text-lg font-semibold text-stone-900 mb-3">4. Proveedores de servicio</h2>
-            <p className="mb-3">Trabajamos con los siguientes proveedores que pueden procesar tus datos:</p>
-            <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Supabase</strong> — base de datos y autenticación (servidores en la UE).</li>
-              <li><strong>Stripe</strong> — procesamiento de pagos. No almacenamos datos de tarjetas.</li>
-              <li><strong>Brevo</strong> — envío de emails transaccionales.</li>
-              <li><strong>Render</strong> — alojamiento de la aplicación web.</li>
-            </ul>
+            <p>
+              Para el funcionamiento de la aplicación contamos con proveedores externos de confianza
+              que pueden acceder a tus datos únicamente en la medida necesaria para prestar sus servicios
+              (autenticación, alojamiento, envío de emails y procesamiento de pagos).
+              Todos ellos están sujetos a acuerdos de confidencialidad y cumplen con el RGPD.
+              No almacenamos datos de tarjetas de crédito.
+            </p>
           </section>
 
           <section>
