@@ -11,10 +11,10 @@
  *
  * Variables de entorno requeridas:
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
- *   RESEND_API_KEY
- *   APP_URL          (ej. https://tu-app.onrender.com)
- *   FROM_EMAIL       (ej. "Porra Mundial <porra@tudominio.com>")
- *                    → Para pruebas puedes usar: onboarding@resend.dev
+ *   BREVO_API_KEY
+ *   APP_URL          (ej. https://porradeempresas.com)
+ *   FROM_EMAIL       (ej. noreply@porradeempresas.com)
+ *   FROM_NAME        (ej. "Porra Mundial")
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -23,9 +23,10 @@ config()
 
 const SUPABASE_URL   = process.env.SUPABASE_URL
 const SUPABASE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY
-const RESEND_KEY     = process.env.RESEND_API_KEY
+const BREVO_KEY      = process.env.BREVO_API_KEY
 const APP_URL        = (process.env.APP_URL ?? 'http://localhost:5173').replace(/\/$/, '')
-const FROM_EMAIL     = process.env.FROM_EMAIL ?? 'Porra Mundial <onboarding@resend.dev>'
+const FROM_EMAIL     = process.env.FROM_EMAIL ?? 'noreply@porradeempresas.com'
+const FROM_NAME      = process.env.FROM_NAME  ?? 'Porra Mundial'
 
 const WINDOW_START_H = 1.5   // solo se envía si faltan entre 1.5h...
 const WINDOW_END_H   = 2.5   // ...y 2.5h para el partido
@@ -112,20 +113,25 @@ function escHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-// ─── Envío via Resend API ─────────────────────────────────────────────────────
+// ─── Envío via Brevo API ──────────────────────────────────────────────────────
 
 async function sendEmail(to, subject, html) {
-  const res = await fetch('https://api.resend.com/emails', {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${RESEND_KEY}`,
+      'api-key': BREVO_KEY,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html }),
+    body: JSON.stringify({
+      sender:      { name: FROM_NAME, email: FROM_EMAIL },
+      to:          [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
   })
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`Resend ${res.status}: ${body}`)
+    throw new Error(`Brevo ${res.status}: ${body}`)
   }
   return res.json()
 }
@@ -137,7 +143,7 @@ async function main() {
   console.log(`[${new Date().toISOString()}] Comprobando recordatorios...`)
 
   if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Faltan vars de Supabase'); process.exit(1) }
-  if (!RESEND_KEY)                    { console.error('Falta RESEND_API_KEY');     process.exit(1) }
+  if (!BREVO_KEY)                     { console.error('Falta BREVO_API_KEY');      process.exit(1) }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
