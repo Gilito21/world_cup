@@ -1,0 +1,29 @@
+name: Test email (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      to:
+        description: Dirección de destino
+        required: true
+        default: jpelaez@bluebullpartners.com
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: node scripts/test-email.js "${{ github.event.inputs.to }}"
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          APP_URL:       ${{ secrets.APP_URL }}
+          FROM_EMAIL:    ${{ secrets.FROM_EMAIL }}
+          FROM_NAME:     ${{ secrets.FROM_NAME }}
