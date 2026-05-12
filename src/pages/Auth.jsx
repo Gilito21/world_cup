@@ -307,7 +307,14 @@ export default function Auth() {
     const { data: league, error: findError } = await supabase
       .from('leagues').select('id').eq('invite_code', joinCode.trim().toUpperCase()).single()
     if (findError || !league) throw new Error('Código de liga inválido. Comprueba que esté bien escrito.')
-    await supabase.from('league_members').insert({ league_id: league.id, user_id: userId, role: 'member' })
+    const { count } = await supabase
+      .from('league_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('league_id', league.id)
+    if (count >= 40) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
+    const { error: memberError } = await supabase
+      .from('league_members').insert({ league_id: league.id, user_id: userId, role: 'member' })
+    if (memberError?.message?.includes('league_full')) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
   }
 
   function switchMode(newMode) {

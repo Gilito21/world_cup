@@ -58,6 +58,14 @@ Deno.serve(async (req: Request) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
+  // ── Comprobar que no existe ya una liga con ese nombre (case-insensitive) ──
+  const { data: existing } = await admin
+    .from('leagues')
+    .select('id')
+    .ilike('name', leagueName)
+    .maybeSingle()
+  if (existing) return json({ error: 'league_name_taken' }, 409)
+
   // ── Gate: solo founders pueden crear sin pagar ──
   const { data: profile, error: profileErr } = await admin
     .from('profiles')

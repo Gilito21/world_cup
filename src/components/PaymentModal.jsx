@@ -49,6 +49,7 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
         body: { payment_intent_id: paymentIntentId },
       })
       if (fnErr) throw new Error(fnErr.message ?? 'No se pudo crear la liga.')
+      if (data?.error === 'league_name_taken') throw new Error('Ya existe una liga con ese nombre.')
       if (!data?.league) throw new Error(data?.error ?? 'Respuesta inesperada del servidor.')
       onSuccess(data.league)
     } catch (err) {

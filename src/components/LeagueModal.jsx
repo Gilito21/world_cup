@@ -41,6 +41,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
             body: { league_name: name },
           })
           if (fnErr) throw new Error(fnErr.message ?? 'No se pudo crear la liga.')
+          if (data?.error === 'league_name_taken') throw new Error('Ya existe una liga con ese nombre. Elige otro.')
           if (!data?.league) throw new Error(data?.error ?? 'Respuesta inesperada del servidor.')
           // Delegamos la pantalla de "Liga creada" al padre.
           if (onFounderCreated) await onFounderCreated(data.league)
