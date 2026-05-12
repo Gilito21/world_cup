@@ -5,6 +5,15 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import Spinner from '../components/Spinner'
 
+// Twemoji CDN URL for any emoji string (works on all browsers/OS)
+function emojiSrc(emoji) {
+  const pts = [...emoji].map(c => c.codePointAt(0).toString(16)).join('-')
+  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${pts}.svg`
+}
+function EmojiImg({ emoji, alt = '', className = 'w-6 h-6' }) {
+  return <img src={emojiSrc(emoji)} alt={alt} className={`inline-block ${className}`} loading="lazy" />
+}
+
 // Twemoji CDN URL for a 2-letter ISO country code (works on all browsers/OS)
 function flagSrc(cc) {
   const pts = [...cc.toUpperCase()].map(c => (c.codePointAt(0) + 0x1F1A5).toString(16))
@@ -192,7 +201,7 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
             } ${locked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <div className="flex flex-col items-center gap-1.5 sm:gap-2">
-              <span className="text-3xl sm:text-5xl">{opt.emoji}</span>
+              <EmojiImg emoji={opt.emoji} alt={opt.label} className="w-12 h-12 sm:w-20 sm:h-20" />
               <div className="text-center min-w-0 w-full">
                 <div className={`font-bold text-sm sm:text-lg truncate ${isActive ? 'text-amber-700' : 'text-stone-800'}`}>
                   {opt.label}
