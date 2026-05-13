@@ -12,6 +12,10 @@ export default function Perfil() {
   const [avatarUrl, setAvatarUrl]             = useState(profile?.avatar_url ?? null)
   const [emailReminders, setEmailReminders]   = useState(profile?.email_reminders ?? false)
   const [savingReminders, setSavingReminders] = useState(false)
+  const [editingCompany, setEditingCompany] = useState(false)
+  const [companyValue, setCompanyValue]     = useState(profile?.company ?? '')
+  const [savingCompany, setSavingCompany]   = useState(false)
+  const [companyError, setCompanyError]     = useState('')
   const fileInputRef = useRef(null)
 
   useEffect(() => {
@@ -21,7 +25,8 @@ export default function Perfil() {
   useEffect(() => {
     setAvatarUrl(profile?.avatar_url ?? null)
     setEmailReminders(profile?.email_reminders ?? false)
-  }, [profile?.avatar_url, profile?.email_reminders])
+    setCompanyValue(profile?.company ?? '')
+  }, [profile?.avatar_url, profile?.email_reminders, profile?.company])
 
   async function handleToggleReminders() {
     setSavingReminders(true)
@@ -49,6 +54,18 @@ export default function Perfil() {
       })
     }
     setLoadingStats(false)
+  }
+
+  async function handleSaveCompany() {
+    setSavingCompany(true)
+    setCompanyError('')
+    const val = companyValue.trim()
+    if (val.length > 80) { setCompanyError('Máximo 80 caracteres.'); setSavingCompany(false); return }
+    const { error } = await supabase.from('profiles').update({ company: val || null }).eq('id', user.id)
+    if (error) { setCompanyError('No se pudo guardar.'); setSavingCompany(false); return }
+    await refreshProfile()
+    setSavingCompany(false)
+    setEditingCompany(false)
   }
 
   async function handleAvatarChange(e) {
@@ -163,6 +180,51 @@ export default function Perfil() {
         <p className="mt-3 text-xs text-stone-400">
           Haz clic en la foto para cambiarla · Máx. 2 MB
         </p>
+
+        {/* Empresa */}
+        <div className="mt-4 pt-4 border-t border-stone-100">
+          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">Empresa</p>
+          {editingCompany ? (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                className="input flex-1 text-sm py-1.5"
+                placeholder="ej. Accenture, EY, McKinsey…"
+                value={companyValue}
+                onChange={e => setCompanyValue(e.target.value)}
+                maxLength={80}
+                autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') handleSaveCompany(); if (e.key === 'Escape') setEditingCompany(false) }}
+              />
+              <button
+                onClick={handleSaveCompany}
+                disabled={savingCompany}
+                className="btn-primary text-sm px-3 py-1.5 flex items-center gap-1"
+              >
+                {savingCompany ? <Spinner size="sm" /> : 'Guardar'}
+              </button>
+              <button
+                onClick={() => { setEditingCompany(false); setCompanyValue(profile?.company ?? '') }}
+                className="btn-secondary text-sm px-3 py-1.5"
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm text-stone-700">
+                {profile?.company || <span className="text-stone-400 italic">Sin empresa</span>}
+              </p>
+              <button
+                onClick={() => setEditingCompany(true)}
+                className="text-xs text-amber-600 hover:text-amber-500 font-medium flex-shrink-0"
+              >
+                {profile?.company ? 'Editar' : '+ Añadir'}
+              </button>
+            </div>
+          )}
+          {companyError && <p className="mt-1.5 text-xs text-red-400">{companyError}</p>}
+        </div>
       </div>
 
       {/* Notificaciones */}

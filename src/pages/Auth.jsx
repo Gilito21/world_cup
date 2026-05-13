@@ -286,6 +286,11 @@ export default function Auth() {
         }
 
         if (!authData?.session) {
+          // Email confirmation required — guardamos el código para que
+          // LeagueContext lo procese automáticamente tras el login.
+          if (leagueMode === 'join' && joinCode.trim()) {
+            sessionStorage.setItem('porra-invite-code', joinCode.trim().toUpperCase())
+          }
           setSuccess('¡Cuenta creada! Revisa tu email para confirmar y después inicia sesión.')
         }
       }
@@ -314,7 +319,11 @@ export default function Auth() {
     if (count >= 40) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
     const { error: memberError } = await supabase
       .from('league_members').insert({ league_id: league.id, user_id: userId, role: 'member' })
-    if (memberError?.message?.includes('league_full')) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
+    if (memberError) {
+      if (memberError.message?.includes('league_full')) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
+      if (memberError.code === '23505') return // ya es miembro, ok
+      throw new Error(`No se pudo unir a la liga: ${memberError.message}`)
+    }
   }
 
   function switchMode(newMode) {
