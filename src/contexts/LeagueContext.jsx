@@ -74,10 +74,16 @@ export function LeagueProvider({ children }) {
         const { data: league } = await supabase
           .from('leagues').select('*').eq('invite_code', pendingCode).single()
         if (!league) return
-        await supabase.from('league_members')
+        const { count } = await supabase
+          .from('league_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('league_id', league.id)
+        if (count >= 40) return // liga llena — no se puede unir
+        const { error } = await supabase.from('league_members')
           .insert({ league_id: league.id, user_id: user.id, role: 'member' })
+        if (error && error.code !== '23505') return // 23505 = ya es miembro
         await loadLeagues()
-      } catch { /* already member or invalid code — silently ignore */ }
+      } catch { /* código inválido — ignorar */ }
     }
     joinPending()
   }, [user?.id])

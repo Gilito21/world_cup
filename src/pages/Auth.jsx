@@ -286,6 +286,11 @@ export default function Auth() {
         }
 
         if (!authData?.session) {
+          // Email confirmation required — guardamos el código para que
+          // LeagueContext lo procese automáticamente tras el login.
+          if (leagueMode === 'join' && joinCode.trim()) {
+            sessionStorage.setItem('porra-invite-code', joinCode.trim().toUpperCase())
+          }
           setSuccess('¡Cuenta creada! Revisa tu email para confirmar y después inicia sesión.')
         }
       }
