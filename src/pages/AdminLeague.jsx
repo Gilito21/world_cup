@@ -98,52 +98,64 @@ function LeaguePanel({ league }) {
   const { t } = useLang()
   const [members, setMembers] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState('')
 
   const loadMembers = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
-      // Fetch league members with profile data
-      const { data: memberRows } = await supabase
+      // 1) league_members.user_id FKs to auth.users(id), not public.profiles.
+      // PostgREST cannot infer that join automatically — we query each side
+      // separately and join client-side. The previous single-query join
+      // returned null and crashed the page when rendered.
+      const { data: memberRows, error: memberErr } = await supabase
         .from('league_members')
-        .select('user_id, role, joined_at, profiles(username, company)')
+        .select('user_id, role, joined_at')
         .eq('league_id', league.id)
         .order('joined_at')
 
-      if (!memberRows) return
+      if (memberErr) throw memberErr
+      if (!memberRows || memberRows.length === 0) { setMembers([]); return }
 
-      // Fetch submission statuses for all members
       const userIds = memberRows.map(m => m.user_id)
 
-      const [{ data: predSubs }, { data: extrasSubs }] = await Promise.all([
-        supabase
-          .from('prediction_submissions')
-          .select('user_id')
-          .eq('league_id', league.id)
-          .eq('source', 'matches')
-          .in('user_id', userIds),
-        supabase
-          .from('prediction_submissions')
-          .select('user_id')
-          .eq('league_id', league.id)
-          .eq('source', 'extras')
-          .in('user_id', userIds),
+      const [
+        { data: profiles, error: profErr },
+        { data: predSubs },
+        { data: extrasSubs },
+      ] = await Promise.all([
+        supabase.from('profiles').select('id, username, company').in('id', userIds),
+        supabase.from('prediction_submissions')
+          .select('user_id').eq('league_id', league.id).eq('source', 'matches').in('user_id', userIds),
+        supabase.from('prediction_submissions')
+          .select('user_id').eq('league_id', league.id).eq('source', 'extras').in('user_id', userIds),
       ])
 
+      if (profErr) throw profErr
+
+      const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
       const predSet   = new Set((predSubs   ?? []).map(r => r.user_id))
       const extrasSet = new Set((extrasSubs ?? []).map(r => r.user_id))
 
-      setMembers(memberRows.map(m => ({
-        user_id:               m.user_id,
-        username:              m.profiles?.username ?? '—',
-        company:               m.profiles?.company,
-        role:                  m.role,
-        predictions_submitted: predSet.has(m.user_id),
-        extras_submitted:      extrasSet.has(m.user_id),
-      })))
+      setMembers(memberRows.map(m => {
+        const p = profileMap[m.user_id] ?? {}
+        return {
+          user_id:               m.user_id,
+          username:              p.username ?? '—',
+          company:               p.company ?? null,
+          role:                  m.role,
+          predictions_submitted: predSet.has(m.user_id),
+          extras_submitted:      extrasSet.has(m.user_id),
+        }
+      }))
+    } catch (err) {
+      console.error('AdminLeague loadMembers failed:', err)
+      setError(t('adminLeague.loadError'))
+      setMembers([])
     } finally {
       setLoading(false)
     }
-  }, [league.id])
+  }, [league.id, t])
 
   useEffect(() => { loadMembers() }, [loadMembers])
 
@@ -170,7 +182,12 @@ function LeaguePanel({ league }) {
       {/* Members table */}
       {loading ? (
         <div className="flex justify-center py-8"><Spinner /></div>
-      ) : members?.length === 0 ? (
+      ) : error ? (
+        <div className="text-center py-8 space-y-2">
+          <p className="text-red-600 text-sm">⚠️ {error}</p>
+          <button onClick={loadMembers} className="btn-secondary text-sm">{t('common.retry')}</button>
+        </div>
+      ) : !members || members.length === 0 ? (
         <p className="text-center text-stone-400 text-sm py-8">{t('adminLeague.noMembers')}</p>
       ) : (
         <div className="overflow-x-auto">

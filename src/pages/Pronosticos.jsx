@@ -116,11 +116,13 @@ function ScoreInput({ value, onChange, disabled }) {
 
 function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submittedAt, onSubmit, submitting }) {
   const { t, dateLocale } = useLang()
+  const [expanded, setExpanded] = useState(false)
   const pct          = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0
   const isPastCutoff = !!(cutoffTime && Date.now() >= cutoffTime)
   const isComplete   = filledCount === totalCount && totalCount > 0
   const canSubmit    = isComplete && !isPastCutoff && !isSubmitted
 
+  // Terminal: prediction was submitted — compact one-line success card
   if (isSubmitted) {
     return (
       <div className="card p-3 sm:p-4 bg-green-50/80 border-green-200 flex items-center gap-3">
@@ -141,33 +143,19 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
     )
   }
 
-  return (
-    <div className="card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
-      {/* Progress bar */}
-      <div>
-        <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
-          <span className="text-stone-500 font-medium truncate">{t('pronosticos.progressLabel')}</span>
-          <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-stone-600'}`}>
-            {filledCount} / {totalCount}
-          </span>
+  // Terminal: deadline missed — keep this fully visible since it's important
+  if (isPastCutoff) {
+    return (
+      <div className="card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
+        <div>
+          <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
+            <span className="text-stone-500 font-medium truncate">{t('pronosticos.progressLabel')}</span>
+            <span className="font-bold tabular-nums flex-shrink-0 text-stone-600">{filledCount} / {totalCount}</span>
+          </div>
+          <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full bg-stone-300" style={{ width: `${pct}%` }} />
+          </div>
         </div>
-        <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-amber-500'}`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Cutoff countdown */}
-      {cutoffTime && !isPastCutoff && (
-        <p className="text-xs text-stone-400 flex items-center gap-1.5 flex-wrap">
-          <span>{t('pronosticos.cutoffNote')}</span>
-          <CutoffCountdown cutoffTime={cutoffTime} />
-        </p>
-      )}
-
-      {isPastCutoff && (
         <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 space-y-1">
           <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
             <span>🔒</span>{t('pronosticos.closedMsg')}
@@ -178,10 +166,57 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
               : t('pronosticos.missedDeadline')}
           </p>
         </div>
+      </div>
+    )
+  }
+
+  // Active state: collapsible. Header shows progress + counter + chevron.
+  // Submit button is always visible (key action). Body — cutoff countdown
+  // + hint text — folds in/out so the panel is clean while filling matches.
+  return (
+    <div className="card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded(e => !e)}
+        className="w-full px-3 sm:px-4 pt-3 pb-2.5 flex items-center gap-3 hover:bg-stone-50/80 active:bg-stone-100/60 transition-colors text-left"
+        aria-expanded={expanded}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
+            <span className="text-stone-500 font-medium truncate">{t('pronosticos.progressLabel')}</span>
+            <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-stone-600'}`}>
+              {filledCount} / {totalCount}
+            </span>
+          </div>
+          <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-amber-500'}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+        <span className={`text-stone-400 text-xs flex-shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} aria-hidden="true">
+          ▼
+        </span>
+      </button>
+
+      {/* Expanded body: cutoff details + hint */}
+      {expanded && (
+        <div className="px-3 sm:px-4 pb-3 pt-2 border-t border-stone-100 space-y-2">
+          {cutoffTime && (
+            <p className="text-xs text-stone-400 flex items-center gap-1.5 flex-wrap">
+              <span>{t('pronosticos.cutoffNote')}</span>
+              <CutoffCountdown cutoffTime={cutoffTime} />
+            </p>
+          )}
+          {!isComplete && (
+            <p className="text-xs text-stone-400">{t('pronosticos.submitHint')}</p>
+          )}
+        </div>
       )}
 
-      {/* Submit button */}
-      {!isPastCutoff && (
+      {/* Submit button — always visible */}
+      <div className="px-3 sm:px-4 pb-3 pt-1">
         <button
           onClick={onSubmit}
           disabled={!canSubmit || submitting}
@@ -192,13 +227,8 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
             ? t('pronosticos.submitBtn')
             : t('pronosticos.submitBtnPending', { n: totalCount - filledCount, s: totalCount - filledCount !== 1 ? 's' : '' })}
         </button>
-      )}
+      </div>
 
-      {!isComplete && !isPastCutoff && (
-        <p className="text-xs text-center text-stone-400">
-          {t('pronosticos.submitHint')}
-        </p>
-      )}
     </div>
   )
 }
@@ -570,6 +600,7 @@ export default function Pronosticos() {
   const [paymentName,      setPaymentName]      = useState(null)
   const [createdLeague,    setCreatedLeague]    = useState(null)
   const [previewMatch,     setPreviewMatch]     = useState(null)
+  const [reuseExpanded,    setReuseExpanded]    = useState(false)
 
   // Submission state
   const [isSubmitted,  setIsSubmitted]  = useState(false)
@@ -952,26 +983,46 @@ export default function Pronosticos() {
 
       {/* Copy from league prompt */}
       {activeLeague && !hasPredictions && !isSubmitted && otherLeagues.length > 0 && (
-        <div className="card p-4 border-amber-500/20 bg-amber-500/5 space-y-3">
-          <div>
-            <p className="text-sm font-semibold text-stone-800">{t('pronosticos.reuseTitle')}</p>
-            <p className="text-xs text-stone-500 mt-0.5">
-              {t('pronosticos.reuseBody', { league: activeLeague.name })}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {otherLeagues.map(l => (
-              <button
-                key={l.id}
-                onClick={() => copyFromLeague(l.id)}
-                disabled={copying}
-                className="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5"
-              >
-                {copying ? <Spinner size="sm" /> : '📋'}
-                {t('pronosticos.copyFrom', { name: l.name })}
-              </button>
-            ))}
-          </div>
+        <div className="card overflow-hidden border-amber-500/20 bg-amber-500/5">
+          <button
+            type="button"
+            onClick={() => setReuseExpanded(e => !e)}
+            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-500/10 active:bg-amber-500/20 transition-colors text-left"
+            aria-expanded={reuseExpanded}
+          >
+            <span className="text-base flex-shrink-0">📋</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-stone-800 truncate">{t('pronosticos.reuseTitle')}</p>
+              {!reuseExpanded && (
+                <p className="text-[11px] text-stone-500 mt-0.5 truncate">
+                  {t('pronosticos.reuseHint', { n: otherLeagues.length, s: otherLeagues.length !== 1 ? 's' : '' })}
+                </p>
+              )}
+            </div>
+            <span className={`text-stone-400 text-xs flex-shrink-0 transition-transform duration-200 ${reuseExpanded ? 'rotate-180' : ''}`} aria-hidden="true">
+              ▼
+            </span>
+          </button>
+          {reuseExpanded && (
+            <div className="px-4 pb-3 pt-1 border-t border-amber-500/20 space-y-3">
+              <p className="text-xs text-stone-500">
+                {t('pronosticos.reuseBody', { league: activeLeague.name })}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {otherLeagues.map(l => (
+                  <button
+                    key={l.id}
+                    onClick={() => copyFromLeague(l.id)}
+                    disabled={copying}
+                    className="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5"
+                  >
+                    {copying ? <Spinner size="sm" /> : '📋'}
+                    {t('pronosticos.copyFrom', { name: l.name })}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

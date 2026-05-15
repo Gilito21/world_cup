@@ -248,6 +248,7 @@ export default {
     confirmIrreversible: 'This action cannot be undone.',
     reuseTitle: 'Reuse drafts from another league?',
     reuseBody: 'You don\'t have any drafts in {{league}} yet. You can copy them from another league as a starting point.',
+    reuseHint: '{{n}} league{{s}} available',
     copyFrom: 'Copy from "{{name}}"',
     noMatches: 'Matches will be loaded soon.',
     completeLabel: '✓ Complete',
@@ -530,6 +531,7 @@ export default {
     pending: 'Pending',
     inviteCode: 'Code: {{code}}',
     noAdminLeagues: 'You are not admin of any league.',
+    loadError: 'Could not load members.',
     selectLeague: 'Select league',
   },
 
