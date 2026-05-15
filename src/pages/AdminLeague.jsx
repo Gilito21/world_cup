@@ -19,7 +19,7 @@ function StatusBadge({ submitted }) {
   )
 }
 
-function MemberRow({ member, leagueId, onReminderSent }) {
+function MemberRow({ member, leagueId }) {
   const { t } = useLang()
   const [status, setStatus] = useState('idle') // idle | sending | sent | error | cooldown
 
@@ -35,7 +35,6 @@ function MemberRow({ member, leagueId, onReminderSent }) {
       }
       if (error) { setStatus('error'); return }
       setStatus('sent')
-      onReminderSent?.(member.user_id)
     } catch {
       setStatus('error')
     }
@@ -99,7 +98,6 @@ function LeaguePanel({ league }) {
   const { t } = useLang()
   const [members, setMembers] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [, forceUpdate] = useState(0)
 
   const loadMembers = useCallback(async () => {
     setLoading(true)
@@ -191,7 +189,6 @@ function LeaguePanel({ league }) {
                   key={m.user_id}
                   member={m}
                   leagueId={league.id}
-                  onReminderSent={() => forceUpdate(n => n + 1)}
                 />
               ))}
             </tbody>

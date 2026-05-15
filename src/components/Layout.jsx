@@ -120,11 +120,14 @@ export default function Layout() {
         body: { league_name: pendingPaymentName },
       })
       if (cancelled) return
+      if (error || !data?.league) {
+        // Leave localStorage intact so the payment modal can still be used
+        console.error('create-league-free failed:', error)
+        return
+      }
       localStorage.removeItem('porra-pending-league-create')
       setPendingPaymentName(null)
-      if (!error && data?.league && onLeagueCreated) {
-        await onLeagueCreated(data.league)
-      }
+      if (onLeagueCreated) await onLeagueCreated(data.league)
     })()
     return () => { cancelled = true }
   }, [pendingPaymentName, profile?.is_founder, onLeagueCreated])

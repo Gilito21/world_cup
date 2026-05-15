@@ -965,9 +965,6 @@ export default function Pronosticos() {
         <div className="card p-6 sm:p-10 text-center">
           <div className="text-3xl sm:text-4xl mb-3">📅</div>
           <p className="text-stone-500 text-sm">{t('pronosticos.noMatches')}</p>
-          <p className="text-stone-400 text-xs mt-1">
-            Ejecuta <code className="bg-stone-100 px-1 rounded">npm run seed-matches</code> para importarlos.
-          </p>
         </div>
       ) : (
         <div className="flex gap-3 items-start">
