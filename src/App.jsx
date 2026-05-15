@@ -1,9 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { Suspense, lazy } from 'react'
+import { Suspense } from 'react'
 import { useAuth } from './contexts/AuthContext'
 import { LeagueProvider } from './contexts/LeagueContext'
 import Layout from './components/Layout'
 import Spinner from './components/Spinner'
+import lazyWithRetry from './lib/lazyWithRetry'
 
 // Landing + Auth are the cold-cache entry points for non-logged-in visitors,
 // so we keep them eager. Everything else is lazy — Pronosticos is the most
@@ -12,18 +13,18 @@ import Spinner from './components/Spinner'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
 
-const Pronosticos    = lazy(() => import('./pages/Pronosticos'))
-const Clasificacion  = lazy(() => import('./pages/Clasificacion'))
-const Resultados     = lazy(() => import('./pages/Resultados'))
-const Bracket        = lazy(() => import('./pages/Bracket'))
-const Reglas         = lazy(() => import('./pages/Reglas'))
-const Extras         = lazy(() => import('./pages/Extras'))
-const Perfil         = lazy(() => import('./pages/Perfil'))
-const AdminLeague    = lazy(() => import('./pages/AdminLeague'))
-const JoinLeague     = lazy(() => import('./pages/JoinLeague'))
-const ResetPassword  = lazy(() => import('./pages/ResetPassword'))
-const Privacidad     = lazy(() => import('./pages/Privacidad'))
-const NotFound       = lazy(() => import('./pages/NotFound'))
+const Pronosticos    = lazyWithRetry(() => import('./pages/Pronosticos'))
+const Clasificacion  = lazyWithRetry(() => import('./pages/Clasificacion'))
+const Resultados     = lazyWithRetry(() => import('./pages/Resultados'))
+const Bracket        = lazyWithRetry(() => import('./pages/Bracket'))
+const Reglas         = lazyWithRetry(() => import('./pages/Reglas'))
+const Extras         = lazyWithRetry(() => import('./pages/Extras'))
+const Perfil         = lazyWithRetry(() => import('./pages/Perfil'))
+const AdminLeague    = lazyWithRetry(() => import('./pages/AdminLeague'))
+const JoinLeague     = lazyWithRetry(() => import('./pages/JoinLeague'))
+const ResetPassword  = lazyWithRetry(() => import('./pages/ResetPassword'))
+const Privacidad     = lazyWithRetry(() => import('./pages/Privacidad'))
+const NotFound       = lazyWithRetry(() => import('./pages/NotFound'))
 
 function FullPageSpinner() {
   return <div className="flex items-center justify-center h-screen bg-stone-50"><Spinner size="lg" /></div>
