@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { useLang } from '../contexts/LangContext'
 import ReportButton from '../components/ReportButton'
 import LangToggle from '../components/LangToggle'
+import SoccerBall from '../components/SoccerBall'
+import useScrollRotation from '../lib/useScrollRotation'
 
 const WORLD_CUP_TS = new Date('2026-06-11T21:00:00Z').getTime()
 
@@ -87,6 +89,7 @@ function Countdown({ target }) {
 
 export default function Landing() {
   const { t } = useLang()
+  const ballRef = useScrollRotation(0.35)
 
   const FEATURES = [
     { icon: '🎯', title: t('landing.f1title'), desc: t('landing.f1desc') },
@@ -123,7 +126,7 @@ export default function Landing() {
       <header className="sticky top-0 z-20 border-b border-stone-100 bg-white/90 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xl">⚽</span>
+            <SoccerBall className="w-6 h-6" />
             <span className="font-bold text-sm sm:text-base text-stone-900">
               {t('common.appName')}
             </span>
@@ -153,6 +156,19 @@ export default function Landing() {
         {/* Soft amber blob */}
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-amber-100/60 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 left-1/4 w-[300px] h-[300px] bg-orange-50 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Scroll-rotating soccer ball — drives the "pro UI" feel.
+            Position: top-right corner of the hero, partly off-edge so it
+            looks like it's spilling out of the canvas. Sits ABOVE the
+            blurred glows so the seams stay sharp, but below the centered
+            text via z-index. */}
+        <div
+          ref={ballRef}
+          className="absolute -top-4 -right-12 sm:top-10 sm:-right-16 lg:right-[-40px] w-44 h-44 sm:w-64 sm:h-64 lg:w-80 lg:h-80 pointer-events-none opacity-90 will-change-transform drop-shadow-2xl"
+          style={{ transformOrigin: 'center' }}
+        >
+          <SoccerBall />
+        </div>
 
         <div className="relative text-center max-w-3xl mx-auto animate-slide-up">
           {/* Badge */}
