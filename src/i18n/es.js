@@ -248,6 +248,7 @@ export default {
     confirmIrreversible: 'Esta acción es irreversible.',
     reuseTitle: '¿Reutilizar borradores de otra liga?',
     reuseBody: 'Aún no tienes borradores en {{league}}. Puedes copiar los de otra liga como punto de partida.',
+    reuseHint: '{{n}} liga{{s}} disponible{{s}}',
     copyFrom: 'Copiar de "{{name}}"',
     noMatches: 'Los partidos se cargarán próximamente.',
     completeLabel: '✓ Completo',
@@ -530,6 +531,7 @@ export default {
     pending: 'Pendiente',
     inviteCode: 'Código: {{code}}',
     noAdminLeagues: 'No eres administrador de ninguna liga.',
+    loadError: 'No se pudieron cargar los participantes.',
     selectLeague: 'Seleccionar liga',
   },
 
