@@ -3,18 +3,12 @@ import { createPortal } from 'react-dom'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { supabase } from '../lib/supabase'
 import { stripePromise, LEAGUE_PRICE_LABEL } from '../lib/stripe'
+import { useLang } from '../contexts/LangContext'
 import Spinner from './Spinner'
-
-const FEATURES = [
-  'Confirmación instantánea',
-  'Liga privada con tu código único',
-  'Hasta 100 amigos jugando contigo',
-  'Acceso a todo el Mundial 2026',
-  'Pago seguro con Stripe',
-]
 
 // ── Formulario interno: tiene acceso a useStripe/useElements ──
 function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
+  const { t } = useLang()
   const stripe   = useStripe()
   const elements = useElements()
   const [submitting, setSubmitting] = useState(false)
@@ -79,12 +73,12 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
         className="w-full bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:from-amber-600 active:to-amber-500 text-stone-950 font-semibold py-3.5 rounded-2xl shadow-lg shadow-amber-500/30 hover:shadow-amber-500/40 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {submitting
-          ? <><Spinner size="sm" /> Procesando…</>
-          : <>Pagar {LEAGUE_PRICE_LABEL} · Crear liga</>}
+          ? <><Spinner size="sm" /> {t('payment.processing')}</>
+          : t('payment.payBtn', { price: LEAGUE_PRICE_LABEL })}
       </button>
 
       <p className="text-center text-stone-400 text-xs flex items-center justify-center gap-1">
-        🔒 Pago seguro · Sin renovaciones automáticas
+        {t('payment.secure')}
       </p>
     </form>
   )
@@ -92,10 +86,15 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
 
 // ── Wrapper que carga el clientSecret y monta <Elements> ──
 export default function PaymentModal({ leagueName, onSuccess, onClose }) {
+  const { t } = useLang()
   const [clientSecret,   setClientSecret]   = useState(null)
   const [paymentIntentId, setPaymentIntentId] = useState(null)
   const [error,          setError]          = useState('')
   const [loading,        setLoading]        = useState(true)
+
+  const FEATURES = [
+    t('payment.f1'), t('payment.f2'), t('payment.f3'), t('payment.f4'), t('payment.f5'),
+  ]
 
   // Cerrar con Escape
   useEffect(() => {
@@ -132,11 +131,11 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
       <Backdrop onClose={onClose}>
         <div className="p-6 space-y-3 text-center">
           <span className="text-3xl">⚠️</span>
-          <p className="text-stone-900 font-semibold">Pago no configurado</p>
+          <p className="text-stone-900 font-semibold">{t('payment.notConfigured')}</p>
           <p className="text-stone-500 text-sm">
-            Falta <code className="bg-stone-100 px-1 rounded text-xs">VITE_STRIPE_PUBLISHABLE_KEY</code> en el entorno.
+            {t('payment.notConfiguredDesc')}
           </p>
-          <button onClick={onClose} className="btn-secondary w-full">Cerrar</button>
+          <button onClick={onClose} className="btn-secondary w-full">{t('common.close')}</button>
         </div>
       </Backdrop>,
       document.body
@@ -150,7 +149,7 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
         <button
           onClick={onClose}
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/30 hover:bg-white/50 backdrop-blur-sm flex items-center justify-center text-stone-900 transition-colors"
-          aria-label="Cerrar"
+          aria-label={t('common.close')}
         >
           ✕
         </button>
@@ -159,10 +158,10 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
           <span className="text-xs font-bold uppercase tracking-wider opacity-80">Porra Mundial 2026</span>
         </div>
         <h2 className="text-xl sm:text-2xl font-bold leading-tight">
-          Crear liga: <span className="italic">{leagueName}</span>
+          {t('payment.createTitle', { name: leagueName })}
         </h2>
         <p className="text-stone-900/70 text-xs sm:text-sm mt-1">
-          11 jun – 19 jul · México · USA · Canadá
+          {t('payment.createSubtitle')}
         </p>
       </div>
 
@@ -182,13 +181,13 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10 gap-2">
             <Spinner size="lg" />
-            <p className="text-stone-400 text-xs">Preparando pago seguro…</p>
+            <p className="text-stone-400 text-xs">{t('payment.loading')}</p>
           </div>
         ) : error ? (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm space-y-2">
-            <p className="font-semibold">No se pudo iniciar el pago</p>
+            <p className="font-semibold">{t('payment.errorTitle')}</p>
             <p className="text-xs">{error}</p>
-            <button onClick={onClose} className="btn-secondary w-full mt-2">Cerrar</button>
+            <button onClick={onClose} className="btn-secondary w-full mt-2">{t('common.close')}</button>
           </div>
         ) : (
           <Elements

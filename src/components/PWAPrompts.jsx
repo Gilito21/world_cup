@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useRegisterSW } from 'virtual:pwa-register/react'
+import { useLang } from '../contexts/LangContext'
 
 const INSTALL_DISMISSED_KEY = 'pwa-install-dismissed-until'
 const SNOOZE_DAYS = 14
@@ -19,6 +20,7 @@ function isIos() {
 
 // ── Banner de "nueva versión disponible" ───────────────────────────────────
 function UpdateBanner() {
+  const { t } = useLang()
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
@@ -37,20 +39,20 @@ function UpdateBanner() {
       <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-stone-300/60 border-amber-500/30">
         <span className="text-xl flex-shrink-0">🔄</span>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-stone-900">Nueva versión disponible</p>
-          <p className="text-xs text-stone-500 mt-0.5">Recarga para tener las últimas mejoras.</p>
+          <p className="font-semibold text-sm text-stone-900">{t('pwa.updateTitle')}</p>
+          <p className="text-xs text-stone-500 mt-0.5">{t('pwa.updateDesc')}</p>
           <div className="flex gap-2 mt-3">
             <button
               onClick={() => updateServiceWorker(true)}
               className="btn-primary text-sm px-3 py-1.5 min-h-0"
             >
-              Actualizar
+              {t('pwa.update')}
             </button>
             <button
               onClick={() => setNeedRefresh(false)}
               className="text-stone-500 hover:text-stone-700 text-sm px-3 py-1.5"
             >
-              Más tarde
+              {t('pwa.later')}
             </button>
           </div>
         </div>
@@ -61,6 +63,7 @@ function UpdateBanner() {
 
 // ── Banner de "Añadir a pantalla de inicio" ───────────────────────────────
 function InstallBanner() {
+  const { t } = useLang()
   const [deferred, setDeferred] = useState(null)
   const [showIosHint, setShowIosHint] = useState(false)
 
@@ -78,9 +81,9 @@ function InstallBanner() {
 
     // iOS no dispara beforeinstallprompt; mostramos hint manual tras 30s.
     if (isIos()) {
-      const t = setTimeout(() => setShowIosHint(true), 30_000)
+      const timer = setTimeout(() => setShowIosHint(true), 30_000)
       return () => {
-        clearTimeout(t)
+        clearTimeout(timer)
         window.removeEventListener('beforeinstallprompt', handler)
       }
     }
@@ -112,12 +115,12 @@ function InstallBanner() {
         <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-stone-300/60 border-amber-500/30">
           <span className="text-2xl flex-shrink-0">⚽</span>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-stone-900">Instala la app</p>
-            <p className="text-xs text-stone-500 mt-0.5">Acceso rápido desde tu pantalla de inicio.</p>
+            <p className="font-semibold text-sm text-stone-900">{t('pwa.installTitle')}</p>
+            <p className="text-xs text-stone-500 mt-0.5">{t('pwa.installDesc')}</p>
             <div className="flex gap-2 mt-3">
-              <button onClick={install} className="btn-primary text-sm px-3 py-1.5 min-h-0">Instalar</button>
+              <button onClick={install} className="btn-primary text-sm px-3 py-1.5 min-h-0">{t('pwa.install')}</button>
               <button onClick={dismiss} className="text-stone-500 hover:text-stone-700 text-sm px-3 py-1.5">
-                Ahora no
+                {t('pwa.notNow')}
               </button>
             </div>
           </div>
@@ -132,13 +135,13 @@ function InstallBanner() {
         <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-stone-300/60 border-amber-500/30">
           <span className="text-2xl flex-shrink-0">📲</span>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-stone-900">Instala la app en tu iPhone</p>
+            <p className="font-semibold text-sm text-stone-900">{t('pwa.iosTitle')}</p>
             <p className="text-xs text-stone-500 mt-0.5">
               Toca <span className="inline-block px-1 font-mono">⎙</span> Compartir y luego{' '}
               <span className="font-semibold">«Añadir a pantalla de inicio»</span>.
             </p>
             <button onClick={dismiss} className="text-stone-500 hover:text-stone-700 text-xs mt-2">
-              Cerrar
+              {t('pwa.iosClose')}
             </button>
           </div>
         </div>

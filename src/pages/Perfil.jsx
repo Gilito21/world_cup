@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 
 export default function Perfil() {
   const { user, profile, refreshProfile } = useAuth()
+  const { t } = useLang()
   const [stats, setStats]               = useState(null)
   const [loadingStats, setLoadingStats] = useState(true)
   const [uploading, setUploading]             = useState(false)
@@ -60,9 +62,9 @@ export default function Perfil() {
     setSavingCompany(true)
     setCompanyError('')
     const val = companyValue.trim()
-    if (val.length > 80) { setCompanyError('Máximo 80 caracteres.'); setSavingCompany(false); return }
+    if (val.length > 80) { setCompanyError(t('perfil.companyMaxChars')); setSavingCompany(false); return }
     const { error } = await supabase.from('profiles').update({ company: val || null }).eq('id', user.id)
-    if (error) { setCompanyError('No se pudo guardar.'); setSavingCompany(false); return }
+    if (error) { setCompanyError(t('perfil.companySaveError')); setSavingCompany(false); return }
     await refreshProfile()
     setSavingCompany(false)
     setEditingCompany(false)
@@ -74,11 +76,11 @@ export default function Perfil() {
     setUploadError('')
 
     if (!file.type.startsWith('image/')) {
-      setUploadError('El archivo debe ser una imagen.')
+      setUploadError(t('perfil.uploadError'))
       return
     }
     if (file.size > 2 * 1024 * 1024) {
-      setUploadError('La imagen debe pesar menos de 2 MB.')
+      setUploadError(t('perfil.uploadSizeError'))
       return
     }
 
@@ -105,7 +107,7 @@ export default function Perfil() {
       setAvatarUrl(publicUrl)
       await refreshProfile()
     } catch (err) {
-      setUploadError('No se pudo subir la imagen. Comprueba que el bucket "avatars" existe en Supabase Storage.')
+      setUploadError(t('perfil.uploadFailed'))
       console.error(err)
     } finally {
       setUploading(false)
@@ -115,8 +117,8 @@ export default function Perfil() {
   return (
     <div className="space-y-4 sm:space-y-6 max-w-lg">
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Mi perfil</h2>
-        <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">Tu cuenta y estadísticas</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">{t('perfil.title')}</h2>
+        <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">{t('perfil.subtitle')}</p>
       </div>
 
       {/* Tarjeta de identidad */}
@@ -129,7 +131,7 @@ export default function Perfil() {
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               className="relative w-16 h-16 rounded-full overflow-hidden group focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-              title="Cambiar foto"
+              title={t('perfil.changePhoto')}
             >
               {avatarUrl ? (
                 <img
@@ -145,7 +147,7 @@ export default function Perfil() {
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 {uploading
                   ? <Spinner size="sm" />
-                  : <span className="text-white text-[10px] font-semibold leading-tight text-center px-1">Cambiar foto</span>
+                  : <span className="text-white text-[10px] font-semibold leading-tight text-center px-1">{t('perfil.changePhoto')}</span>
                 }
               </div>
             </button>
@@ -166,7 +168,7 @@ export default function Perfil() {
             <p className="text-stone-400 text-sm truncate">{user?.email}</p>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded-full font-semibold">
-                {profile?.total_points ?? 0} pts globales
+                {t('perfil.globalPts', { n: profile?.total_points ?? 0 })}
               </span>
             </div>
           </div>
@@ -178,18 +180,18 @@ export default function Perfil() {
           </p>
         )}
         <p className="mt-3 text-xs text-stone-400">
-          Haz clic en la foto para cambiarla · Máx. 2 MB
+          {t('perfil.photoHint')}
         </p>
 
         {/* Empresa */}
         <div className="mt-4 pt-4 border-t border-stone-100">
-          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">Empresa</p>
+          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">{t('perfil.companySection')}</p>
           {editingCompany ? (
             <div className="flex gap-2">
               <input
                 type="text"
                 className="input flex-1 text-sm py-1.5"
-                placeholder="ej. Accenture, EY, McKinsey…"
+                placeholder={t('perfil.companyPlaceholder')}
                 value={companyValue}
                 onChange={e => setCompanyValue(e.target.value)}
                 maxLength={80}
@@ -201,25 +203,25 @@ export default function Perfil() {
                 disabled={savingCompany}
                 className="btn-primary text-sm px-3 py-1.5 flex items-center gap-1"
               >
-                {savingCompany ? <Spinner size="sm" /> : 'Guardar'}
+                {savingCompany ? <Spinner size="sm" /> : t('common.save')}
               </button>
               <button
                 onClick={() => { setEditingCompany(false); setCompanyValue(profile?.company ?? '') }}
                 className="btn-secondary text-sm px-3 py-1.5"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
             </div>
           ) : (
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm text-stone-700">
-                {profile?.company || <span className="text-stone-400 italic">Sin empresa</span>}
+                {profile?.company || <span className="text-stone-400 italic">{t('perfil.noCompany')}</span>}
               </p>
               <button
                 onClick={() => setEditingCompany(true)}
                 className="text-xs text-amber-600 hover:text-amber-500 font-medium flex-shrink-0"
               >
-                {profile?.company ? 'Editar' : '+ Añadir'}
+                {profile?.company ? t('perfil.editCompany') : t('perfil.addCompany')}
               </button>
             </div>
           )}
@@ -229,13 +231,13 @@ export default function Perfil() {
 
       {/* Notificaciones */}
       <div>
-        <h3 className="text-sm font-semibold text-stone-400 uppercase tracking-wider mb-3">Notificaciones</h3>
+        <h3 className="text-sm font-semibold text-stone-400 uppercase tracking-wider mb-3">{t('perfil.notificationsSection')}</h3>
         <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-stone-900">Recordatorios por email</p>
+              <p className="text-sm font-semibold text-stone-900">{t('perfil.remindersTitle')}</p>
               <p className="text-xs text-stone-400 mt-0.5 leading-relaxed">
-                Recibe un aviso cuando un partido empiece en menos de 2 horas y no hayas pronosticado.
+                {t('perfil.remindersDesc')}
               </p>
             </div>
             <button
@@ -255,16 +257,16 @@ export default function Perfil() {
 
       {/* Estadísticas */}
       <div>
-        <h3 className="text-sm font-semibold text-stone-400 uppercase tracking-wider mb-3">Estadísticas</h3>
+        <h3 className="text-sm font-semibold text-stone-400 uppercase tracking-wider mb-3">{t('perfil.statsSection')}</h3>
         {loadingStats ? (
           <div className="flex justify-center py-6"><Spinner /></div>
         ) : stats ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Pronósticos', value: stats.totalPredictions, icon: '📝', color: 'text-stone-700' },
-              { label: 'Exactos',     value: stats.exact,            icon: '🎯', color: 'text-amber-500' },
-              { label: 'Correctos',   value: stats.correct,          icon: '✓',  color: 'text-blue-500'  },
-              { label: 'Precisión',   value: stats.accuracy !== null ? `${stats.accuracy}%` : '—', icon: '📊', color: 'text-green-500' },
+              { label: t('perfil.statPredictions'), value: stats.totalPredictions, icon: '📝', color: 'text-stone-700' },
+              { label: t('perfil.statExact'),       value: stats.exact,            icon: '🎯', color: 'text-amber-500' },
+              { label: t('perfil.statCorrect'),     value: stats.correct,          icon: '✓',  color: 'text-blue-500'  },
+              { label: t('perfil.statAccuracy'),    value: stats.accuracy !== null ? `${stats.accuracy}%` : '—', icon: '📊', color: 'text-green-500' },
             ].map(({ label, value, icon, color }) => (
               <div key={label} className="card p-4 text-center">
                 <div className="text-xl mb-1">{icon}</div>

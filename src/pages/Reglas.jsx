@@ -1,105 +1,109 @@
+import { useLang } from '../contexts/LangContext'
+
 export default function Reglas() {
+  const { t } = useLang()
+
   return (
     <div className="max-w-2xl mx-auto space-y-5 sm:space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Cómo funciona</h2>
-        <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">Reglas e instrucciones</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">{t('reglas.title')}</h2>
+        <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">{t('reglas.subtitle')}</p>
       </div>
 
       {/* 1. Los pronósticos */}
-      <Section icon="🎯" title="Tus pronósticos">
-        <p>Antes del inicio del Mundial tienes que rellenar el resultado de <strong>todos los partidos</strong>: los 48 de fase de grupos y los 16 eliminatorios (R32, octavos, cuartos, semis, tercer puesto y final).</p>
+      <Section icon="🎯" title={t('reglas.s1title')}>
+        <p>{t('reglas.s1body')}</p>
         <ul className="mt-3 space-y-2 text-stone-600">
-          <li className="flex gap-2"><span className="mt-0.5 flex-shrink-0">1.</span><span>Ve a la pestaña <strong>Pronósticos</strong> y rellena los marcadores de todos los partidos de grupos.</span></li>
-          <li className="flex gap-2"><span className="mt-0.5 flex-shrink-0">2.</span><span>Según vayas poniendo resultados de grupos, la app predice automáticamente qué equipos pasan de ronda y te permite poner el marcador de cada partido eliminatorio.</span></li>
-          <li className="flex gap-2"><span className="mt-0.5 flex-shrink-0">3.</span><span>Cuando tengas todos los partidos rellenos (104 en total), podrás pulsar <strong>Enviar pronóstico</strong>.</span></li>
+          <li className="flex gap-2"><span className="mt-0.5 flex-shrink-0">1.</span><span>{t('reglas.s1step1')}</span></li>
+          <li className="flex gap-2"><span className="mt-0.5 flex-shrink-0">2.</span><span>{t('reglas.s1step2')}</span></li>
+          <li className="flex gap-2"><span className="mt-0.5 flex-shrink-0">3.</span><span>{t('reglas.s1step3')}</span></li>
         </ul>
         <Callout type="warning">
-          El pronóstico se envía <strong>una sola vez y es irreversible</strong>. Una vez enviado no podrás modificar ningún resultado.
+          {t('reglas.s1callout')}
         </Callout>
       </Section>
 
       {/* 2. Fecha límite */}
-      <Section icon="⏰" title="Fecha límite de envío">
-        <p>Los pronósticos se cierran <strong>1 hora antes del primer partido del Mundial</strong> (11 de junio de 2026, México vs. Sudáfrica). A partir de ese momento no se aceptan nuevos envíos ni modificaciones.</p>
+      <Section icon="⏰" title={t('reglas.s2title')}>
+        <p>{t('reglas.s2body')}</p>
         <Callout type="info">
-          La cuenta atrás aparece en la parte superior de la pantalla de Pronósticos. Envía con tiempo.
+          {t('reglas.s2callout')}
         </Callout>
       </Section>
 
       {/* 3. Puntuación */}
-      <Section icon="🏅" title="Sistema de puntuación">
-        <p className="mb-4">Los puntos se calculan automáticamente cuando se registra el resultado real de cada partido:</p>
+      <Section icon="🏅" title={t('reglas.s3title')}>
+        <p className="mb-4">{t('reglas.s3body')}</p>
         <div className="space-y-3">
           <ScoreRow
-            label="Resultado exacto"
-            badge="🎯 +3 pts"
+            label={t('reglas.s3exact')}
+            badge={t('reglas.s3exactBadge')}
             badgeClass="bg-amber-500/15 text-amber-600 border border-amber-500/30"
-            description="Aciertas el marcador exacto. Ej: predices 2–1 y acaba 2–1."
+            description={t('reglas.s3exactDesc')}
           />
           <ScoreRow
-            label="Ganador correcto"
-            badge="✓ +1 pt"
+            label={t('reglas.s3correct')}
+            badge={t('reglas.s3correctBadge')}
             badgeClass="bg-blue-500/15 text-blue-600 border border-blue-500/30"
-            description="Aciertas quién gana (o que hay empate) pero el marcador no es exacto. Ej: predices 2–1 y acaba 3–1."
+            description={t('reglas.s3correctDesc')}
           />
           <ScoreRow
-            label="Fallo"
-            badge="✗ 0 pts"
+            label={t('reglas.s3wrong')}
+            badge={t('reglas.s3wrongBadge')}
             badgeClass="bg-stone-100 text-stone-500 border border-stone-200"
-            description="El ganador que predices no coincide con el resultado real."
+            description={t('reglas.s3wrongDesc')}
           />
         </div>
-        <p className="mt-4 text-sm text-stone-500">La clasificación general suma los puntos de todos los partidos. Los puntos por liga son independientes de los globales.</p>
+        <p className="mt-4 text-sm text-stone-500">{t('reglas.s3note')}</p>
       </Section>
 
       {/* 4. Ligas */}
-      <Section icon="🏆" title="Ligas privadas">
-        <p>Las ligas te permiten competir dentro de un grupo cerrado de amigos. Puedes estar en varias ligas a la vez.</p>
+      <Section icon="🏆" title={t('reglas.s4title')}>
+        <p>{t('reglas.s4body')}</p>
 
         <div className="mt-4 grid sm:grid-cols-2 gap-3">
           <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4">
-            <p className="font-semibold text-stone-800 mb-1">Crear una liga</p>
-            <p className="text-sm text-stone-600">Pulsa el selector de liga en la barra superior → <em>Crear o unirme a otra liga</em> → pestaña <em>Crear liga</em>. Recibirás un código de 8 letras para compartir con tus amigos.</p>
+            <p className="font-semibold text-stone-800 mb-1">{t('reglas.s4createTitle')}</p>
+            <p className="text-sm text-stone-600">{t('reglas.s4createDesc')}</p>
           </div>
           <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4">
-            <p className="font-semibold text-stone-800 mb-1">Unirse a una liga</p>
-            <p className="text-sm text-stone-600">Introduce el código que te haya dado el administrador, o accede al enlace directo que comparta. Te unirás automáticamente.</p>
+            <p className="font-semibold text-stone-800 mb-1">{t('reglas.s4joinTitle')}</p>
+            <p className="text-sm text-stone-600">{t('reglas.s4joinDesc')}</p>
           </div>
         </div>
 
-        <p className="mt-4 text-sm text-stone-600">Cada liga tiene su propia clasificación. Puedes enviar un pronóstico diferente para cada liga, o reusar el mismo en varias si lo prefieres.</p>
+        <p className="mt-4 text-sm text-stone-600">{t('reglas.s4note')}</p>
 
         <Callout type="info">
-          Puedes cambiar de liga en cualquier momento desde el selector de la barra superior. La clasificación, resultados y pronósticos se muestran siempre en el contexto de la liga activa.
+          {t('reglas.s4callout')}
         </Callout>
       </Section>
 
       {/* 5. Clasificación */}
-      <Section icon="📊" title="Clasificación">
-        <p>La clasificación muestra a todos los participantes ordenados por puntos totales. En caso de empate a puntos, el orden es:</p>
+      <Section icon="📊" title={t('reglas.s5title')}>
+        <p>{t('reglas.s5body')}</p>
         <ol className="mt-3 space-y-1 text-stone-600 list-decimal list-inside">
-          <li>Mayor número de resultados exactos (3 pts)</li>
-          <li>Mayor número de ganadores correctos (1 pt)</li>
-          <li>Orden alfabético de nombre de usuario</li>
+          <li>{t('reglas.s5tb1')}</li>
+          <li>{t('reglas.s5tb2')}</li>
+          <li>{t('reglas.s5tb3')}</li>
         </ol>
       </Section>
 
       {/* 6. Fase de grupos */}
-      <Section icon="⚽" title="Formato del Mundial 2026">
-        <p>El Mundial 2026 (USA, México y Canadá) tiene un formato nuevo con <strong>48 selecciones</strong>:</p>
+      <Section icon="⚽" title={t('reglas.s6title')}>
+        <p>{t('reglas.s6body')}</p>
         <ul className="mt-3 space-y-2 text-stone-600">
-          <li className="flex gap-2"><span className="flex-shrink-0">•</span><span><strong>12 grupos</strong> (A–L) de 4 equipos. Cada equipo juega 3 partidos.</span></li>
-          <li className="flex gap-2"><span className="flex-shrink-0">•</span><span>Clasifican los <strong>2 primeros de cada grupo</strong> (24 equipos) más los <strong>8 mejores terceros</strong>.</span></li>
-          <li className="flex gap-2"><span className="flex-shrink-0">•</span><span>A partir de ahí, eliminación directa: Ronda de 32 → Octavos → Cuartos → Semis → Final.</span></li>
+          <li className="flex gap-2"><span className="flex-shrink-0">•</span><span>{t('reglas.s6b1')}</span></li>
+          <li className="flex gap-2"><span className="flex-shrink-0">•</span><span>{t('reglas.s6b2')}</span></li>
+          <li className="flex gap-2"><span className="flex-shrink-0">•</span><span>{t('reglas.s6b3')}</span></li>
         </ul>
-        <p className="mt-3 text-sm text-stone-500">La pestaña <strong>Bracket</strong> muestra el cuadro completo con las clasificaciones de grupos en tiempo real.</p>
+        <p className="mt-3 text-sm text-stone-500">{t('reglas.s6note')}</p>
       </Section>
 
       {/* Footer */}
       <div className="text-center text-xs text-stone-400 pb-4">
-        ¿Dudas? Pregunta al administrador de tu liga · Mundial 2026 · USA · México · Canadá
+        {t('reglas.footer')}
       </div>
     </div>
   )
