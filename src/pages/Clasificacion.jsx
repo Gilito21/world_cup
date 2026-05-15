@@ -235,7 +235,7 @@ export default function Clasificacion() {
     setLoadError('')
     try {
       const { data: members } = await sq(
-        supabase.from('league_members').select('user_id, role').eq('league_id', activeLeague.id)
+        supabase.from('league_members').select('user_id, role, prediction_mode').eq('league_id', activeLeague.id)
       )
 
       // Timeout — keep whatever was already rendered (cache or stale state),
@@ -250,17 +250,22 @@ export default function Clasificacion() {
         return
       }
 
-      const memberIds = members.map(m => m.user_id)
+      const memberIds   = members.map(m => m.user_id)
+      const modeByUser  = Object.fromEntries(members.map(m => [m.user_id, m.prediction_mode ?? 'global']))
 
       const [{ data: profiles }, { data: leaguePreds }] = await Promise.all([
         sq(supabase.from('profiles').select('id, username, avatar_url, company').in('id', memberIds)),
         sq(supabase.from('predictions').select('user_id, points_earned')
-          .eq('league_id', activeLeague.id).in('user_id', memberIds)),
+          .or(`league_id.eq.${activeLeague.id},league_id.is.null`)
+          .in('user_id', memberIds)),
       ])
 
       const pointsMap = {}
       const statsMap  = {}
       ;(leaguePreds ?? []).forEach(p => {
+        const mode     = modeByUser[p.user_id] ?? 'global'
+        const expected = mode === 'per_league' ? activeLeague.id : null
+        if (p.league_id !== expected) return
         pointsMap[p.user_id] = (pointsMap[p.user_id] ?? 0) + (p.points_earned ?? 0)
         if (!statsMap[p.user_id]) statsMap[p.user_id] = { exact: 0, correct: 0, total: 0 }
         statsMap[p.user_id].total++
