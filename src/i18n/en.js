@@ -529,6 +529,12 @@ export default {
     selectLeague: 'Select league',
   },
 
+  layout: {
+    freeLeagueErrorTitle: 'Could not create league',
+    freeLeagueErrorDesc: 'There was a problem creating "{{name}}". Retry or cancel to create it later from the league switcher.',
+    freeLeagueRetry: 'Retry',
+  },
+
   payment: {
     payBtn: 'Pay {{price}} · Create league',
     processing: 'Processing…',
@@ -543,6 +549,7 @@ export default {
     errorProcessing: 'Payment could not be processed.',
     errorCreating: 'Could not create the league.',
     errorInitiate: 'Could not start the payment.',
+    confirmFailedSupport: 'Payment went through but the league could not be created ({{err}}). Your payment is on file and we will be in touch. If you need urgent help, contact support with this ID: {{id}}',
     notConfigured: 'Payment not configured',
     notConfiguredDesc: 'VITE_STRIPE_PUBLISHABLE_KEY is missing from the environment.',
     createTitle: 'Create league: {{name}}',

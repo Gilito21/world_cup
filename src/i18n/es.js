@@ -529,6 +529,12 @@ export default {
     selectLeague: 'Seleccionar liga',
   },
 
+  layout: {
+    freeLeagueErrorTitle: 'No se pudo crear la liga',
+    freeLeagueErrorDesc: 'Hubo un problema creando "{{name}}". Reintenta o cancela para hacerlo más tarde desde el selector de liga.',
+    freeLeagueRetry: 'Reintentar',
+  },
+
   payment: {
     payBtn: 'Pagar {{price}} · Crear liga',
     processing: 'Procesando…',
@@ -543,6 +549,7 @@ export default {
     errorProcessing: 'No se pudo procesar el pago.',
     errorCreating: 'No se pudo crear la liga.',
     errorInitiate: 'No se pudo iniciar el pago.',
+    confirmFailedSupport: 'El pago se realizó correctamente pero no se pudo crear la liga ({{err}}). Tu pago está registrado y nos pondremos en contacto contigo. Si necesitas ayuda urgente, contacta con soporte indicando este ID: {{id}}',
     notConfigured: 'Pago no configurado',
     notConfiguredDesc: 'Falta VITE_STRIPE_PUBLISHABLE_KEY en el entorno.',
     createTitle: 'Crear liga: {{name}}',

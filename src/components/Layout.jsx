@@ -108,29 +108,44 @@ export default function Layout() {
   const [pendingPaymentName, setPendingPaymentName] = useState(() => {
     try { return localStorage.getItem('porra-pending-league-create') } catch { return null }
   })
+  const [freeLeagueError, setFreeLeagueError]   = useState(false)
+  const [freeLeagueAttempt, setFreeLeagueAttempt] = useState(0)
 
   // Si el usuario logueado es founder y hay intención pendiente, crea la
-  // liga directo sin pasar por el modal de pago.
+  // liga directo sin pasar por el modal de pago. Retry transient failures
+  // (backoff 0→1.5s→4s) before surfacing the error to the user.
   useEffect(() => {
     if (!pendingPaymentName) return
     if (!profile?.is_founder) return
     let cancelled = false
+    setFreeLeagueError(false)
     ;(async () => {
-      const { data, error } = await supabase.functions.invoke('create-league-free', {
-        body: { league_name: pendingPaymentName },
-      })
-      if (cancelled) return
-      if (error || !data?.league) {
-        // Leave localStorage intact so the payment modal can still be used
-        console.error('create-league-free failed:', error)
-        return
+      const BACKOFFS_MS = [0, 1500, 4000]
+      for (const wait of BACKOFFS_MS) {
+        if (cancelled) return
+        if (wait) await new Promise(r => setTimeout(r, wait))
+        const { data, error } = await supabase.functions.invoke('create-league-free', {
+          body: { league_name: pendingPaymentName },
+        })
+        if (cancelled) return
+        if (!error && data?.league) {
+          localStorage.removeItem('porra-pending-league-create')
+          setPendingPaymentName(null)
+          if (onLeagueCreated) await onLeagueCreated(data.league)
+          return
+        }
+        console.error('create-league-free attempt failed:', error)
       }
-      localStorage.removeItem('porra-pending-league-create')
-      setPendingPaymentName(null)
-      if (onLeagueCreated) await onLeagueCreated(data.league)
+      if (!cancelled) setFreeLeagueError(true)
     })()
     return () => { cancelled = true }
-  }, [pendingPaymentName, profile?.is_founder, onLeagueCreated])
+  }, [pendingPaymentName, profile?.is_founder, onLeagueCreated, freeLeagueAttempt])
+
+  function dismissFreeLeagueError() {
+    setFreeLeagueError(false)
+    localStorage.removeItem('porra-pending-league-create')
+    setPendingPaymentName(null)
+  }
 
   async function handleSignOut() {
     await signOut()
@@ -253,12 +268,42 @@ export default function Layout() {
           Si profile aún no cargó, mostramos el modal igualmente: el
           peor caso para un founder es que el modal aparezca un instante
           antes de que el effect del bypass lo cierre. */}
-      {pendingPaymentName && !profile?.is_founder && (
+      {pendingPaymentName && !profile?.is_founder && !freeLeagueError && (
         <PaymentModal
           leagueName={pendingPaymentName}
           onSuccess={handlePaymentSuccess}
           onClose={handlePaymentClose}
         />
+      )}
+
+      {/* Founder free-league creation failed after retries — let the user
+          retry manually or dismiss to recover state. */}
+      {freeLeagueError && (
+        <div className="fixed inset-x-0 top-4 z-[70] flex justify-center px-3 pointer-events-none">
+          <div className="pointer-events-auto bg-red-50 border border-red-200 rounded-2xl shadow-lg shadow-red-900/10 px-4 py-3 max-w-sm w-full space-y-2">
+            <div className="flex items-start gap-2">
+              <span className="text-lg">⚠️</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-red-700">{t('layout.freeLeagueErrorTitle')}</p>
+                <p className="text-xs text-red-600 mt-0.5">{t('layout.freeLeagueErrorDesc', { name: pendingPaymentName })}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setFreeLeagueError(false); setFreeLeagueAttempt(n => n + 1) }}
+                className="flex-1 text-xs font-semibold bg-red-600 text-white rounded-lg py-2 hover:bg-red-700 transition-colors"
+              >
+                {t('layout.freeLeagueRetry')}
+              </button>
+              <button
+                onClick={dismissFreeLeagueError}
+                className="flex-1 text-xs font-semibold bg-white text-red-700 border border-red-200 rounded-lg py-2 hover:bg-red-100 transition-colors"
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <ReportButton username={profile?.username} userEmail={user?.email} />

@@ -37,19 +37,34 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
       return
     }
 
-    // 2) Verifica server-side y crea la liga
-    try {
-      const { data, error: fnErr } = await supabase.functions.invoke('confirm-league-payment', {
-        body: { payment_intent_id: paymentIntentId },
-      })
-      if (fnErr) throw new Error(fnErr.message ?? t('payment.errorCreating'))
-      if (data?.error === 'league_name_taken') throw new Error(t('league.nameTaken'))
-      if (!data?.league) throw new Error(data?.error ?? 'Respuesta inesperada del servidor.')
-      onSuccess(data.league)
-    } catch (err) {
-      setError(`El pago se realizó pero hubo un problema creando la liga (${err.message}). Contacta con soporte indicando el ID: ${paymentIntentId}`)
-      setSubmitting(false)
+    // 2) Verifica server-side y crea la liga.
+    // confirm-league-payment is idempotent (returns the existing league if
+    // already created), so transient network/edge-function failures are safe
+    // to retry. We back off and try up to 3 times before showing the support
+    // fallback — most flaky failures resolve on the second attempt.
+    const BACKOFFS_MS = [0, 1500, 4000]
+    let lastErr
+    for (const wait of BACKOFFS_MS) {
+      if (wait) await new Promise(r => setTimeout(r, wait))
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke('confirm-league-payment', {
+          body: { payment_intent_id: paymentIntentId },
+        })
+        if (fnErr) throw new Error(fnErr.message ?? t('payment.errorCreating'))
+        if (data?.error === 'league_name_taken') {
+          setError(t('league.nameTaken'))
+          setSubmitting(false)
+          return
+        }
+        if (!data?.league) throw new Error(data?.error ?? t('payment.errorCreating'))
+        onSuccess(data.league)
+        return
+      } catch (err) {
+        lastErr = err
+      }
     }
+    setError(t('payment.confirmFailedSupport', { id: paymentIntentId, err: lastErr?.message ?? '' }))
+    setSubmitting(false)
   }
 
   return (
