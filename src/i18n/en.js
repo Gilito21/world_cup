@@ -219,6 +219,9 @@ export default {
 
   pronosticos: {
     title: 'My predictions',
+    noLeagueTitle: 'Join a league to submit your predictions',
+    noLeagueDesc: 'Invite your friends and compete against them',
+    noLeagueCta: 'Join a league',
     subtitle: 'Fill in all matches (group stage + knockout rounds) and submit your full prediction at once.',
     progressLabel: 'Prediction progress',
     cutoffNote: '⏰ Submissions close 1 hour before the first match:',

@@ -219,6 +219,9 @@ export default {
 
   pronosticos: {
     title: 'Mis pronósticos',
+    noLeagueTitle: 'Únete a una liga para poder enviar',
+    noLeagueDesc: 'Invita a tus amigos y compite contra ellos',
+    noLeagueCta: 'Unirme a una liga',
     subtitle: 'Rellena todos los partidos (grupos + eliminatorias) y envía el pronóstico completo de una vez.',
     progressLabel: 'Progreso del pronóstico',
     cutoffNote: '⏰ El plazo de envío cierra 1 hora antes del primer partido:',
