@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLang } from '../contexts/LangContext'
 
@@ -11,152 +11,184 @@ function CopyButton({ text, label }) {
       await navigator.clipboard.writeText(text)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch {/* clipboard blocked — ignoramos */}
+    } catch {/* clipboard blocked */}
   }
   return (
-    <button
-      onClick={handleCopy}
-      className="btn-secondary text-xs px-3 py-2 flex-shrink-0"
-    >
+    <button onClick={handleCopy} className="btn-secondary text-xs px-3 py-2 flex-shrink-0">
       {copied ? '✓' : displayLabel}
     </button>
   )
 }
 
-// Generates a downloadable PNG share card via canvas
-function generateShareImage({ leagueName, inviteCode, inviteLink, appName, joinText, codeLabel }) {
-  const W = 1080, H = 1080
+// Draw text letter-by-letter to simulate letterSpacing (not natively supported on canvas)
+function fillSpacedText(ctx, text, x, y, spacing) {
+  const chars = [...text]
+  const totalW = chars.reduce((sum, ch) => sum + ctx.measureText(ch).width + spacing, 0) - spacing
+  let cx = x - totalW / 2
+  for (const ch of chars) {
+    ctx.fillText(ch, cx + ctx.measureText(ch).width / 2, y)
+    cx += ctx.measureText(ch).width + spacing
+  }
+}
+
+function generateShareImage({ leagueName, inviteCode, joinText, appName, inviteLink, codeLabel }) {
+  const W = 1200, H = 675
   const canvas = document.createElement('canvas')
   canvas.width = W
   canvas.height = H
   const ctx = canvas.getContext('2d')
+  ctx.textBaseline = 'middle'
 
-  // Amber gradient background
-  const grd = ctx.createLinearGradient(0, 0, W, H)
-  grd.addColorStop(0, '#f59e0b')
-  grd.addColorStop(0.55, '#fb923c')
-  grd.addColorStop(1, '#ea580c')
-  ctx.fillStyle = grd
+  // ── BACKGROUND ─────────────────────────────────────────────────────
+  const bg = ctx.createLinearGradient(0, 0, W, H)
+  bg.addColorStop(0,   '#080c18')
+  bg.addColorStop(0.5, '#0d1427')
+  bg.addColorStop(1,   '#060a14')
+  ctx.fillStyle = bg
   ctx.fillRect(0, 0, W, H)
 
-  // Subtle dot pattern overlay
-  ctx.fillStyle = 'rgba(0,0,0,0.06)'
-  for (let x = 24; x < W; x += 40) {
-    for (let y = 24; y < H; y += 40) {
-      ctx.beginPath()
-      ctx.arc(x, y, 2, 0, Math.PI * 2)
-      ctx.fill()
-    }
+  // Blue glow left
+  const gl = ctx.createRadialGradient(160, H / 2, 0, 160, H / 2, 420)
+  gl.addColorStop(0, 'rgba(37, 99, 235, 0.28)')
+  gl.addColorStop(1, 'rgba(37, 99, 235, 0)')
+  ctx.fillStyle = gl
+  ctx.fillRect(0, 0, W, H)
+
+  // Amber glow right
+  const gr = ctx.createRadialGradient(W - 160, H / 2, 0, W - 160, H / 2, 420)
+  gr.addColorStop(0, 'rgba(245, 158, 11, 0.22)')
+  gr.addColorStop(1, 'rgba(245, 158, 11, 0)')
+  ctx.fillStyle = gr
+  ctx.fillRect(0, 0, W, H)
+
+  // Diagonal lines texture
+  ctx.save()
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)'
+  ctx.lineWidth = 1
+  for (let i = -H; i < W + H; i += 36) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + H, H); ctx.stroke()
+  }
+  ctx.restore()
+
+  // ── GOLD GRADIENT helper ────────────────────────────────────────────
+  function goldGrad(x1, x2, y) {
+    const g = ctx.createLinearGradient(x1, y, x2, y)
+    g.addColorStop(0,   'rgba(245,158,11,0)')
+    g.addColorStop(0.2, 'rgba(245,158,11,0.7)')
+    g.addColorStop(0.5, 'rgba(251,191,36,1)')
+    g.addColorStop(0.8, 'rgba(245,158,11,0.7)')
+    g.addColorStop(1,   'rgba(245,158,11,0)')
+    return g
   }
 
-  // White glass card
-  const cx = W / 2, cardW = 860, cardH = 640, cardY = 200
-  const cardX = (W - cardW) / 2
-  ctx.fillStyle = 'rgba(255,255,255,0.20)'
-  ctx.beginPath()
-  ctx.roundRect(cardX, cardY, cardW, cardH, 32)
-  ctx.fill()
-
-  // ⚽ emoji
-  ctx.font = '96px serif'
+  // ── TOP: App name ───────────────────────────────────────────────────
   ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('⚽', cx, 140)
+  ctx.font = 'bold 18px system-ui, sans-serif'
+  ctx.fillStyle = 'rgba(251,191,36,0.75)'
+  ctx.fillText(appName.toUpperCase(), W / 2, 46)
 
-  // App name
-  ctx.font = 'bold 38px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = 'rgba(0,0,0,0.70)'
-  ctx.fillText(appName, cx, 210)
+  // ── TITLE: "ÚNETE A MI LIGA" ────────────────────────────────────────
+  ctx.font = 'bold 72px system-ui, sans-serif'
+  ctx.fillStyle = '#ffffff'
+  ctx.shadowColor = 'rgba(245,158,11,0.45)'
+  ctx.shadowBlur = 28
+  ctx.fillText(joinText.toUpperCase(), W / 2, 140)
+  ctx.shadowBlur = 0
 
-  // "Join my league!" headline
-  ctx.font = 'bold 68px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = '#000'
-  ctx.fillText(joinText, cx, 330)
+  // ── LEAGUE NAME ─────────────────────────────────────────────────────
+  ctx.font = 'bold 36px system-ui, sans-serif'
+  ctx.fillStyle = 'rgba(255,255,255,0.50)'
+  let name = leagueName
+  while (ctx.measureText(name).width > W - 160) name = name.slice(0, -1)
+  if (name !== leagueName) name += '…'
+  ctx.fillText(name.toUpperCase(), W / 2, 210)
 
-  // League name
-  ctx.font = 'bold 52px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = 'rgba(0,0,0,0.75)'
-  // Truncate long names
-  let nameText = leagueName
-  while (nameText.length > 22 && ctx.measureText(nameText).width > cardW - 80) {
-    nameText = nameText.slice(0, -1)
-  }
-  if (nameText !== leagueName) nameText += '…'
-  ctx.fillText(nameText, cx, 420)
+  // ── DIVIDER ─────────────────────────────────────────────────────────
+  ctx.strokeStyle = goldGrad(60, W - 60, 248)
+  ctx.lineWidth = 1.5
+  ctx.beginPath(); ctx.moveTo(60, 248); ctx.lineTo(W - 60, 248); ctx.stroke()
 
-  // Divider
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)'
-  ctx.lineWidth = 2
-  ctx.beginPath()
-  ctx.moveTo(cardX + 60, 480)
-  ctx.lineTo(cardX + cardW - 60, 480)
-  ctx.stroke()
+  // ── CODE LABEL ──────────────────────────────────────────────────────
+  ctx.font = '600 17px system-ui, sans-serif'
+  ctx.fillStyle = 'rgba(251,191,36,0.70)'
+  ctx.fillText(codeLabel.toUpperCase(), W / 2, 285)
 
-  // Code label
-  ctx.font = '500 28px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = 'rgba(0,0,0,0.5)'
-  ctx.fillText(codeLabel.toUpperCase(), cx, 530)
+  // ── INVITE CODE (huge, spaced) ──────────────────────────────────────
+  ctx.font = 'bold 108px monospace'
+  ctx.fillStyle = '#fbbf24'
+  ctx.shadowColor = 'rgba(245,158,11,0.55)'
+  ctx.shadowBlur = 36
+  fillSpacedText(ctx, inviteCode, W / 2, 400, 14)
+  ctx.shadowBlur = 0
 
-  // Invite code (large monospace)
-  ctx.font = 'bold 88px monospace'
-  ctx.fillStyle = '#000'
-  ctx.fillText(inviteCode, cx, 640)
+  // ── DIVIDER ─────────────────────────────────────────────────────────
+  ctx.strokeStyle = goldGrad(60, W - 60, 462)
+  ctx.lineWidth = 1
+  ctx.beginPath(); ctx.moveTo(60, 462); ctx.lineTo(W - 60, 462); ctx.stroke()
 
-  // Divider
-  ctx.beginPath()
-  ctx.moveTo(cardX + 60, 695)
-  ctx.lineTo(cardX + cardW - 60, 695)
-  ctx.stroke()
+  // ── JOIN URL ────────────────────────────────────────────────────────
+  ctx.font = '500 20px monospace'
+  ctx.fillStyle = 'rgba(255,255,255,0.38)'
+  ctx.fillText(inviteLink, W / 2, 500)
 
-  // Join URL
-  ctx.font = '26px monospace'
-  ctx.fillStyle = 'rgba(0,0,0,0.55)'
-  ctx.fillText(inviteLink, cx, 740)
+  // ── FOOTER BAR ──────────────────────────────────────────────────────
+  ctx.fillStyle = 'rgba(245,158,11,0.07)'
+  ctx.fillRect(0, H - 88, W, 88)
+  ctx.strokeStyle = 'rgba(245,158,11,0.18)'
+  ctx.lineWidth = 1
+  ctx.beginPath(); ctx.moveTo(0, H - 88); ctx.lineTo(W, H - 88); ctx.stroke()
 
-  // Footer strip
-  ctx.fillStyle = 'rgba(0,0,0,0.12)'
-  ctx.fillRect(0, H - 100, W, 100)
-  ctx.font = 'bold 30px system-ui, -apple-system, sans-serif'
-  ctx.fillStyle = 'rgba(0,0,0,0.50)'
-  ctx.fillText('porramundial.com · World Cup 2026', cx, H - 55)
+  // Footer icon + text
+  ctx.font = 'bold 20px system-ui, sans-serif'
+  ctx.fillStyle = 'rgba(251,191,36,0.85)'
+  const domain = inviteLink.replace(/https?:\/\//, '').split('/')[0].toUpperCase()
+  ctx.fillText(`⚽  ESTADÍSTICAS BASADAS EN VOTOS DE ${domain}`, W / 2, H - 44)
 
   return canvas
 }
 
-// Visual share card shown inside the modal
-function ShareCard({ leagueName, inviteCode, appName, joinText }) {
+// Preview card shown inside the modal — matches the dark style
+function ShareCard({ leagueName, inviteCode, joinText, appName }) {
   return (
     <div
       className="relative rounded-2xl overflow-hidden select-none"
-      style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #fb923c 55%, #ea580c 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #080c18 0%, #0d1427 50%, #060a14 100%)' }}
     >
-      {/* Dot overlay */}
-      <div
-        className="absolute inset-0 opacity-10 pointer-events-none"
-        style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '28px 28px' }}
-      />
-      <div className="relative px-6 py-8 text-center">
-        <div className="text-5xl mb-1">⚽</div>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-black/60 mb-4">{appName}</p>
+      {/* Blue glow left */}
+      <div className="absolute inset-y-0 left-0 w-1/2 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at 0% 50%, rgba(37,99,235,0.25) 0%, transparent 70%)' }} />
+      {/* Amber glow right */}
+      <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at 100% 50%, rgba(245,158,11,0.22) 0%, transparent 70%)' }} />
+      {/* Diagonal lines */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
+        style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff 0px, #fff 1px, transparent 1px, transparent 36px)' }} />
 
-        {/* Glass card */}
-        <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-5 mx-auto max-w-xs">
-          <p className="font-bold text-lg text-black/80 mb-1">{joinText}</p>
-          <p className="font-semibold text-sm text-black/60 mb-4 truncate">{leagueName}</p>
-          <div className="h-px bg-black/15 mb-4" />
-          <p className="text-[10px] font-semibold text-black/50 uppercase tracking-widest mb-1">Código</p>
-          <p className="font-black text-3xl tracking-[0.35em] text-black font-mono">{inviteCode}</p>
-        </div>
+      <div className="relative px-5 py-6 text-center space-y-1">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">{appName}</p>
+        <p className="text-xl font-black text-white uppercase tracking-wide leading-tight"
+          style={{ textShadow: '0 0 20px rgba(245,158,11,0.45)' }}>
+          {joinText}
+        </p>
+        <p className="text-xs font-semibold text-white/40 uppercase tracking-wider truncate">{leagueName}</p>
+
+        {/* Gold divider */}
+        <div className="my-3" style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(251,191,36,0.8), transparent)' }} />
+
+        {/* Code */}
+        <p className="text-[10px] font-semibold text-amber-400/60 uppercase tracking-[0.15em]">Código</p>
+        <p className="font-black text-3xl tracking-[0.4em] text-amber-400 font-mono"
+          style={{ textShadow: '0 0 20px rgba(245,158,11,0.55)' }}>
+          {inviteCode}
+        </p>
       </div>
     </div>
   )
 }
 
-// Modal de éxito tras crear una liga (founder o tras pago).
-// Muestra el código, el link y una tarjeta visual para compartir.
 export default function LeagueCreatedModal({ league, onClose }) {
   const { t } = useLang()
-  const [shareStatus, setShareStatus] = useState('idle') // idle | copied | downloading
+  const [shareStatus, setShareStatus] = useState('idle')
 
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape') onClose() }
@@ -165,41 +197,27 @@ export default function LeagueCreatedModal({ league, onClose }) {
   }, [onClose])
 
   const inviteLink = `${window.location.origin}/join/${league.invite_code}`
-  const appName = t('common.appName')
+  const appName  = t('common.appName')
   const joinText = t('league.shareCardJoin')
   const codeLabel = t('league.inviteCode')
 
   async function handleShare() {
-    const text = t('league.shareMsg', {
-      name: league.name,
-      code: league.invite_code,
-      link: inviteLink,
-    })
+    const text = t('league.shareMsg', { name: league.name, code: league.invite_code, link: inviteLink })
     if (navigator.share && navigator.canShare?.({ title: appName, text, url: inviteLink })) {
-      try {
-        await navigator.share({ title: appName, text, url: inviteLink })
-      } catch { /* user cancelled */ }
+      try { await navigator.share({ title: appName, text, url: inviteLink }) } catch { /* cancelled */ }
     } else {
-      // Fallback: copy text to clipboard
       try {
         await navigator.clipboard.writeText(`${text}\n${inviteLink}`)
         setShareStatus('copied')
         setTimeout(() => setShareStatus('idle'), 2500)
-      } catch { /* clipboard blocked */ }
+      } catch { /* blocked */ }
     }
   }
 
   async function handleDownload() {
     setShareStatus('downloading')
     try {
-      const canvas = generateShareImage({
-        leagueName: league.name,
-        inviteCode: league.invite_code,
-        inviteLink,
-        appName,
-        joinText,
-        codeLabel,
-      })
+      const canvas = generateShareImage({ leagueName: league.name, inviteCode: league.invite_code, inviteLink, appName, joinText, codeLabel })
       const a = document.createElement('a')
       a.download = `liga-${league.invite_code}.png`
       a.href = canvas.toDataURL('image/png')
@@ -219,19 +237,12 @@ export default function LeagueCreatedModal({ league, onClose }) {
         <div className="relative bg-gradient-to-br from-amber-500 via-amber-400 to-orange-400 p-6 text-stone-950 text-center">
           <div className="text-4xl mb-1">🎉</div>
           <h2 className="text-xl font-bold">{t('league.created')}</h2>
-          <p className="text-stone-900/80 text-sm mt-1">
-            {t('league.createdReady', { name: league.name })}
-          </p>
+          <p className="text-stone-900/80 text-sm mt-1">{t('league.createdReady', { name: league.name })}</p>
         </div>
 
         <div className="p-5 space-y-4">
-          {/* Visual share card */}
-          <ShareCard
-            leagueName={league.name}
-            inviteCode={league.invite_code}
-            appName={appName}
-            joinText={joinText}
-          />
+          {/* Dark share card preview */}
+          <ShareCard leagueName={league.name} inviteCode={league.invite_code} joinText={joinText} appName={appName} />
 
           {/* Invite code row */}
           <div className="space-y-2">
@@ -248,20 +259,15 @@ export default function LeagueCreatedModal({ league, onClose }) {
           <div className="space-y-2">
             <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{t('league.directLink')}</p>
             <div className="flex items-center gap-2">
-              <p className="flex-1 text-xs text-stone-500 bg-stone-100 rounded-xl px-3 py-2.5 font-mono truncate">
-                {inviteLink}
-              </p>
+              <p className="flex-1 text-xs text-stone-500 bg-stone-100 rounded-xl px-3 py-2.5 font-mono truncate">{inviteLink}</p>
               <CopyButton text={inviteLink} />
             </div>
             <p className="text-xs text-stone-400">{t('league.inviteFriends')}</p>
           </div>
 
-          {/* Share + Download buttons */}
+          {/* Share + Download */}
           <div className="flex gap-2">
-            <button
-              onClick={handleShare}
-              className="flex-1 btn-primary flex items-center justify-center gap-2 text-sm"
-            >
+            <button onClick={handleShare} className="flex-1 btn-primary flex items-center justify-center gap-2 text-sm">
               <span>📤</span>
               {shareStatus === 'copied' ? t('common.copied') : t('league.shareBtn')}
             </button>
