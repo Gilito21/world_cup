@@ -241,6 +241,8 @@ export default {
     submitBtn: 'Enviar pronóstico definitivo',
     submitBtnPending: 'Falta completar {{n}} partido{{s}}',
     submitHint: 'Debes rellenar el resultado de todos los partidos (grupos + eliminatorias) antes de poder enviar.',
+    consensusLabel: 'Consenso global',
+    consensusTooltip: 'Marcador más pronosticado por toda la app · {{n}} pronósticos',
     submitted: 'Pronóstico enviado',
     submittedDesc: '{{n}} partidos · No modificable',
     confirmTitle: '¿Enviar pronóstico?',

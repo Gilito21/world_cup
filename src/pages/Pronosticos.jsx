@@ -91,7 +91,7 @@ function CutoffCountdown({ cutoffTime }) {
 
 // ─── SCORE INPUT ─────────────────────────────────────────────────────────────
 
-function ScoreInput({ value, onChange, disabled }) {
+function ScoreInput({ value, onChange, disabled, placeholder }) {
   return (
     <input
       type="number"
@@ -101,10 +101,12 @@ function ScoreInput({ value, onChange, disabled }) {
       min="0"
       max="99"
       value={value}
+      placeholder={placeholder != null ? String(placeholder) : undefined}
       onFocus={e => e.target.select()}
       onChange={e => onChange(Math.max(0, Math.min(99, parseInt(e.target.value) || 0)))}
       disabled={disabled}
       className="w-11 h-11 sm:w-12 sm:h-12 text-center text-xl sm:text-xl font-bold bg-white border border-stone-300 rounded-lg sm:rounded-xl text-stone-900
+                 placeholder:text-stone-300 placeholder:font-bold
                  focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500
                  disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm
                  touch-manipulation"
@@ -272,7 +274,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
 
 // ─── MATCH CARD ───────────────────────────────────────────────────────────────
 
-function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, submitted, isPastCutoff, onPreview }) {
+function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, submitted, isPastCutoff, onPreview, consensus }) {
   const { t, dateLocale } = useLang()
   const STAGE_INFO = buildStageInfo(t)
   const STATUS_BADGE = useMemo(() => ({
@@ -401,10 +403,31 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               <span className="text-xl font-bold text-red-400">{match.away_score ?? 0}</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <ScoreInput value={home} onChange={setHome} disabled={isLocked} />
-              <span className="text-stone-400 font-bold text-sm">-</span>
-              <ScoreInput value={away} onChange={setAway} disabled={isLocked} />
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-2">
+                <ScoreInput
+                  value={home}
+                  onChange={setHome}
+                  disabled={isLocked}
+                  placeholder={!isLocked && home === '' && consensus ? consensus.home_score : undefined}
+                />
+                <span className="text-stone-400 font-bold text-sm">-</span>
+                <ScoreInput
+                  value={away}
+                  onChange={setAway}
+                  disabled={isLocked}
+                  placeholder={!isLocked && away === '' && consensus ? consensus.away_score : undefined}
+                />
+              </div>
+              {consensus && !isLocked && (home === '' || away === '') && (
+                <span
+                  className="text-[10px] text-stone-400 flex items-center gap-1 leading-none"
+                  title={t('pronosticos.consensusTooltip', { n: consensus.total_voters })}
+                >
+                  <span aria-hidden="true">🌐</span>
+                  {t('pronosticos.consensusLabel')}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -587,6 +610,7 @@ export default function Pronosticos() {
   const [matches,     setMatches]     = useState(() => getMatchCache() ?? [])
   const [predictions, setPredictions] = useState({})
   const [drafts,      setDrafts]      = useState({})
+  const [consensus,   setConsensus]   = useState({}) // matchId → { home_score, away_score, vote_count, total_voters }
   // Start as loading only if we have no cached matches at all. When the user
   // navigates back to this page and we already have data in memory, render it
   // immediately and refresh in the background — no spinner.
@@ -721,6 +745,34 @@ export default function Pronosticos() {
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeLeague?.id, predictionMode, leagueLoading])
+
+  // ── Global consensus (most-picked score per match across all users) ─────────
+  // Single RPC call returns one row per match with ≥3 voters. Aggregates
+  // run via SECURITY DEFINER on the server; only the top score per match
+  // is exposed to the client. We cache the result in dataCache so revisits
+  // show the placeholder hints instantly while a fresh copy refreshes in
+  // the background.
+  useEffect(() => {
+    const cached = getCache('consensus:global')
+    if (cached) setConsensus(cached)
+    let cancelled = false
+    ;(async () => {
+      const { data } = await sq(supabase.rpc('match_consensus_v1'))
+      if (cancelled || !data) return
+      const map = {}
+      for (const row of data) {
+        map[row.match_id] = {
+          home_score:  row.home_score,
+          away_score:  row.away_score,
+          vote_count:  row.vote_count,
+          total_voters: row.total_voters,
+        }
+      }
+      setConsensus(map)
+      setCache('consensus:global', map)
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   // ── Cascade: group predictions → predicted knockout teams ───────────────────
   const predictedOverlay = useMemo(() => {
@@ -1117,6 +1169,7 @@ export default function Pronosticos() {
                       predictedAway={predictedOverlay[m.id]?.awayTeam}
                       submitted={isSubmitted}
                       isPastCutoff={isPastCutoff}
+                      consensus={consensus[m.id]}
                       onPreview={activeLeague ? () => setPreviewMatch(m) : null}
                     />
                   ))}

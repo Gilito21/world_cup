@@ -110,7 +110,7 @@ function LeaguePanel({ league }) {
       // returned null and crashed the page when rendered.
       const { data: memberRows, error: memberErr } = await supabase
         .from('league_members')
-        .select('user_id, role, joined_at')
+        .select('user_id, role, joined_at, prediction_mode')
         .eq('league_id', league.id)
         .order('joined_at')
 
@@ -119,6 +119,12 @@ function LeaguePanel({ league }) {
 
       const userIds = memberRows.map(m => m.user_id)
 
+      // Each member chooses their own prediction_mode for this league:
+      //  - 'per_league'  → submission row has league_id = league.id
+      //  - 'global'      → submission row has league_id IS NULL
+      // We fetch both candidate sets and resolve each member's submission
+      // status against their own mode so global-mode members aren't
+      // incorrectly marked as "pending".
       const [
         { data: profiles, error: profErr },
         { data: predSubs },
@@ -126,16 +132,30 @@ function LeaguePanel({ league }) {
       ] = await Promise.all([
         supabase.from('profiles').select('id, username, company').in('id', userIds),
         supabase.from('prediction_submissions')
-          .select('user_id').eq('league_id', league.id).eq('source', 'matches').in('user_id', userIds),
+          .select('user_id, league_id').eq('source', 'matches').in('user_id', userIds)
+          .or(`league_id.eq.${league.id},league_id.is.null`),
         supabase.from('prediction_submissions')
-          .select('user_id').eq('league_id', league.id).eq('source', 'extras').in('user_id', userIds),
+          .select('user_id, league_id').eq('source', 'extras').in('user_id', userIds)
+          .or(`league_id.eq.${league.id},league_id.is.null`),
       ])
 
       if (profErr) throw profErr
 
       const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
-      const predSet   = new Set((predSubs   ?? []).map(r => r.user_id))
-      const extrasSet = new Set((extrasSubs ?? []).map(r => r.user_id))
+      const modeByUser = Object.fromEntries(memberRows.map(m => [m.user_id, m.prediction_mode ?? 'global']))
+
+      function submittedFor(rows) {
+        const set = new Set()
+        for (const r of (rows ?? [])) {
+          const mode = modeByUser[r.user_id]
+          const expected = mode === 'per_league' ? league.id : null
+          if (r.league_id === expected) set.add(r.user_id)
+        }
+        return set
+      }
+
+      const predSet   = submittedFor(predSubs)
+      const extrasSet = submittedFor(extrasSubs)
 
       setMembers(memberRows.map(m => {
         const p = profileMap[m.user_id] ?? {}

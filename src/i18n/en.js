@@ -241,6 +241,8 @@ export default {
     submitBtn: 'Submit final prediction',
     submitBtnPending: '{{n}} match{{s}} still to fill in',
     submitHint: 'You must fill in every match result (group stage + knockout rounds) before you can submit.',
+    consensusLabel: 'Global consensus',
+    consensusTooltip: 'Most-picked score across the whole app · {{n}} predictions',
     submitted: 'Prediction submitted',
     submittedDesc: '{{n}} matches · Cannot be changed',
     confirmTitle: 'Submit prediction?',
