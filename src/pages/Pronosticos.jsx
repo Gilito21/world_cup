@@ -8,6 +8,7 @@ import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 import { MatchListSkeleton } from '../components/Skeleton'
 import UpcomingAlert from '../components/UpcomingAlert'
+import MatchPreviewModal from '../components/MatchPreviewModal'
 import LeagueModal from '../components/LeagueModal'
 import PaymentModal from '../components/PaymentModal'
 import LeagueCreatedModal from '../components/LeagueCreatedModal'
@@ -241,7 +242,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
 
 // ─── MATCH CARD ───────────────────────────────────────────────────────────────
 
-function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, submitted, isPastCutoff }) {
+function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, submitted, isPastCutoff, onPreview }) {
   const { t, dateLocale } = useLang()
   const STAGE_INFO = buildStageInfo(t)
   const STATUS_BADGE = useMemo(() => ({
@@ -327,6 +328,21 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               </span>
             )
           })()}
+          {onPreview && (
+            <button
+              type="button"
+              onClick={onPreview}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-stone-400 hover:text-amber-500 hover:bg-amber-50 active:bg-amber-100 transition-colors flex-shrink-0"
+              aria-label={t('preview.openLabel')}
+              title={t('preview.openLabel')}
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -553,6 +569,7 @@ export default function Pronosticos() {
   const [showLeagueModal,  setShowLeagueModal]  = useState(false)
   const [paymentName,      setPaymentName]      = useState(null)
   const [createdLeague,    setCreatedLeague]    = useState(null)
+  const [previewMatch,     setPreviewMatch]     = useState(null)
 
   // Submission state
   const [isSubmitted,  setIsSubmitted]  = useState(false)
@@ -1049,6 +1066,7 @@ export default function Pronosticos() {
                       predictedAway={predictedOverlay[m.id]?.awayTeam}
                       submitted={isSubmitted}
                       isPastCutoff={isPastCutoff}
+                      onPreview={activeLeague ? () => setPreviewMatch(m) : null}
                     />
                   ))}
                 </div>
@@ -1076,6 +1094,15 @@ export default function Pronosticos() {
         <LeagueCreatedModal
           league={createdLeague}
           onClose={() => setCreatedLeague(null)}
+        />
+      )}
+      {previewMatch && (
+        <MatchPreviewModal
+          match={previewMatch}
+          userPrediction={predictions[previewMatch.id]}
+          league={activeLeague}
+          predictionMode={predictionMode}
+          onClose={() => setPreviewMatch(null)}
         />
       )}
     </div>

@@ -203,6 +203,7 @@ export default {
     leagueCodeLabel: 'League code',
     share: 'Share',
     shareBtn: 'Share league',
+    shareWhatsApp: 'Share on WhatsApp',
     shareMsg: 'Join my league "{{name}}" on World Cup Predictor 2026!\n\nCode: {{code}}\n{{link}}',
     shareCardJoin: 'Join my league!',
     downloadImage: 'Save image',
@@ -530,6 +531,21 @@ export default {
     inviteCode: 'Code: {{code}}',
     noAdminLeagues: 'You are not admin of any league.',
     selectLeague: 'Select league',
+  },
+
+  preview: {
+    openLabel: 'View match details',
+    upcoming: 'Upcoming',
+    yourPrediction: 'Your prediction',
+    pointsEarned: 'Points',
+    noPrediction: 'You did not submit a prediction for this match.',
+    lockedTitle: 'Predictions hidden',
+    lockedDesc: "You'll see the league's predictions once the match kicks off.",
+    leagueConsensus: 'League consensus ({{n}} predictions)',
+    topScore: 'Most-picked score: {{score}} ({{n}} votes)',
+    members: 'League predictions',
+    noLeaguePredictions: 'Nobody in the league has predicted this match.',
+    draw: 'Draw',
   },
 
   layout: {

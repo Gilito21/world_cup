@@ -5,12 +5,14 @@ import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
 import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from './Spinner'
+import useScrollLock from '../lib/useScrollLock'
 
 // LeagueModal — "Unirme a liga" (gratis) o "Crear liga" (paywall salvo founders).
 // Para crear, NO renderiza el PaymentModal aquí: emite onPaymentRequested(name)
 // y deja que el padre (LeagueSwitcher) gestione el modal de pago como hermano,
 // para evitar portales anidados y bugs de stacking.
 export default function LeagueModal({ onClose, onPaymentRequested, onFounderCreated }) {
+  useScrollLock()
   const { profile }           = useAuth()
   const { joinLeague }        = useLeague()
   const { t }                 = useLang()
@@ -71,15 +73,16 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-stone-900/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 sm:px-4 py-4 sm:py-8 bg-stone-900/40 backdrop-blur-sm overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="card w-full max-w-md animate-slide-up">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-stone-200">
+      <div className="card w-full max-w-md animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
+        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 border-b border-stone-200 flex-shrink-0">
           <h2 className="font-semibold text-stone-900 text-lg">{t('league.title')}</h2>
           <button
             onClick={onClose}
-            className="text-stone-500 hover:text-stone-900 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-stone-100 transition-colors"
+            className="text-stone-500 hover:text-stone-900 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-stone-100 active:bg-stone-200 transition-colors -mr-2"
+            aria-label={t('common.close')}
           >
             ✕
           </button>
@@ -100,7 +103,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
           ))}
         </div>
 
-        <div className="p-5">
+        <div className="p-5 overflow-y-auto flex-1">
           <form onSubmit={handleSubmit} className="space-y-4">
               {tab === 'join' ? (
                 <>

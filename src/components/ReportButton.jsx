@@ -65,7 +65,8 @@ export default function ReportButton({ username, userEmail }) {
               </div>
               <button
                 onClick={handleClose}
-                className="text-stone-400 hover:text-stone-700 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-stone-100 transition-colors text-sm"
+                className="text-stone-400 hover:text-stone-700 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-stone-100 active:bg-stone-200 transition-colors text-sm -mr-2"
+                aria-label={t('common.close')}
               >
                 ✕
               </button>
