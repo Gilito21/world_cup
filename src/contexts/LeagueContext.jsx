@@ -130,7 +130,7 @@ export function LeagueProvider({ children }) {
 
     // Comprobar si ya es miembro
     const already = leagues.find(l => l.id === league.id)
-    if (already) throw new Error(t('league.alreadyMember'))
+    if (already) { const e = new Error(t('league.alreadyMember')); e.code = 'already_member'; throw e }
 
     // Comprobar aforo antes de insertar
     const { count } = await supabase
@@ -144,7 +144,7 @@ export function LeagueProvider({ children }) {
       .insert({ league_id: league.id, user_id: user.id, role: 'member' })
 
     if (memberError) {
-      if (memberError.code === '23505')  throw new Error(t('league.alreadyMember'))
+      if (memberError.code === '23505')  { const e = new Error(t('league.alreadyMember')); e.code = 'already_member'; throw e }
       if (memberError.message?.includes('league_full')) throw new Error(t('league.full'))
       throw memberError
     }
