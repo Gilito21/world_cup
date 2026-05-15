@@ -66,9 +66,9 @@ export function LeagueProvider({ children }) {
   // Join pending league from invite link after login/register
   useEffect(() => {
     if (!user) return
-    const pendingCode = sessionStorage.getItem('porra-invite-code')
+    const pendingCode = localStorage.getItem('porra-invite-code')
     if (!pendingCode) return
-    sessionStorage.removeItem('porra-invite-code')
+    localStorage.removeItem('porra-invite-code')
     async function joinPending() {
       try {
         const { data: league } = await supabase

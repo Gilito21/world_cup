@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { useLang } from '../contexts/LangContext'
 import { Flag, teamName } from '../utils/teams'
 
 const WINDOW_HOURS = 24
@@ -18,6 +19,7 @@ function timeLeft(dateStr) {
 export default function UpcomingAlert() {
   const { user }         = useAuth()
   const { activeLeague } = useLeague()
+  const { t }            = useLang()
   const [missing, setMissing]     = useState([])
   const [dismissed, setDismissed] = useState(false)
 
@@ -80,13 +82,13 @@ export default function UpcomingAlert() {
       <div className="flex-1 min-w-0">
         <p className={`font-semibold text-sm ${urgentCount > 0 ? 'text-red-300' : 'text-amber-300'}`}>
           {urgentCount > 0
-            ? `¡${urgentCount} partido${urgentCount > 1 ? 's' : ''} a punto de empezar sin pronóstico!`
-            : `${missing.length} partido${missing.length > 1 ? 's' : ''} en las próximas ${WINDOW_HOURS}h sin pronóstico`}
+            ? t('upcoming.urgentTitle', { n: urgentCount, s: urgentCount > 1 ? 's' : '' })
+            : t('upcoming.normalTitle', { n: missing.length, s: missing.length > 1 ? 's' : '', h: WINDOW_HOURS })}
         </p>
 
         <ul className="mt-2 space-y-1">
           {missing.slice(0, 3).map(m => {
-            const t = timeLeft(m.match_date)
+            const timeStr = timeLeft(m.match_date)
             const hoursLeft = (new Date(m.match_date) - new Date()) / 3_600_000
             return (
               <li key={m.id} className="flex items-center gap-2 text-sm">
@@ -94,20 +96,20 @@ export default function UpcomingAlert() {
                 <span className="text-stone-700 truncate">
                   {teamName(m.home_team)} vs {teamName(m.away_team)}
                 </span>
-                {t && (
+                {timeStr && (
                   <span className={`ml-auto flex-shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
                     hoursLeft < 3
                       ? 'bg-red-500/20 text-red-400'
                       : 'bg-stone-200 text-stone-500'
                   }`}>
-                    en {t}
+                    en {timeStr}
                   </span>
                 )}
               </li>
             )
           })}
           {missing.length > 3 && (
-            <li className="text-xs text-stone-400">y {missing.length - 3} más…</li>
+            <li className="text-xs text-stone-400">{t('upcoming.moreMatches', { n: missing.length - 3 })}</li>
           )}
         </ul>
       </div>
@@ -115,7 +117,7 @@ export default function UpcomingAlert() {
       <button
         onClick={() => setDismissed(true)}
         className="text-stone-500 hover:text-stone-700 transition-colors flex-shrink-0 self-start text-lg leading-none"
-        aria-label="Cerrar aviso"
+        aria-label={t('upcoming.closeBtn')}
       >
         ✕
       </button>

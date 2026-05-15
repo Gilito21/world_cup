@@ -1,13 +1,15 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { useLang } from '../contexts/LangContext'
 
 export default function NotFound() {
   const navigate = useNavigate()
+  const { t } = useLang()
   const [dots, setDots] = useState('')
 
   useEffect(() => {
-    const t = setInterval(() => setDots(d => d.length >= 3 ? '' : d + '.'), 500)
-    return () => clearInterval(t)
+    const timer = setInterval(() => setDots(d => d.length >= 3 ? '' : d + '.'), 500)
+    return () => clearInterval(timer)
   }, [])
 
   return (
@@ -32,13 +34,13 @@ export default function NotFound() {
         {/* Mensaje */}
         <div className="space-y-2">
           <h1 className="text-2xl font-bold text-stone-100">
-            Página no encontrada
+            {t('notFound.title')}
           </h1>
           <p className="text-stone-400 text-sm leading-relaxed">
-            Esta URL no existe o el partido ya ha terminado.<br />
+            {t('notFound.subtitle')}<br />
             {dots.length > 0
-              ? <span className="font-mono text-amber-500">Buscando ruta{dots}</span>
-              : <span>Vuelve al inicio para continuar.</span>}
+              ? <span className="font-mono text-amber-500">{t('notFound.searching')}{dots}</span>
+              : <span>{t('notFound.goBack')}</span>}
           </p>
         </div>
 
@@ -49,20 +51,20 @@ export default function NotFound() {
             className="btn-primary px-8 py-3 text-base flex items-center gap-2 w-full sm:w-auto justify-center"
           >
             <span>🏠</span>
-            Ir al inicio
+            {t('notFound.goHome')}
           </button>
           <button
             onClick={() => window.location.reload()}
             className="btn-secondary px-6 py-3 text-base flex items-center gap-2 w-full sm:w-auto justify-center"
           >
             <span>↺</span>
-            Reintentar
+            {t('notFound.retry')}
           </button>
         </div>
 
         {/* Pie */}
         <p className="text-stone-600 text-xs">
-          Porra Mundial 2026 · Si el problema persiste, espera unos segundos y recarga
+          {t('notFound.footer')}
         </p>
       </div>
     </div>

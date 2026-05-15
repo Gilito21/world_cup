@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
+import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 import { Flag, teamName } from '../utils/teams'
 import {
@@ -19,13 +20,15 @@ import {
 
 const ROUND_ORDER = ['round_of_32','round_of_16','quarter_final','semi_final','third_place','final']
 
-const ROUND_INFO = {
-  round_of_32:   { label:'Ronda de 32',        short:'R32',    icon:'🎽' },
-  round_of_16:   { label:'Octavos de final',   short:'Octavos',icon:'🎯' },
-  quarter_final: { label:'Cuartos de final',   short:'Cuartos',icon:'⚔️' },
-  semi_final:    { label:'Semifinales',         short:'Semis',  icon:'⭐' },
-  third_place:   { label:'Tercer puesto',       short:'3er',    icon:'🥉' },
-  final:         { label:'Gran Final',          short:'Final',  icon:'🏆' },
+function buildRoundInfo(t) {
+  return {
+    round_of_32:   { label: t('stages.round_of_32'),   short: 'R32',                           icon: '🎽' },
+    round_of_16:   { label: t('stages.round_of_16'),   short: t('stages.round_of_16Short'),    icon: '🎯' },
+    quarter_final: { label: t('stages.quarter_final'), short: t('stages.quarter_finalShort'),  icon: '⚔️' },
+    semi_final:    { label: t('stages.semi_final'),    short: t('stages.semi_finalShort'),      icon: '⭐' },
+    third_place:   { label: t('stages.third_place'),   short: t('stages.third_placeShort'),    icon: '🥉' },
+    final:         { label: t('stages.final'),         short: t('stages.finalShort'),           icon: '🏆' },
+  }
 }
 
 // Knockout match IDs per round (used to filter knockoutSlots into rounds)
@@ -42,6 +45,7 @@ const ROUND_MATCH_IDS = {
 // ─── SMALL UI COMPONENTS ──────────────────────────────────────────────────────
 
 function TeamCell({ team, winner, loser }) {
+  const { t } = useLang()
   const base = 'flex items-center gap-2 min-w-0'
   const color = winner ? 'text-stone-900 font-semibold'
               : loser  ? 'text-stone-400'
@@ -50,7 +54,7 @@ function TeamCell({ team, winner, loser }) {
     <div className={`${base} ${color}`}>
       {team
         ? <><Flag team={team} /><span className="truncate text-sm">{teamName(team)}</span></>
-        : <span className="truncate text-sm text-stone-300 italic">Por determinar</span>
+        : <span className="truncate text-sm text-stone-300 italic">{t('common.tbd')}</span>
       }
     </div>
   )
@@ -72,6 +76,7 @@ function ScoreBadge({ home, away, bold }) {
 // ─── GROUP STANDING TABLE ─────────────────────────────────────────────────────
 
 function GroupTable({ group, standings, qualifyingThirds }) {
+  const { t } = useLang()
   const thirdQualifies = standings[2] && qualifyingThirds.has(standings[2]?.team)
 
   return (
@@ -80,19 +85,19 @@ function GroupTable({ group, standings, qualifyingThirds }) {
         <span className="w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center text-xs font-bold text-amber-500">
           {group}
         </span>
-        <span className="text-sm font-semibold text-stone-700">Grupo {group}</span>
+        <span className="text-sm font-semibold text-stone-700">{t('common.group', { g: group })}</span>
       </div>
 
       <table className="w-full text-xs table-fixed">
         <thead>
           <tr className="text-stone-400 border-b border-stone-100">
-            <th className="text-left pl-2 pr-1 py-2 font-medium">Equipo</th>
-            <th className="w-7 text-center py-2 font-medium" title="Partidos jugados">PJ</th>
-            <th className="w-6 text-center py-2 font-medium" title="Ganados">G</th>
-            <th className="w-6 text-center py-2 font-medium" title="Empatados">E</th>
-            <th className="w-6 text-center py-2 font-medium" title="Perdidos">P</th>
-            <th className="w-9 text-center py-2 font-medium" title="Diferencia de goles">DG</th>
-            <th className="w-9 text-center pr-2 py-2 font-medium" title="Puntos">Pts</th>
+            <th className="text-left pl-2 pr-1 py-2 font-medium">{t('bracket.colTeam')}</th>
+            <th className="w-7 text-center py-2 font-medium" title="Partidos jugados">{t('bracket.colPlayed')}</th>
+            <th className="w-6 text-center py-2 font-medium" title="Ganados">{t('bracket.colWon')}</th>
+            <th className="w-6 text-center py-2 font-medium" title="Empatados">{t('bracket.colDrawn')}</th>
+            <th className="w-6 text-center py-2 font-medium" title="Perdidos">{t('bracket.colLost')}</th>
+            <th className="w-9 text-center py-2 font-medium" title="Diferencia de goles">{t('bracket.colGD')}</th>
+            <th className="w-9 text-center pr-2 py-2 font-medium" title="Puntos">{t('bracket.colPts')}</th>
           </tr>
         </thead>
         <tbody>
@@ -136,7 +141,7 @@ function GroupTable({ group, standings, qualifyingThirds }) {
           {standings.length === 0 && (
             <tr>
               <td colSpan={7} className="px-3 py-4 text-center text-stone-300 italic text-xs">
-                Sin resultados aún
+                {t('common.noResults')}
               </td>
             </tr>
           )}
@@ -149,6 +154,7 @@ function GroupTable({ group, standings, qualifyingThirds }) {
 // ─── THIRD-PLACE QUALIFIER PANEL ─────────────────────────────────────────────
 
 function ThirdPlaceRanking({ thirds, totalGroupsComplete }) {
+  const { t } = useLang()
   const needed = THIRD_PLACE_QUALIFIERS
 
   return (
@@ -156,34 +162,34 @@ function ThirdPlaceRanking({ thirds, totalGroupsComplete }) {
       <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-base">🥉</span>
-          <span className="text-sm font-semibold text-stone-700">Mejores terceros</span>
+          <span className="text-sm font-semibold text-stone-700">{t('bracket.thirds')}</span>
         </div>
-        <span className="text-xs text-stone-400">{thirds.length} / {needed} clasificados</span>
+        <span className="text-xs text-stone-400">{t('bracket.thirdsCount', { n: thirds.length, total: needed })}</span>
       </div>
 
       <div className="divide-y divide-stone-50">
-        {thirds.map((t, i) => (
-          <div key={t.team} className="px-4 py-2.5 flex items-center gap-3">
+        {thirds.map((third, i) => (
+          <div key={third.team} className="px-4 py-2.5 flex items-center gap-3">
             <span className={`text-xs font-bold w-5 text-center ${
               i < needed ? 'text-amber-500' : 'text-stone-300'
             }`}>{i + 1}</span>
-            <Flag team={t.team} />
+            <Flag team={third.team} />
             <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-stone-800 truncate block">{teamName(t.team)}</span>
-              <span className="text-xs text-stone-400">Grupo {t.group}</span>
+              <span className="text-sm font-medium text-stone-800 truncate block">{teamName(third.team)}</span>
+              <span className="text-xs text-stone-400">{t('common.group', { g: third.group })}</span>
             </div>
             <div className="flex items-center gap-3 text-xs text-stone-500">
-              <span className="font-bold text-stone-700">{t.points} pts</span>
-              <span className={t.gd >= 0 ? 'text-green-500' : 'text-red-400'}>
-                {t.gd > 0 ? `+${t.gd}` : t.gd} DG
+              <span className="font-bold text-stone-700">{third.points} pts</span>
+              <span className={third.gd >= 0 ? 'text-green-500' : 'text-red-400'}>
+                {third.gd > 0 ? `+${third.gd}` : third.gd} DG
               </span>
-              <span>{t.gf} GF</span>
+              <span>{third.gf} GF</span>
             </div>
           </div>
         ))}
         {thirds.length === 0 && (
           <p className="px-4 py-6 text-center text-stone-300 italic text-sm">
-            Aún no hay resultados en fase de grupos.
+            {t('bracket.noThirds')}
           </p>
         )}
         {/* Placeholder rows for remaining spots */}
@@ -191,7 +197,7 @@ function ThirdPlaceRanking({ thirds, totalGroupsComplete }) {
           <div key={`tbd-${i}`} className="px-4 py-2.5 flex items-center gap-3 opacity-30">
             <span className="text-xs font-bold w-5 text-center text-stone-300">{thirds.length + i + 1}</span>
             <div className="w-7 h-5 bg-stone-100 rounded-sm flex-shrink-0" />
-            <span className="text-sm text-stone-300 italic">Por determinar</span>
+            <span className="text-sm text-stone-300 italic">{t('common.tbd')}</span>
           </div>
         ))}
       </div>
@@ -202,6 +208,7 @@ function ThirdPlaceRanking({ thirds, totalGroupsComplete }) {
 // ─── KNOCKOUT MATCH CARD ─────────────────────────────────────────────────────
 
 function KnockoutMatchCard({ matchId, homeTeam, awayTeam, dbMatch, homeSlot, awaySlot }) {
+  const { t } = useLang()
   const hs = dbMatch?.home_score ?? null
   const as = dbMatch?.away_score ?? null
   const finished = dbMatch?.status === 'finished'
@@ -237,7 +244,7 @@ function KnockoutMatchCard({ matchId, homeTeam, awayTeam, dbMatch, homeSlot, awa
       </div>
 
       {finished && winHome === false && winAway === false && hs != null && (
-        <p className="text-xs text-center text-amber-500">Prórroga / Penaltis</p>
+        <p className="text-xs text-center text-amber-500">{t('bracket.overtime')}</p>
       )}
     </div>
   )
@@ -246,6 +253,8 @@ function KnockoutMatchCard({ matchId, homeTeam, awayTeam, dbMatch, homeSlot, awa
 // ─── KNOCKOUT ROUND SECTION ───────────────────────────────────────────────────
 
 function KnockoutRound({ roundKey, r32Matches, knockoutSlots, dbMatchesByBracketId }) {
+  const { t } = useLang()
+  const ROUND_INFO = buildRoundInfo(t)
   const info    = ROUND_INFO[roundKey]
   const matchIds = ROUND_MATCH_IDS[roundKey]
 
@@ -295,6 +304,7 @@ function KnockoutRound({ roundKey, r32Matches, knockoutSlots, dbMatchesByBracket
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function Bracket() {
+  const { t } = useLang()
   const [allMatches, setAllMatches] = useState(() => getMatchCache() ?? [])
   const [loading,    setLoading]    = useState(() => !getMatchCache())
   const [activeTab,  setActiveTab]  = useState('grupos')
@@ -373,7 +383,7 @@ export default function Bracket() {
 
   // Count of qualifying thirds per group (for highlighting)
   const qualifyingThirdTeams = useMemo(
-    () => new Set(qualifiers.thirds.map(t => t.team)),
+    () => new Set(qualifiers.thirds.map(third => third.team)),
     [qualifiers.thirds]
   )
 
@@ -387,35 +397,35 @@ export default function Bracket() {
   }
 
   const tabs = [
-    { key: 'grupos',    label: 'Grupos',      icon: '⚽' },
-    { key: 'terceros',  label: 'Terceros',     icon: '🥉' },
-    { key: 'bracket',   label: 'Eliminatoria', icon: '🏆' },
+    { key: 'grupos',   label: t('bracket.tabGroups'), icon: '⚽' },
+    { key: 'terceros', label: t('bracket.tabThirds'), icon: '🥉' },
+    { key: 'bracket',  label: t('bracket.tabElim'),   icon: '🏆' },
   ]
 
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* Header */}
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Bracket Mundial 2026</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">{t('bracket.title')}</h2>
         <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
-          Tiempo real · {groupsComplete}/12 grupos completados
+          {t('bracket.subtitle', { n: groupsComplete })}
         </p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1.5 flex-wrap">
-        {tabs.map(t => (
+        {tabs.map(tab => (
           <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key)}
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              activeTab === t.key
+              activeTab === tab.key
                 ? 'bg-amber-500 text-stone-950'
                 : 'bg-stone-100 text-stone-500 hover:text-stone-800'
             }`}
           >
-            <span>{t.icon}</span>
-            <span>{t.label}</span>
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
           </button>
         ))}
       </div>
@@ -427,11 +437,11 @@ export default function Bracket() {
           <div className="flex items-center gap-4 text-xs text-stone-500 flex-wrap">
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-sm bg-green-100 border border-green-300 inline-block" />
-              Clasificado directo (1º / 2º)
+              {t('bracket.legendDirect')}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-sm bg-amber-50 border border-amber-200 inline-block" />
-              3er clasificado (si está en los 8 mejores)
+              {t('bracket.legendThird')}
             </span>
           </div>
 
@@ -458,17 +468,16 @@ export default function Bracket() {
           />
 
           <div className="mt-4 card p-4 text-xs text-stone-500 space-y-1">
-            <p className="font-semibold text-stone-600">Criterios de desempate (terceros)</p>
+            <p className="font-semibold text-stone-600">{t('bracket.tiebreakerTitle')}</p>
             <ol className="list-decimal list-inside space-y-0.5">
-              <li>Puntos</li>
-              <li>Diferencia de goles</li>
-              <li>Goles a favor</li>
-              <li>Juego limpio / rendimiento disciplinario</li>
-              <li>Orden alfabético (desempate de pantalla)</li>
+              <li>{t('bracket.tb1')}</li>
+              <li>{t('bracket.tb2')}</li>
+              <li>{t('bracket.tb3')}</li>
+              <li>{t('bracket.tb4')}</li>
+              <li>{t('bracket.tb5')}</li>
             </ol>
             <p className="text-stone-400 mt-2">
-              Los 8 mejores terceros de los 12 grupos avanzan al Partido de Ronda de 32.
-              El escenario de bracket depende de qué grupos produzcan equipos clasificados.
+              {t('bracket.thirdsNote')}
             </p>
           </div>
         </div>
@@ -488,18 +497,9 @@ export default function Bracket() {
           ))}
 
           <div className="card p-4 text-xs text-stone-400 space-y-1">
-            <p className="font-semibold text-stone-500">Sobre la asignación de terceros al bracket</p>
+            <p className="font-semibold text-stone-500">{t('bracket.bracketAssignTitle')}</p>
             <p>
-              El slot de cada equipo tercero en Ronda de 32 se determina mediante
-              escenarios predefinidos según qué grupos produzcan los 8 mejores terceros.
-              Un algoritmo de restricciones garantiza que ningún equipo se enfrente
-              a un rival de su propio grupo en esta ronda.
-            </p>
-            <p>
-              Los escenarios oficiales de FIFA WC 2026 reemplazarán la tabla
-              <code className="bg-stone-100 px-1 rounded mx-1">BRACKET_SCENARIOS</code>
-              en <code className="bg-stone-100 px-1 rounded">src/utils/tournament.js</code>
-              cuando se publiquen.
+              {t('bracket.bracketAssignBody')}
             </p>
           </div>
         </div>

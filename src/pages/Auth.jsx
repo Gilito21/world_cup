@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
 import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from '../components/Spinner'
 import ReportButton from '../components/ReportButton'
+import LangToggle from '../components/LangToggle'
 
 // Aliases de empresa: abreviatura → nombre(s) canónico(s)
 const COMPANY_ALIASES = {
@@ -55,6 +57,7 @@ function AuthBg({ children }) {
       {/* Soft amber glow */}
       <div className="absolute -top-32 -right-32 w-96 h-96 bg-amber-100/70 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-orange-50 rounded-full blur-3xl pointer-events-none" />
+      <LangToggle className="absolute top-4 right-4" />
       {children}
     </div>
   )
@@ -62,6 +65,7 @@ function AuthBg({ children }) {
 
 // ── ForgotPassword ─────────────────────────────────────────────────────────
 function ForgotPassword({ onBack }) {
+  const { t } = useLang()
   const [email, setEmail]     = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent]       = useState(false)
@@ -88,22 +92,22 @@ function ForgotPassword({ onBack }) {
         </Link>
         <div className="bg-white rounded-3xl shadow-xl shadow-stone-900/8 border border-stone-200 overflow-hidden">
           <div className="bg-gradient-to-br from-amber-50 to-stone-50 px-6 py-6 border-b border-stone-100">
-            <h2 className="text-lg font-bold text-stone-900">Recuperar contraseña</h2>
-            <p className="text-stone-500 text-sm mt-1">Te enviamos un enlace para crear una nueva.</p>
+            <h2 className="text-lg font-bold text-stone-900">{t('auth.recoverTitle')}</h2>
+            <p className="text-stone-500 text-sm mt-1">{t('auth.recoverHint')}</p>
           </div>
           <div className="p-6">
             {sent ? (
               <div className="text-center space-y-3 py-4">
                 <div className="text-4xl">📧</div>
-                <p className="text-stone-900 font-semibold">Email enviado</p>
-                <p className="text-stone-500 text-sm">Revisa tu bandeja de entrada. El enlace caduca en 1 hora.</p>
-                <button onClick={onBack} className="btn-secondary w-full mt-2">Volver al inicio de sesión</button>
+                <p className="text-stone-900 font-semibold">{t('auth.emailSent')}</p>
+                <p className="text-stone-500 text-sm">{t('auth.emailSentDesc')}</p>
+                <button onClick={onBack} className="btn-secondary w-full mt-2">{t('auth.backToLogin')}</button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Tu email</label>
-                  <input type="email" className="input" placeholder="tu@email.com"
+                  <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('auth.email')}</label>
+                  <input type="email" className="input" placeholder={t('auth.emailPlaceholder')}
                     value={email} onChange={e => setEmail(e.target.value)}
                     required autoFocus autoComplete="email" />
                 </div>
@@ -111,10 +115,10 @@ function ForgotPassword({ onBack }) {
                   <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">{error}</div>
                 )}
                 <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
-                  {loading && <Spinner size="sm" />} Enviar enlace
+                  {loading && <Spinner size="sm" />} {t('auth.sendLink')}
                 </button>
                 <button type="button" onClick={onBack} className="w-full text-center text-stone-400 text-sm hover:text-stone-700 transition-colors">
-                  ← Volver
+                  {t('auth.backToAuth')}
                 </button>
               </form>
             )}
@@ -126,6 +130,7 @@ function ForgotPassword({ onBack }) {
 }
 
 function CopyLinkButton({ text }) {
+  const { t } = useLang()
   const [copied, setCopied] = useState(false)
   async function handleCopy() {
     await navigator.clipboard.writeText(text)
@@ -134,7 +139,7 @@ function CopyLinkButton({ text }) {
   }
   return (
     <button onClick={handleCopy} className="btn-secondary text-xs px-3 py-2 flex-shrink-0">
-      {copied ? '✓' : 'Copiar'}
+      {copied ? '✓' : t('common.copy')}
     </button>
   )
 }
@@ -143,6 +148,7 @@ const USERNAME_RE = /^[a-zA-Z0-9_-]+$/
 
 export default function Auth() {
   const { signIn, signUp } = useAuth()
+  const { t } = useLang()
   const [searchParams]          = useSearchParams()
   const [mode, setMode]         = useState('login')
   const [loading, setLoading]   = useState(false)
@@ -216,7 +222,7 @@ export default function Auth() {
     clearTimeout(companyDebounceRef.current)
     companyDebounceRef.current = setTimeout(async () => {
       const terms = expandAliases(q)
-      const orFilter = terms.map(t => `company.ilike.%${t}%`).join(',')
+      const orFilter = terms.map(term => `company.ilike.%${term}%`).join(',')
       const { data } = await supabase
         .from('profiles')
         .select('company')
@@ -262,22 +268,22 @@ export default function Auth() {
       if (mode === 'login') {
         await signIn(form.email, form.password)
       } else {
-        if (form.username.trim().length < 3) throw new Error('El nombre de usuario debe tener al menos 3 caracteres.')
-        if (!USERNAME_RE.test(form.username.trim())) throw new Error('Solo letras, números, - y _ en el nombre de usuario.')
-        if (usernameStatus === 'taken') throw new Error('Ese nombre de usuario ya está en uso.')
-        if (usernameStatus === 'checking') throw new Error('Espera, comprobando disponibilidad del nombre...')
-        if (leagueMode === 'create' && leagueName.trim().length < 2) throw new Error('El nombre de liga debe tener al menos 2 caracteres.')
-        if (leagueMode === 'join' && joinCode.trim().length !== 8) throw new Error('El código de liga debe tener 8 caracteres.')
+        if (form.username.trim().length < 3) throw new Error(t('auth.errUsernameShort'))
+        if (!USERNAME_RE.test(form.username.trim())) throw new Error(t('auth.errUsernameChars'))
+        if (usernameStatus === 'taken') throw new Error(t('auth.errUsernameTaken'))
+        if (usernameStatus === 'checking') throw new Error(t('auth.errUsernameChecking'))
+        if (leagueMode === 'create' && leagueName.trim().length < 2) throw new Error(t('auth.errLeagueNameShort'))
+        if (leagueMode === 'join' && joinCode.trim().length !== 8) throw new Error(t('auth.errLeagueCodeLength'))
 
         if (leagueMode === 'create') {
-          sessionStorage.setItem('porra-pending-league-create', leagueName.trim())
+          localStorage.setItem('porra-pending-league-create', leagueName.trim())
         }
 
         let authData
         try {
           ;({ data: authData } = await signUp(form.email, form.password, form.username.trim(), company.trim()))
         } catch (signUpErr) {
-          sessionStorage.removeItem('porra-pending-league-create')
+          localStorage.removeItem('porra-pending-league-create')
           throw signUpErr
         }
 
@@ -286,20 +292,21 @@ export default function Auth() {
         }
 
         if (!authData?.session) {
-          // Email confirmation required — guardamos el código para que
-          // LeagueContext lo procese automáticamente tras el login.
+          // Email confirmation required — guardamos el código en localStorage
+          // (no sessionStorage) para que sobreviva si el usuario abre el link
+          // de confirmación en otra pestaña o ventana.
           if (leagueMode === 'join' && joinCode.trim()) {
-            sessionStorage.setItem('porra-invite-code', joinCode.trim().toUpperCase())
+            localStorage.setItem('porra-invite-code', joinCode.trim().toUpperCase())
           }
-          setSuccess('¡Cuenta creada! Revisa tu email para confirmar y después inicia sesión.')
+          setSuccess(t('auth.successCreated'))
         }
       }
     } catch (err) {
       const msgs = {
-        'Invalid login credentials':                    'Email o contraseña incorrectos.',
-        'User already registered':                      'Este email ya está registrado.',
-        'Password should be at least 6 characters':    'La contraseña debe tener al menos 6 caracteres.',
-        'Email rate limit exceeded':                    'Demasiados intentos. Espera un momento.',
+        'Invalid login credentials':                    t('auth.errInvalidCredentials'),
+        'User already registered':                      t('auth.errAlreadyRegistered'),
+        'Password should be at least 6 characters':    t('auth.errWeakPassword'),
+        'Email rate limit exceeded':                    t('auth.errRateLimit'),
       }
       setError(msgs[err.message] ?? err.message)
     } finally {
@@ -311,18 +318,18 @@ export default function Auth() {
     if (leagueMode !== 'join') return
     const { data: league, error: findError } = await supabase
       .from('leagues').select('id').eq('invite_code', joinCode.trim().toUpperCase()).single()
-    if (findError || !league) throw new Error('Código de liga inválido. Comprueba que esté bien escrito.')
+    if (findError || !league) throw new Error(t('auth.errLeagueNotFound'))
     const { count } = await supabase
       .from('league_members')
       .select('*', { count: 'exact', head: true })
       .eq('league_id', league.id)
-    if (count >= 40) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
+    if (count >= 40) throw new Error(t('auth.errLeagueFull'))
     const { error: memberError } = await supabase
       .from('league_members').insert({ league_id: league.id, user_id: userId, role: 'member' })
     if (memberError) {
-      if (memberError.message?.includes('league_full')) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
+      if (memberError.message?.includes('league_full')) throw new Error(t('auth.errLeagueFull'))
       if (memberError.code === '23505') return // ya es miembro, ok
-      throw new Error(`No se pudo unir a la liga: ${memberError.message}`)
+      throw new Error(t('league.cantJoin'))
     }
   }
 
@@ -348,17 +355,17 @@ export default function Auth() {
         <div className="relative w-full max-w-sm animate-slide-up space-y-4">
           <div className="text-center">
             <div className="text-5xl mb-2">🎉</div>
-            <h2 className="text-2xl font-bold text-stone-900">¡Liga creada!</h2>
-            <p className="text-stone-500 text-sm mt-1">Comparte el código o el link con tus amigos:</p>
+            <h2 className="text-2xl font-bold text-stone-900">{t('auth.leagueCreatedTitle')}</h2>
+            <p className="text-stone-500 text-sm mt-1">{t('auth.leagueCreatedShare')}</p>
           </div>
           <div className="bg-white rounded-3xl shadow-xl shadow-stone-900/8 border border-stone-200 overflow-hidden">
             <div className="bg-gradient-to-br from-amber-50 to-stone-50 px-6 py-5 border-b border-stone-100">
-              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 text-center">Código de invitación</p>
+              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 text-center">{t('auth.leagueCreatedCodeLabel')}</p>
               <p className="text-4xl font-black tracking-[0.4em] text-amber-500 font-mono text-center break-all">{createdCode}</p>
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">Link directo</p>
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">{t('auth.leagueCreatedDirectLink')}</p>
                 <div className="flex items-center gap-2">
                   <p className="flex-1 text-xs text-stone-500 bg-stone-100 rounded-xl px-3 py-2 font-mono truncate">
                     {inviteLink}
@@ -366,8 +373,8 @@ export default function Auth() {
                   <CopyLinkButton text={inviteLink} />
                 </div>
               </div>
-              <p className="text-stone-400 text-xs text-center">Tu cuenta está lista. Inicia sesión para empezar.</p>
-              <button onClick={() => switchMode('login')} className="btn-primary w-full">Iniciar sesión</button>
+              <p className="text-stone-400 text-xs text-center">{t('auth.leagueCreatedAccountReady')}</p>
+              <button onClick={() => switchMode('login')} className="btn-primary w-full">{t('auth.startSession')}</button>
             </div>
           </div>
         </div>
@@ -383,7 +390,7 @@ export default function Auth() {
         {/* Back to landing */}
         <div className="text-center mb-5">
           <Link to="/" className="inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-800 text-sm transition-colors font-medium">
-            ← Volver al inicio
+            {t('auth.backToLanding')}
           </Link>
         </div>
 
@@ -398,12 +405,12 @@ export default function Auth() {
               <h1 className="text-xl font-bold text-stone-900">
                 Porra <span className="text-amber-500">Mundial 2026</span>
               </h1>
-              <p className="text-stone-400 text-xs mt-1">México vs Sudáfrica · 11 jun 2026</p>
+              <p className="text-stone-400 text-xs mt-1">{t('auth.firstMatchSub')}</p>
             </div>
 
             {/* Stats pills */}
             <div className="flex justify-center gap-2 mb-5">
-              {['48 equipos', '104 partidos', '1 ganador'].map(s => (
+              {[t('auth.stat48'), t('auth.stat104'), t('auth.stat1')].map(s => (
                 <span
                   key={s}
                   className="text-[10px] sm:text-xs text-stone-500 bg-white/80 border border-stone-200 px-2.5 py-1 rounded-full"
@@ -415,7 +422,7 @@ export default function Auth() {
 
             {/* Tab switcher */}
             <div className="flex rounded-xl overflow-hidden bg-stone-100 p-1">
-              {[['login', 'Iniciar sesión'], ['register', 'Registrarse']].map(([m, label]) => (
+              {[['login', t('auth.loginTab')], ['register', t('auth.registerTab')]].map(([m, label]) => (
                 <button
                   key={m}
                   onClick={() => switchMode(m)}
@@ -438,7 +445,7 @@ export default function Auth() {
             {mode === 'register' && (
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                  Nombre de usuario <span className="text-red-400">*</span>
+                  {t('auth.username')} <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -447,7 +454,7 @@ export default function Auth() {
                       usernameStatus === 'available' ? 'border-green-500 focus:border-green-500 focus:ring-green-500/15' :
                       usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : ''
                     }`}
-                    placeholder="ej. ElCrack7"
+                    placeholder={t('auth.usernamePlaceholder')}
                     value={form.username} onChange={update('username')}
                     required minLength={3} maxLength={20}
                     autoComplete="username" autoFocus
@@ -463,11 +470,11 @@ export default function Auth() {
                   usernameStatus === 'available' ? 'text-green-600' :
                   usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'text-red-500' : 'text-stone-400'
                 }`}>
-                  {usernameStatus === 'available' && '✓ Nombre disponible'}
-                  {usernameStatus === 'taken'     && 'Este nombre ya está en uso, elige otro'}
+                  {usernameStatus === 'available' && t('auth.usernameAvailable')}
+                  {usernameStatus === 'taken'     && t('auth.usernameTaken')}
                   {usernameStatus === 'invalid'   && (form.username.length > 0 && form.username.length < 3
-                    ? 'Mínimo 3 caracteres' : 'Solo letras, números, guiones y guiones bajos')}
-                  {(usernameStatus === 'idle' || usernameStatus === 'checking') && 'Con este nombre te verán el resto de jugadores'}
+                    ? t('auth.usernameMinLength') : t('auth.usernameInvalidChars'))}
+                  {(usernameStatus === 'idle' || usernameStatus === 'checking') && t('auth.usernameHint')}
                 </p>
               </div>
             )}
@@ -476,12 +483,12 @@ export default function Auth() {
             {mode === 'register' && (
               <div ref={companyContainerRef} className="relative">
                 <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                  Empresa <span className="text-stone-400 font-normal text-xs">(opcional)</span>
+                  {t('auth.company')} <span className="text-stone-400 font-normal text-xs">{t('auth.companyOptional')}</span>
                 </label>
                 <input
                   type="text"
                   className="input"
-                  placeholder="ej. Accenture, EY, McKinsey…"
+                  placeholder={t('auth.companyPlaceholder')}
                   value={company}
                   onChange={e => { setCompany(e.target.value); setCompanyHighlight(-1) }}
                   onFocus={() => companySuggestions.length > 0 && setShowCompanySug(true)}
@@ -510,9 +517,9 @@ export default function Auth() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('auth.email')}</label>
               <input
-                type="email" className="input" placeholder="tu@email.com"
+                type="email" className="input" placeholder={t('auth.emailPlaceholder')}
                 value={form.email} onChange={update('email')}
                 required autoComplete="email"
               />
@@ -521,20 +528,20 @@ export default function Auth() {
             {/* Contraseña */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-medium text-stone-700">Contraseña</label>
+                <label className="text-sm font-medium text-stone-700">{t('auth.password')}</label>
                 {mode === 'login' && (
                   <button
                     type="button"
                     onClick={() => setShowForgot(true)}
                     className="text-xs text-amber-600 hover:text-amber-500 hover:underline underline-offset-2"
                   >
-                    ¿Olvidaste la contraseña?
+                    {t('auth.forgotPassword')}
                   </button>
                 )}
               </div>
               <input
                 type="password" className="input"
-                placeholder={mode === 'register' ? 'Mínimo 6 caracteres' : '••••••••'}
+                placeholder={mode === 'register' ? t('auth.passwordRegisterPlaceholder') : t('auth.passwordPlaceholder')}
                 value={form.password} onChange={update('password')}
                 required minLength={6}
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
@@ -545,10 +552,10 @@ export default function Auth() {
             {mode === 'register' && (
               <div className="space-y-3 pt-1">
                 <p className="text-sm font-medium text-stone-700">
-                  Liga <span className="text-stone-400 font-normal text-xs">(opcional)</span>
+                  {t('auth.leagueSection')} <span className="text-stone-400 font-normal text-xs">{t('auth.leagueOptional')}</span>
                 </p>
                 <div className="grid grid-cols-3 gap-2">
-                  {[['none','👋','Después'],['join','🔗','Unirme'],['create','👑','Crear']].map(([val, icon, label]) => (
+                  {[['none','👋', t('auth.laterBtn')],['join','🔗', t('auth.joinBtn')],['create','👑', t('auth.createBtn')]].map(([val, icon, label]) => (
                     <button
                       key={val} type="button" onClick={() => setLeagueMode(val)}
                       className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${
@@ -564,26 +571,26 @@ export default function Auth() {
                 </div>
                 {leagueMode === 'create' && (
                   <div>
-                    <label className="block text-xs text-stone-500 mb-1.5">Nombre de la liga</label>
+                    <label className="block text-xs text-stone-500 mb-1.5">{t('auth.leagueNameLabel')}</label>
                     <input
                       type="text" className="input"
-                      placeholder="ej. Los Cracks del Trabajo"
+                      placeholder={t('auth.leagueNamePlaceholder')}
                       value={leagueName} onChange={e => setLeagueName(e.target.value)}
                       maxLength={40} required
                     />
                     <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1.5">
                       <span>💳</span>
-                      Crear una liga cuesta {LEAGUE_PRICE_LABEL} (pago único). Tras pagar recibirás un código para invitar a tus amigos.
+                      {t('auth.leaguePriceNote', { price: LEAGUE_PRICE_LABEL })}
                     </p>
                   </div>
                 )}
                 {leagueMode === 'join' && (
                   <div>
-                    <label className="block text-xs text-stone-500 mb-1.5">Código de invitación</label>
+                    <label className="block text-xs text-stone-500 mb-1.5">{t('auth.inviteCodeLabel')}</label>
                     <input
                       type="text"
                       className="input uppercase tracking-widest font-mono text-center text-lg"
-                      placeholder="XXXXXXXX" value={joinCode}
+                      placeholder={t('auth.inviteCodePlaceholder')} value={joinCode}
                       onChange={e => setJoinCode(e.target.value.toUpperCase())}
                       maxLength={8} required
                     />
@@ -591,7 +598,7 @@ export default function Auth() {
                 )}
                 {leagueMode === 'none' && (
                   <p className="text-xs text-stone-400 text-center">
-                    Podrás crear o unirte a ligas desde el menú una vez dentro.
+                    {t('auth.laterHint')}
                   </p>
                 )}
               </div>
@@ -610,24 +617,24 @@ export default function Auth() {
               className="btn-primary w-full flex items-center justify-center gap-2 text-base"
             >
               {loading && <Spinner size="sm" />}
-              {mode === 'login' ? 'Entrar a la app' : 'Crear cuenta'}
+              {mode === 'login' ? t('auth.loginBtn') : t('auth.registerBtn')}
             </button>
 
             <p className="text-center text-stone-400 text-xs pt-1">
-              {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
+              {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
               <button
                 type="button"
                 onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
                 className="text-amber-600 hover:text-amber-500 hover:underline underline-offset-2 font-semibold"
               >
-                {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
+                {mode === 'login' ? t('auth.toRegister') : t('auth.toLogin')}
               </button>
             </p>
             {mode === 'register' && (
               <p className="text-center text-stone-400 text-xs">
-                Al registrarte aceptas nuestra{' '}
+                {t('auth.privacyText')}{' '}
                 <Link to="/privacidad" className="text-stone-500 hover:text-stone-700 underline underline-offset-2">
-                  política de privacidad
+                  {t('auth.privacyLink')}
                 </Link>
               </p>
             )}

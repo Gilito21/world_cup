@@ -4,6 +4,7 @@ import { supabase, sq } from '../lib/supabase'
 import { getCache, setCache } from '../lib/dataCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { useLang } from '../contexts/LangContext'
 import LeagueModal from '../components/LeagueModal'
 import Spinner from '../components/Spinner'
 
@@ -55,6 +56,7 @@ function Avatar({ url, username, size = 'md', isMe = false }) {
 // ─── PROFILE MODAL ───────────────────────────────────────────────────────────
 
 function ProfileModal({ profile, currentUserId, onClose }) {
+  const { t } = useLang()
   const [stats,   setStats]   = useState(null)
   const [loading, setLoading] = useState(true)
   const isMe = profile.id === currentUserId
@@ -125,7 +127,7 @@ function ProfileModal({ profile, currentUserId, onClose }) {
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-lg font-bold text-stone-900 truncate">{profile.username}</h3>
                 {isMe && (
-                  <span className="text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded flex-shrink-0">Tú</span>
+                  <span className="text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded flex-shrink-0">{t('common.you')}</span>
                 )}
               </div>
               {profile.company && (
@@ -145,19 +147,19 @@ function ProfileModal({ profile, currentUserId, onClose }) {
         <div>
           <p className="text-xs text-stone-400 mb-3 font-medium uppercase tracking-wider">
             {loading
-              ? 'Cargando...'
+              ? t('clasificacion.loading')
               : stats?.leagueName
-                ? `Mejor liga · ${stats.leagueName}`
-                : 'Pronósticos globales'}
+                ? t('clasificacion.bestLeague', { name: stats.leagueName })
+                : t('clasificacion.globalPreds')}
           </p>
           {loading ? (
             <div className="flex justify-center py-4"><Spinner size="sm" /></div>
           ) : (
             <div className="grid grid-cols-4 gap-2">
-              <StatBadge label="Puntos"   value={stats.points}  color="text-amber-400" />
-              <StatBadge label="Exactos"  value={stats.exact}   color="text-amber-400" />
-              <StatBadge label="Correct." value={stats.correct} color="text-blue-400" />
-              <StatBadge label="Total"    value={stats.total}   color="text-stone-600" />
+              <StatBadge label={t('clasificacion.statPoints')}  value={stats.points}  color="text-amber-400" />
+              <StatBadge label={t('clasificacion.statExact')}   value={stats.exact}   color="text-amber-400" />
+              <StatBadge label={t('clasificacion.statCorrect')} value={stats.correct} color="text-blue-400" />
+              <StatBadge label={t('clasificacion.statTotal')}   value={stats.total}   color="text-stone-600" />
             </div>
           )}
         </div>
@@ -171,6 +173,7 @@ function ProfileModal({ profile, currentUserId, onClose }) {
 export default function Clasificacion() {
   const { user }                                   = useAuth()
   const { activeLeague, leagues, setActiveLeague } = useLeague()
+  const { t }                                      = useLang()
   const [tab, setTab]                   = useState('global')
   const [globalStandings, setGlobalStandings]   = useState(() => getCache('lb:global') ?? [])
   const [leagueStandings, setLeagueStandings]   = useState([])
@@ -325,9 +328,9 @@ export default function Clasificacion() {
   function handleTabChange(newTab) { setTab(newTab) }
 
   const tabs = [
-    { id: 'global',    label: 'Global',   icon: '🌐' },
-    { id: 'league',    label: 'Mi Liga',  icon: '🏆' },
-    { id: 'companies', label: 'Empresas', icon: '🏢' },
+    { id: 'global',    label: t('clasificacion.tabGlobal'),    icon: '🌐' },
+    { id: 'league',    label: t('clasificacion.tabLeague'),    icon: '🏆' },
+    { id: 'companies', label: t('clasificacion.tabCompanies'), icon: '🏢' },
   ]
 
   // ── Individual table ──────────────────────────────────────────────────────
@@ -348,24 +351,24 @@ export default function Clasificacion() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-semibold text-stone-900 truncate">{myEntry.username}</span>
-                    <span className="text-[10px] sm:text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded">Tú</span>
+                    <span className="text-[10px] sm:text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded">{t('common.you')}</span>
                     {myEntry.role === 'admin' && (
                       <span className="text-[10px] sm:text-xs text-amber-600/80 bg-amber-600/10 px-1.5 rounded">👑</span>
                     )}
                   </div>
-                  <div className="text-xs sm:text-sm text-stone-400">Posición #{myEntry.position}</div>
+                  <div className="text-xs sm:text-sm text-stone-400">{t('clasificacion.positionLabel', { n: myEntry.position })}</div>
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
                 <div className="text-xl sm:text-2xl font-bold text-amber-400">{myEntry.league_points}</div>
-                <div className="text-[10px] sm:text-xs text-stone-500">pts</div>
+                <div className="text-[10px] sm:text-xs text-stone-500">{t('common.pts')}</div>
               </div>
             </div>
             {showStats && (
               <div className="flex gap-2 mt-3">
-                <StatBadge label="Exactos"     value={myLeagueStats.exact}   color="text-amber-400" />
-                <StatBadge label="Correctos"   value={myLeagueStats.correct} color="text-blue-400" />
-                <StatBadge label="Pronósticos" value={myLeagueStats.total}   color="text-stone-700" />
+                <StatBadge label={t('clasificacion.statExact')}   value={myLeagueStats.exact}   color="text-amber-400" />
+                <StatBadge label={t('clasificacion.statCorrect')} value={myLeagueStats.correct} color="text-blue-400" />
+                <StatBadge label={t('clasificacion.statTotal')}   value={myLeagueStats.total}   color="text-stone-700" />
               </div>
             )}
           </div>
@@ -374,17 +377,17 @@ export default function Clasificacion() {
         {standings.length === 0 ? (
           <div className="card p-6 sm:p-10 text-center">
             <div className="text-3xl sm:text-4xl mb-3">🏆</div>
-            <p className="text-stone-400 text-sm">Nadie ha puntuado todavía. ¡Los partidos empiezan el 11 de junio!</p>
+            <p className="text-stone-400 text-sm">{t('clasificacion.noPointsYet')}</p>
           </div>
         ) : (
           <div className="card overflow-hidden">
             <div className="grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-stone-200 text-[11px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider">
               <div>#</div>
-              <div>Jugador</div>
-              <div className="hidden sm:block text-center">Exactos</div>
-              <div className="hidden sm:block text-center">Correct.</div>
-              <div className="hidden sm:block text-center">Total</div>
-              <div className="text-right">Puntos</div>
+              <div>{t('clasificacion.colPlayer')}</div>
+              <div className="hidden sm:block text-center">{t('clasificacion.colExact')}</div>
+              <div className="hidden sm:block text-center">{t('clasificacion.colCorrect')}</div>
+              <div className="hidden sm:block text-center">{t('clasificacion.colTotal')}</div>
+              <div className="text-right">{t('clasificacion.colPts')}</div>
             </div>
             <div className="divide-y divide-stone-200">
               {standings.map(entry => {
@@ -412,7 +415,7 @@ export default function Clasificacion() {
                           <span className={`font-medium truncate ${isMe ? 'text-amber-500' : 'text-stone-900'}`}>
                             {entry.username}
                           </span>
-                          {isMe && <span className="text-xs text-amber-500/60 flex-shrink-0">Tú</span>}
+                          {isMe && <span className="text-xs text-amber-500/60 flex-shrink-0">{t('common.you')}</span>}
                         </div>
                       </div>
                     </div>
@@ -429,7 +432,7 @@ export default function Clasificacion() {
                       <span className={`text-lg font-bold ${isTop ? 'text-amber-400' : 'text-stone-900'}`}>
                         {entry.league_points}
                       </span>
-                      <span className="text-stone-400 text-xs ml-0.5">pts</span>
+                      <span className="text-stone-400 text-xs ml-0.5">{t('common.pts')}</span>
                     </div>
                   </div>
                 )
@@ -439,7 +442,7 @@ export default function Clasificacion() {
         )}
       </>
     )
-  }, [user.id, myLeagueStats, setSelectedProfile])
+  }, [user.id, myLeagueStats, setSelectedProfile, t])
 
   // ── Main render ───────────────────────────────────────────────────────────
 
@@ -447,14 +450,14 @@ export default function Clasificacion() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Clasificación</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-stone-900">{t('clasificacion.title')}</h2>
           <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
-            Exacto = 3 pts · Correcto = 1 pt
+            {t('clasificacion.subtitle')}
           </p>
         </div>
         {tab === 'league' && activeLeague?.role === 'admin' && (
           <div className="flex-shrink-0 card p-2.5 sm:p-3 text-center min-w-[110px] sm:min-w-[140px]">
-            <p className="text-[10px] sm:text-xs text-stone-500 mb-0.5 sm:mb-1">Código liga</p>
+            <p className="text-[10px] sm:text-xs text-stone-500 mb-0.5 sm:mb-1">{t('league.leagueCodeLabel')}</p>
             <p className="font-mono font-bold text-amber-400 tracking-widest text-sm sm:text-lg">{activeLeague.invite_code}</p>
           </div>
         )}
@@ -486,7 +489,7 @@ export default function Clasificacion() {
           {tab === 'global' && (
             <>
               <p className="text-stone-400 text-sm -mt-2">
-                {globalStandings.length} participante{globalStandings.length !== 1 ? 's' : ''} en total
+                {t('clasificacion.nParticipants', { n: globalStandings.length, s: globalStandings.length !== 1 ? 's' : '' })}
               </p>
               <IndividualTable standings={globalStandings} />
             </>
@@ -498,9 +501,9 @@ export default function Clasificacion() {
               {leagues.length === 0 ? (
                 <div className="card p-6 sm:p-10 text-center space-y-3 sm:space-y-4">
                   <div className="text-3xl sm:text-4xl">🏆</div>
-                  <p className="text-stone-700 font-medium text-sm sm:text-base">No estás en ninguna liga</p>
-                  <p className="text-stone-500 text-xs sm:text-sm">Crea o únete a una liga para ver su clasificación.</p>
-                  <button onClick={() => setShowModal(true)} className="btn-primary">Crear o unirme a una liga</button>
+                  <p className="text-stone-700 font-medium text-sm sm:text-base">{t('clasificacion.noLeague')}</p>
+                  <p className="text-stone-500 text-xs sm:text-sm">{t('clasificacion.noLeagueDesc')}</p>
+                  <button onClick={() => setShowModal(true)} className="btn-primary">{t('clasificacion.createOrJoinBtn')}</button>
                 </div>
               ) : (
                 <>
@@ -522,11 +525,11 @@ export default function Clasificacion() {
                     </div>
                   )}
                   <p className="text-stone-400 text-sm -mt-2">
-                    {activeLeague?.name} · {leagueStandings.length} participante{leagueStandings.length !== 1 ? 's' : ''}
+                    {t('clasificacion.nParticipantsLeague', { name: activeLeague?.name, n: leagueStandings.length, s: leagueStandings.length !== 1 ? 's' : '' })}
                   </p>
                   <IndividualTable standings={leagueStandings} showStats />
                   <p className="text-center text-stone-400 text-xs">
-                    Los puntos se calculan de los pronósticos de cada jugador en esta liga
+                    {t('clasificacion.leaguePointsNote')}
                   </p>
                 </>
               )}
@@ -537,20 +540,20 @@ export default function Clasificacion() {
           {tab === 'companies' && (
             <>
               <p className="text-stone-400 text-sm -mt-2">
-                Media de puntos por empleado · {companyStandings.length} empresa{companyStandings.length !== 1 ? 's' : ''}
+                {t('clasificacion.companiesSubtitle', { n: companyStandings.length, s: companyStandings.length !== 1 ? 's' : '' })}
               </p>
               {companyStandings.length === 0 ? (
                 <div className="card p-6 sm:p-10 text-center">
                   <div className="text-3xl sm:text-4xl mb-3">🏢</div>
-                  <p className="text-stone-400 text-sm">Ningún usuario ha indicado su empresa todavía.</p>
+                  <p className="text-stone-400 text-sm">{t('clasificacion.noCompanies')}</p>
                 </div>
               ) : (
                 <div className="card overflow-hidden">
                   <div className="grid grid-cols-[2rem_1fr_3.5rem_3.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-stone-200 text-[11px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider">
                     <div>#</div>
-                    <div>Empresa</div>
-                    <div className="text-center">Miembros</div>
-                    <div className="text-right">Media</div>
+                    <div>{t('clasificacion.colCompany')}</div>
+                    <div className="text-center">{t('clasificacion.colMembers')}</div>
+                    <div className="text-right">{t('clasificacion.colAvg')}</div>
                   </div>
                   <div className="divide-y divide-stone-200">
                     {companyStandings.map(entry => {
@@ -575,12 +578,12 @@ export default function Clasificacion() {
                                 {entry.name}
                               </span>
                               {isMyCompany && (
-                                <span className="text-[10px] sm:text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded flex-shrink-0">Tu emp.</span>
+                                <span className="text-[10px] sm:text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded flex-shrink-0">{t('clasificacion.yourCompany')}</span>
                               )}
                             </div>
                             <div className="text-[11px] sm:text-xs text-stone-400 mt-0.5 truncate">
-                              Top: {entry.top?.username ?? '—'}
-                              {(entry.top?.total_points ?? 0) > 0 && ` · ${entry.top.total_points} pts`}
+                              {t('clasificacion.topPlayer', { name: entry.top?.username ?? '—' })}
+                              {(entry.top?.total_points ?? 0) > 0 && ` · ${entry.top.total_points} ${t('common.pts')}`}
                             </div>
                           </div>
                           <div className="text-center text-stone-500 text-xs sm:text-sm tabular-nums">
@@ -598,7 +601,7 @@ export default function Clasificacion() {
                 </div>
               )}
               <p className="text-center text-stone-400 text-xs">
-                Puntuación = media de todos los miembros de la empresa
+                {t('clasificacion.companyScoreNote')}
               </p>
             </>
           )}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
 import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from './Spinner'
@@ -12,6 +13,7 @@ import Spinner from './Spinner'
 export default function LeagueModal({ onClose, onPaymentRequested, onFounderCreated }) {
   const { profile }           = useAuth()
   const { joinLeague }        = useLeague()
+  const { t }                 = useLang()
   const isFounder             = !!profile?.is_founder
   const [tab, setTab]         = useState('join')
   const [value, setValue]     = useState('')
@@ -32,8 +34,8 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
     try {
       if (tab === 'create') {
         const name = value.trim()
-        if (name.length < 2) throw new Error('El nombre debe tener al menos 2 caracteres.')
-        if (name.length > 40) throw new Error('El nombre no puede superar 40 caracteres.')
+        if (name.length < 2) throw new Error(t('league.nameTooShort'))
+        if (name.length > 40) throw new Error(t('league.nameTooLong'))
 
         if (isFounder) {
           // Founder bypass: la edge function valida is_founder y crea gratis.
@@ -41,7 +43,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
             body: { league_name: name },
           })
           if (fnErr) throw new Error(fnErr.message ?? 'No se pudo crear la liga.')
-          if (data?.error === 'league_name_taken') throw new Error('Ya existe una liga con ese nombre. Elige otro.')
+          if (data?.error === 'league_name_taken') throw new Error(t('league.nameTaken'))
           if (!data?.league) throw new Error(data?.error ?? 'Respuesta inesperada del servidor.')
           // Delegamos la pantalla de "Liga creada" al padre.
           if (onFounderCreated) await onFounderCreated(data.league)
@@ -61,8 +63,8 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
     }
   }
 
-  function switchTab(t) {
-    setTab(t)
+  function switchTab(newTab) {
+    setTab(newTab)
     setValue('')
     setError('')
   }
@@ -74,7 +76,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
     >
       <div className="card w-full max-w-md animate-slide-up">
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-stone-200">
-          <h2 className="font-semibold text-stone-900 text-lg">Ligas</h2>
+          <h2 className="font-semibold text-stone-900 text-lg">{t('league.title')}</h2>
           <button
             onClick={onClose}
             className="text-stone-500 hover:text-stone-900 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-stone-100 transition-colors"
@@ -85,12 +87,12 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
 
         {/* Tabs */}
         <div className="flex gap-1 p-1 bg-stone-100 mx-5 mt-5 rounded-xl">
-          {[['join', 'Unirme a liga'], ['create', 'Crear liga']].map(([t, label]) => (
+          {[['join', t('league.joinTab')], ['create', t('league.createTab')]].map(([tabKey, label]) => (
             <button
-              key={t}
-              onClick={() => switchTab(t)}
+              key={tabKey}
+              onClick={() => switchTab(tabKey)}
               className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                tab === t ? 'bg-amber-500 text-stone-950' : 'text-stone-500 hover:text-stone-700'
+                tab === tabKey ? 'bg-amber-500 text-stone-950' : 'text-stone-500 hover:text-stone-700'
               }`}
             >
               {label}
@@ -103,7 +105,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
               {tab === 'join' ? (
                 <>
                   <p className="text-stone-500 text-sm">
-                    Introduce el código que te ha dado el administrador de la liga.
+                    {t('league.joinHint')}
                   </p>
                   <input
                     type="text"
@@ -119,12 +121,12 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
               ) : (
                 <>
                   <p className="text-stone-500 text-sm">
-                    Crea una liga privada. Recibirás un código para invitar a tus amigos.
+                    {t('league.createHint')}
                   </p>
                   <input
                     type="text"
                     className="input"
-                    placeholder="Nombre de la liga (ej. Los Cracks)"
+                    placeholder={t('league.createPlaceholder')}
                     value={value}
                     onChange={e => setValue(e.target.value)}
                     maxLength={40}
@@ -143,17 +145,17 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
               <button type="submit" disabled={loading || !value.trim()} className="btn-primary w-full flex items-center justify-center gap-2">
                 {loading && <Spinner size="sm" />}
                 {tab === 'join'
-                  ? 'Unirme gratis'
+                  ? t('league.joinFree')
                   : isFounder
-                    ? <>👑 Crear liga (founder)</>
-                    : <>Continuar al pago · {LEAGUE_PRICE_LABEL}</>}
+                    ? t('league.createFounder')
+                    : t('league.continuePayment', { price: LEAGUE_PRICE_LABEL })}
               </button>
 
               {tab === 'create' && (
                 <p className="text-center text-stone-400 text-xs">
                   {isFounder
-                    ? 'Como founder creas ligas sin coste.'
-                    : <>Crear una liga cuesta {LEAGUE_PRICE_LABEL} (pago único). Unirse a una liga existente es gratis.</>}
+                    ? t('league.founderNote')
+                    : t('league.priceNote', { price: LEAGUE_PRICE_LABEL })}
                 </p>
               )}
           </form>

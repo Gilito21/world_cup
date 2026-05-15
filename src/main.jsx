@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
+import { LangProvider } from './contexts/LangContext.jsx'
 import PWAPrompts from './components/PWAPrompts.jsx'
 import './index.css'
 
@@ -17,10 +18,12 @@ window.addEventListener('pageshow', (event) => {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <App />
-        <PWAPrompts />
-      </AuthProvider>
+      <LangProvider>
+        <AuthProvider>
+          <App />
+          <PWAPrompts />
+        </AuthProvider>
+      </LangProvider>
     </BrowserRouter>
   </React.StrictMode>
 )

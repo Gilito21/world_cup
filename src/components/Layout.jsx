@@ -3,30 +3,18 @@ import { createPortal } from 'react-dom'
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
 import LeagueSwitcher from './LeagueSwitcher'
+import LangToggle from './LangToggle'
 import PaymentModal from './PaymentModal'
 import ReportButton from './ReportButton'
-
-// Pestañas principales. En móvil mostramos las 5 que también aparecen
-// en MOBILE_NAV; "Reglas" se accede desde el menú del avatar para no
-// saturar la barra inferior con 6 elementos.
-const NAV = [
-  { to: '/pronosticos',   label: 'Pronósticos',   short: 'Pronós.',   icon: '🎯' },
-  { to: '/extras',        label: 'Extras',        short: 'Extras',    icon: '🎲' },
-  { to: '/clasificacion', label: 'Clasificación', short: 'Ranking',   icon: '🏆' },
-  { to: '/resultados',    label: 'Resultados',    short: 'Result.',   icon: '📋' },
-  { to: '/bracket',       label: 'Bracket',       short: 'Bracket',   icon: '⚽' },
-  { to: '/reglas',        label: 'Cómo funciona', short: 'Reglas',    icon: '📖' },
-]
-
-// Bottom-bar (móvil): un máximo de 5 ítems para no saturar.
-const MOBILE_NAV = NAV.filter(n => n.to !== '/reglas')
 
 // ── Avatar/menú del usuario para móvil (perfil + salir) ────────────────────
 function MobileUserMenu({ profile, onSignOut }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
+  const { t } = useLang()
 
   useEffect(() => {
     if (!open) return
@@ -45,7 +33,7 @@ function MobileUserMenu({ profile, onSignOut }) {
       <button
         onClick={() => setOpen(o => !o)}
         className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden"
-        aria-label="Menú de usuario"
+        aria-label={t('nav.profile')}
       >
         {profile?.avatar_url ? (
           <img src={profile.avatar_url} alt={profile.username} className="w-9 h-9 rounded-full object-cover" />
@@ -65,8 +53,8 @@ function MobileUserMenu({ profile, onSignOut }) {
           >
             <span className="text-base">👤</span>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-stone-900 truncate">{profile?.username ?? 'Perfil'}</div>
-              <div className="text-xs text-stone-500">{profile?.total_points ?? 0} pts totales</div>
+              <div className="text-sm font-semibold text-stone-900 truncate">{profile?.username ?? t('nav.profile')}</div>
+              <div className="text-xs text-stone-500">{t('nav.totalPts', { n: profile?.total_points ?? 0 })}</div>
             </div>
           </Link>
           <Link
@@ -75,7 +63,7 @@ function MobileUserMenu({ profile, onSignOut }) {
             className="flex items-center gap-3 px-3 py-2.5 hover:bg-stone-100"
           >
             <span className="text-base">📖</span>
-            <span className="text-sm text-stone-700">Cómo funciona</span>
+            <span className="text-sm text-stone-700">{t('nav.rules')}</span>
           </Link>
           <div className="border-t border-stone-200 my-1" />
           <button
@@ -83,7 +71,7 @@ function MobileUserMenu({ profile, onSignOut }) {
             className="w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm text-red-500 hover:bg-red-50"
           >
             <span className="text-base">🚪</span>
-            <span>Cerrar sesión</span>
+            <span>{t('nav.signOutFull')}</span>
           </button>
         </div>
       )}
@@ -94,13 +82,29 @@ function MobileUserMenu({ profile, onSignOut }) {
 export default function Layout() {
   const { user, profile, signOut } = useAuth()
   const { activeLeague, onLeagueCreated } = useLeague()
+  const { t } = useLang()
   const navigate = useNavigate()
 
+  // Pestañas principales. En móvil mostramos las 5 que también aparecen
+  // en MOBILE_NAV; "Reglas" se accede desde el menú del avatar para no
+  // saturar la barra inferior con 6 elementos.
+  const NAV = [
+    { to: '/pronosticos',   label: t('nav.predictions'), short: t('nav.predictionsShort'), icon: '🎯' },
+    { to: '/extras',        label: t('nav.extras'),      short: t('nav.extras'),           icon: '🎲' },
+    { to: '/clasificacion', label: t('nav.standings'),   short: t('nav.standingsShort'),   icon: '🏆' },
+    { to: '/resultados',    label: t('nav.results'),     short: t('nav.resultsShort'),     icon: '📋' },
+    { to: '/bracket',       label: t('nav.bracket'),     short: t('nav.bracket'),          icon: '⚽' },
+    { to: '/reglas',        label: t('nav.rules'),       short: t('nav.rulesShort'),       icon: '📖' },
+  ]
+
+  // Bottom-bar (móvil): un máximo de 5 ítems para no saturar.
+  const MOBILE_NAV = NAV.filter(n => n.to !== '/reglas')
+
   // Pending payment intent: si el usuario eligió "Crear liga" durante el
-  // signup, Auth.jsx dejó el nombre en sessionStorage y aquí abrimos el
+  // signup, Auth.jsx dejó el nombre en localStorage y aquí abrimos el
   // modal de pago una vez ya está autenticado.
   const [pendingPaymentName, setPendingPaymentName] = useState(() => {
-    try { return sessionStorage.getItem('porra-pending-league-create') } catch { return null }
+    try { return localStorage.getItem('porra-pending-league-create') } catch { return null }
   })
 
   // Si el usuario logueado es founder y hay intención pendiente, crea la
@@ -114,7 +118,7 @@ export default function Layout() {
         body: { league_name: pendingPaymentName },
       })
       if (cancelled) return
-      sessionStorage.removeItem('porra-pending-league-create')
+      localStorage.removeItem('porra-pending-league-create')
       setPendingPaymentName(null)
       if (!error && data?.league && onLeagueCreated) {
         await onLeagueCreated(data.league)
@@ -129,7 +133,7 @@ export default function Layout() {
   }
 
   async function handlePaymentSuccess(league) {
-    sessionStorage.removeItem('porra-pending-league-create')
+    localStorage.removeItem('porra-pending-league-create')
     setPendingPaymentName(null)
     if (onLeagueCreated) await onLeagueCreated(league)
   }
@@ -137,7 +141,7 @@ export default function Layout() {
   function handlePaymentClose() {
     // Si cancelan, limpiamos la intención para que no reaparezca
     // en cada recarga. Pueden volver a intentar desde el menú de ligas.
-    sessionStorage.removeItem('porra-pending-league-create')
+    localStorage.removeItem('porra-pending-league-create')
     setPendingPaymentName(null)
   }
 
@@ -182,11 +186,12 @@ export default function Layout() {
                 </span>
               </Link>
             )}
+            <LangToggle className="ml-1 hidden sm:flex" />
             <button
               onClick={handleSignOut}
               className="hidden sm:inline-flex text-stone-400 hover:text-red-500 text-sm px-2.5 py-1.5 rounded-xl hover:bg-red-50 transition-all duration-150"
             >
-              Salir
+              {t('nav.signOut')}
             </button>
 
             {/* Móvil: avatar compacto con menú */}
