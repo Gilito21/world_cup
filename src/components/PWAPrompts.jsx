@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 const INSTALL_DISMISSED_KEY = 'pwa-install-dismissed-until'
@@ -149,6 +150,8 @@ function InstallBanner() {
 }
 
 export default function PWAPrompts() {
+  const { pathname } = useLocation()
+  if (pathname === '/auth') return null
   return (
     <>
       <UpdateBanner />
