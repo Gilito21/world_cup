@@ -7,6 +7,7 @@ import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
 import LeagueModal from '../components/LeagueModal'
 import Spinner from '../components/Spinner'
+import { StandingsSkeleton } from '../components/Skeleton'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
@@ -180,6 +181,7 @@ export default function Clasificacion() {
   const [companyStandings, setCompanyStandings] = useState(() => getCache('lb:companies') ?? [])
   const [myLeagueStats, setMyLeagueStats]       = useState({ exact: 0, correct: 0, total: 0 })
   const [loading, setLoading]           = useState(false)
+  const [loadError, setLoadError]       = useState('')
   const [showModal, setShowModal]       = useState(false)
   const [selectedProfile, setSelectedProfile] = useState(null)
 
@@ -193,8 +195,9 @@ export default function Clasificacion() {
     const cached = getCache('lb:global')
     if (cached) setGlobalStandings(cached)
     else setLoading(true)
+    setLoadError('')
     try {
-      const { data: profiles } = await sq(
+      const { data: profiles, error } = await sq(
         supabase.from('profiles')
           .select('id, username, total_points, avatar_url, company')
           .order('total_points', { ascending: false })
@@ -209,6 +212,8 @@ export default function Clasificacion() {
         }))
         setGlobalStandings(next)
         setCache('lb:global', next)
+      } else if (error && !cached) {
+        setLoadError(t('clasificacion.loadError'))
       }
     } finally {
       setLoading(false)
@@ -227,13 +232,18 @@ export default function Clasificacion() {
     } else {
       setLoading(true)
     }
+    setLoadError('')
     try {
       const { data: members } = await sq(
         supabase.from('league_members').select('user_id, role').eq('league_id', activeLeague.id)
       )
 
-      // Timeout — keep whatever was already rendered (cache or stale state)
-      if (members === null) return
+      // Timeout — keep whatever was already rendered (cache or stale state),
+      // but surface an error if we had nothing cached to fall back on.
+      if (members === null) {
+        if (!cached) setLoadError(t('clasificacion.loadError'))
+        return
+      }
 
       if (members.length === 0) {
         setLeagueStandings([])
@@ -292,13 +302,17 @@ export default function Clasificacion() {
     const cached = getCache('lb:companies')
     if (cached) setCompanyStandings(cached)
     else setLoading(true)
+    setLoadError('')
     try {
       const { data: profiles } = await sq(
         supabase.from('profiles').select('id, username, company, total_points, avatar_url')
           .not('company', 'is', null).neq('company', '')
       )
 
-      if (!profiles) return
+      if (!profiles) {
+        if (!cached) setLoadError(t('clasificacion.loadError'))
+        return
+      }
 
       const companyMap = {}
       for (const p of profiles) {
@@ -481,8 +495,20 @@ export default function Clasificacion() {
         ))}
       </div>
 
+      {loadError && (
+        <div className="card p-4 bg-red-50 border-red-200 text-center space-y-2">
+          <p className="text-red-700 text-sm font-medium">⚠️ {loadError}</p>
+          <button
+            onClick={() => { tab === 'global' ? loadGlobal() : tab === 'league' ? loadLeague() : loadCompanies() }}
+            className="btn-secondary text-sm"
+          >
+            {t('common.retry')}
+          </button>
+        </div>
+      )}
+
       {loading ? (
-        <div className="flex justify-center items-center py-20"><Spinner size="lg" /></div>
+        <StandingsSkeleton />
       ) : (
         <>
           {/* ── Global ── */}

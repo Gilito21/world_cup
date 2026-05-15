@@ -14,6 +14,7 @@ export default {
     copy: 'Copy',
     copied: '✓ Copied',
     error: 'Error',
+    retry: 'Retry',
     saveDraft: 'Save draft',
     saved: 'Saved',
     back: '← Back',
@@ -274,6 +275,7 @@ export default {
   clasificacion: {
     title: 'Standings',
     subtitle: 'Exact = 3 pts · Correct = 1 pt',
+    loadError: 'Could not load the standings. Check your connection.',
     tabGlobal: 'Global',
     tabLeague: 'My League',
     tabCompanies: 'Companies',
@@ -420,6 +422,7 @@ export default {
     statAccuracy: 'Accuracy',
     uploadError: 'The file must be an image.',
     uploadSizeError: 'Image must be under 2 MB.',
+    uploadDimensionsError: 'Image is too large. Maximum 4096×4096 pixels.',
     uploadFailed: 'Could not upload the image.',
   },
 

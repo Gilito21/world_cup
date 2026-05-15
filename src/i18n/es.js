@@ -14,6 +14,7 @@ export default {
     copy: 'Copiar',
     copied: '✓ Copiado',
     error: 'Error',
+    retry: 'Reintentar',
     saveDraft: 'Guardar borrador',
     saved: 'Guardado',
     back: '← Volver',
@@ -274,6 +275,7 @@ export default {
   clasificacion: {
     title: 'Clasificación',
     subtitle: 'Exacto = 3 pts · Correcto = 1 pt',
+    loadError: 'No se pudo cargar la clasificación. Revisa tu conexión.',
     tabGlobal: 'Global',
     tabLeague: 'Mi Liga',
     tabCompanies: 'Empresas',
@@ -420,6 +422,7 @@ export default {
     statAccuracy: 'Precisión',
     uploadError: 'El archivo debe ser una imagen.',
     uploadSizeError: 'La imagen debe pesar menos de 2 MB.',
+    uploadDimensionsError: 'La imagen es demasiado grande. Máximo 4096×4096 píxeles.',
     uploadFailed: 'No se pudo subir la imagen.',
   },
 

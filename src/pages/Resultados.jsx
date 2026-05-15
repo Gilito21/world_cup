@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
+import { MatchListSkeleton } from '../components/Skeleton'
 
 function formatDate(dateStr, locale) {
   return new Date(dateStr).toLocaleDateString(locale, {
@@ -309,7 +310,11 @@ export default function Resultados() {
   }, {})
 
   if (loading) {
-    return <div className="flex justify-center items-center py-20"><Spinner size="lg" /></div>
+    return (
+      <div className="space-y-3 py-2">
+        <MatchListSkeleton count={5} />
+      </div>
+    )
   }
 
   return (

@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
+import { MatchListSkeleton } from '../components/Skeleton'
 import UpcomingAlert from '../components/UpcomingAlert'
 import LeagueModal from '../components/LeagueModal'
 import PaymentModal from '../components/PaymentModal'
@@ -876,7 +877,11 @@ export default function Pronosticos() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   if (loading) {
-    return <div className="flex justify-center items-center py-20"><Spinner size="lg" /></div>
+    return (
+      <div className="space-y-3 py-2">
+        <MatchListSkeleton count={6} />
+      </div>
+    )
   }
 
   return (

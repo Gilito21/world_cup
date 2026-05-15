@@ -35,6 +35,9 @@ const COMPANY_ALIASES = {
 function expandAliases(query) {
   const lower = query.toLowerCase().trim()
   const terms = [query]
+  // Require at least 2 characters to avoid over-broad matches (typing 'e'
+  // shouldn't expand to every alias starting with 'e').
+  if (lower.length < 2) return terms
   for (const [abbrev, fullNames] of Object.entries(COMPANY_ALIASES)) {
     if (lower === abbrev || abbrev.startsWith(lower) || lower.startsWith(abbrev)) {
       terms.push(...fullNames)
@@ -262,6 +265,17 @@ export default function Auth() {
     setError('')
     setSuccess('')
     setLoading(true)
+
+    // Clear stale signup intents from any previous attempt. The user may
+    // have switched leagueMode between attempts ('create' → 'none', or
+    // changed leagueName/joinCode); the values from the prior attempt
+    // would otherwise be picked up by Layout / LeagueContext after auth.
+    if (mode === 'register') {
+      try {
+        localStorage.removeItem('porra-pending-league-create')
+        localStorage.removeItem('porra-invite-code')
+      } catch {}
+    }
 
     try {
       if (mode === 'login') {

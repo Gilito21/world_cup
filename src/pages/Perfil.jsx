@@ -84,6 +84,19 @@ export default function Perfil() {
       return
     }
 
+    // Reject absurdly large dimensions before uploading. A 2MB JPEG can
+    // still decode to 12000×12000 pixels and lock up the browser.
+    const dims = await new Promise(resolve => {
+      const img = new Image()
+      img.onload  = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
+      img.onerror = () => resolve(null)
+      img.src = URL.createObjectURL(file)
+    })
+    if (!dims || dims.w > 4096 || dims.h > 4096) {
+      setUploadError(t('perfil.uploadDimensionsError'))
+      return
+    }
+
     setUploading(true)
     try {
       const ext  = file.name.split('.').pop().toLowerCase()
