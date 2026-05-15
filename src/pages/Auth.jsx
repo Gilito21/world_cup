@@ -286,6 +286,14 @@ export default function Auth() {
           throw signUpErr
         }
 
+        // Supabase returns an obfuscated user with empty identities[] when the
+        // email is already registered (anti-enumeration). Treat as error so we
+        // don't show a false "account created" success banner.
+        if (authData?.user && authData.user.identities?.length === 0) {
+          localStorage.removeItem('porra-pending-league-create')
+          throw new Error('User already registered')
+        }
+
         if (authData?.session && leagueMode === 'join') {
           await setupLeague(authData.user.id)
         }
