@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLang } from '../contexts/LangContext'
+import { appUrl } from '../lib/appUrl'
 
 function CopyButton({ text, label }) {
   const { t } = useLang()
@@ -196,7 +197,7 @@ export default function LeagueCreatedModal({ league, onClose }) {
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
 
-  const inviteLink = `${window.location.origin}/join/${league.invite_code}`
+  const inviteLink = `${appUrl()}/join/${league.invite_code}`
   const appName  = t('common.appName')
   const joinText = t('league.shareCardJoin')
   const codeLabel = t('league.inviteCode')

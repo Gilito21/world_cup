@@ -14,6 +14,7 @@ export default {
     copy: 'Copy',
     copied: '✓ Copied',
     error: 'Error',
+    retry: 'Retry',
     saveDraft: 'Save draft',
     saved: 'Saved',
     back: '← Back',
@@ -37,6 +38,7 @@ export default {
     signOutFull: 'Sign out',
     profile: 'Profile',
     totalPts: '{{n}} pts total',
+    adminLeague: 'My League',
   },
 
   landing: {
@@ -192,6 +194,7 @@ export default {
     joinShort: 'Join',
     toLeague: 'league',
     cantJoin: 'Could not join the league',
+    fullTitle: 'League is full',
     invalidCode: 'Invalid invite code.',
     joining: 'Joining the league…',
     goHome: 'Go to home',
@@ -232,6 +235,8 @@ export default {
     cutoffNote: '⏰ Submissions close 1 hour before the first match:',
     closedLabel: 'Closed!',
     closedMsg: 'The prediction window has closed — no more submissions accepted.',
+    missedDeadline: 'You didn\'t submit your prediction before the deadline.',
+    missedDeadlinePartial: 'You had {{n}} of {{total}} matches filled in when the deadline passed.',
     submitBtn: 'Submit final prediction',
     submitBtnPending: '{{n}} match{{s}} still to fill in',
     submitHint: 'You must fill in every match result (group stage + knockout rounds) before you can submit.',
@@ -270,6 +275,7 @@ export default {
   clasificacion: {
     title: 'Standings',
     subtitle: 'Exact = 3 pts · Correct = 1 pt',
+    loadError: 'Could not load the standings. Check your connection.',
     tabGlobal: 'Global',
     tabLeague: 'My League',
     tabCompanies: 'Companies',
@@ -312,6 +318,8 @@ export default {
     cutoffNote: '⏰ Deadline is 1 hour before the first match:',
     closedLabel: 'Closed!',
     closedMsg: 'The bonus predictions window has closed.',
+    missedDeadline: 'You didn\'t submit your bonus answers before the deadline.',
+    missedDeadlinePartial: 'You had {{n}} of {{total}} questions answered when the deadline passed.',
     submitBtn: 'Submit bonus answers',
     pendingBtn: '{{count}} question{{s}} still unanswered',
     allRequired: 'Answer all questions before submitting.',
@@ -414,6 +422,7 @@ export default {
     statAccuracy: 'Accuracy',
     uploadError: 'The file must be an image.',
     uploadSizeError: 'Image must be under 2 MB.',
+    uploadDimensionsError: 'Image is too large. Maximum 4096×4096 pixels.',
     uploadFailed: 'Could not upload the image.',
   },
 
@@ -505,6 +514,30 @@ export default {
     closeBtn: 'Dismiss',
   },
 
+  adminLeague: {
+    title: 'League management',
+    members: 'Members',
+    predictions: 'Predictions',
+    extras: 'Extras',
+    reminder: 'Send reminder',
+    reminderSent: '✓ Sent',
+    reminderSending: 'Sending…',
+    reminderError: 'Failed to send',
+    reminderCooldown: 'Recently reminded',
+    noMembers: 'No members yet.',
+    submitted: 'Submitted',
+    pending: 'Pending',
+    inviteCode: 'Code: {{code}}',
+    noAdminLeagues: 'You are not admin of any league.',
+    selectLeague: 'Select league',
+  },
+
+  layout: {
+    freeLeagueErrorTitle: 'Could not create league',
+    freeLeagueErrorDesc: 'There was a problem creating "{{name}}". Retry or cancel to create it later from the league switcher.',
+    freeLeagueRetry: 'Retry',
+  },
+
   payment: {
     payBtn: 'Pay {{price}} · Create league',
     processing: 'Processing…',
@@ -519,6 +552,7 @@ export default {
     errorProcessing: 'Payment could not be processed.',
     errorCreating: 'Could not create the league.',
     errorInitiate: 'Could not start the payment.',
+    confirmFailedSupport: 'Payment went through but the league could not be created ({{err}}). Your payment is on file and we will be in touch. If you need urgent help, contact support with this ID: {{id}}',
     notConfigured: 'Payment not configured',
     notConfiguredDesc: 'VITE_STRIPE_PUBLISHABLE_KEY is missing from the environment.',
     createTitle: 'Create league: {{name}}',

@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
+import { MatchListSkeleton } from '../components/Skeleton'
 import UpcomingAlert from '../components/UpcomingAlert'
 import LeagueModal from '../components/LeagueModal'
 import PaymentModal from '../components/PaymentModal'
@@ -166,9 +167,15 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
       )}
 
       {isPastCutoff && (
-        <div className="flex items-center gap-2 text-sm text-red-500 font-medium">
-          <span>🔒</span>
-          <span>{t('pronosticos.closedMsg')}</span>
+        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 space-y-1">
+          <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
+            <span>🔒</span>{t('pronosticos.closedMsg')}
+          </p>
+          <p className="text-xs text-red-500">
+            {filledCount > 0
+              ? t('pronosticos.missedDeadlinePartial', { n: filledCount, total: totalCount })
+              : t('pronosticos.missedDeadline')}
+          </p>
         </div>
       )}
 
@@ -870,7 +877,11 @@ export default function Pronosticos() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   if (loading) {
-    return <div className="flex justify-center items-center py-20"><Spinner size="lg" /></div>
+    return (
+      <div className="space-y-3 py-2">
+        <MatchListSkeleton count={6} />
+      </div>
+    )
   }
 
   return (
@@ -959,9 +970,6 @@ export default function Pronosticos() {
         <div className="card p-6 sm:p-10 text-center">
           <div className="text-3xl sm:text-4xl mb-3">📅</div>
           <p className="text-stone-500 text-sm">{t('pronosticos.noMatches')}</p>
-          <p className="text-stone-400 text-xs mt-1">
-            Ejecuta <code className="bg-stone-100 px-1 rounded">npm run seed-matches</code> para importarlos.
-          </p>
         </div>
       ) : (
         <div className="flex gap-3 items-start">

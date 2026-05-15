@@ -14,6 +14,7 @@ export default {
     copy: 'Copiar',
     copied: '✓ Copiado',
     error: 'Error',
+    retry: 'Reintentar',
     saveDraft: 'Guardar borrador',
     saved: 'Guardado',
     back: '← Volver',
@@ -37,6 +38,7 @@ export default {
     signOutFull: 'Cerrar sesión',
     profile: 'Perfil',
     totalPts: '{{n}} pts totales',
+    adminLeague: 'Mi Liga',
   },
 
   landing: {
@@ -192,6 +194,7 @@ export default {
     joinShort: 'Unirse',
     toLeague: 'a liga',
     cantJoin: 'No se pudo unir a la liga',
+    fullTitle: 'Liga completa',
     invalidCode: 'Código de invitación inválido.',
     joining: 'Uniéndote a la liga…',
     goHome: 'Ir al inicio',
@@ -232,6 +235,8 @@ export default {
     cutoffNote: '⏰ El plazo de envío cierra 1 hora antes del primer partido:',
     closedLabel: '¡Cerrado!',
     closedMsg: 'El período de pronósticos ha cerrado — ya no se aceptan envíos.',
+    missedDeadline: 'No enviaste tu pronóstico antes del cierre.',
+    missedDeadlinePartial: 'Tenías {{n}} de {{total}} partidos rellenos cuando cerró el plazo.',
     submitBtn: 'Enviar pronóstico definitivo',
     submitBtnPending: 'Falta completar {{n}} partido{{s}}',
     submitHint: 'Debes rellenar el resultado de todos los partidos (grupos + eliminatorias) antes de poder enviar.',
@@ -270,6 +275,7 @@ export default {
   clasificacion: {
     title: 'Clasificación',
     subtitle: 'Exacto = 3 pts · Correcto = 1 pt',
+    loadError: 'No se pudo cargar la clasificación. Revisa tu conexión.',
     tabGlobal: 'Global',
     tabLeague: 'Mi Liga',
     tabCompanies: 'Empresas',
@@ -312,6 +318,8 @@ export default {
     cutoffNote: '⏰ El plazo cierra 1 hora antes del primer partido:',
     closedLabel: '¡Cerrado!',
     closedMsg: 'El período de pronósticos extra ha cerrado.',
+    missedDeadline: 'No enviaste tus respuestas extra antes del cierre.',
+    missedDeadlinePartial: 'Tenías {{n}} de {{total}} preguntas respondidas cuando cerró el plazo.',
     submitBtn: 'Enviar respuestas extra',
     pendingBtn: 'Falta{{n}} {{count}} pregunta{{s}} por responder',
     allRequired: 'Responde todas las preguntas antes de poder enviar.',
@@ -414,6 +422,7 @@ export default {
     statAccuracy: 'Precisión',
     uploadError: 'El archivo debe ser una imagen.',
     uploadSizeError: 'La imagen debe pesar menos de 2 MB.',
+    uploadDimensionsError: 'La imagen es demasiado grande. Máximo 4096×4096 píxeles.',
     uploadFailed: 'No se pudo subir la imagen.',
   },
 
@@ -505,6 +514,30 @@ export default {
     closeBtn: 'Cerrar aviso',
   },
 
+  adminLeague: {
+    title: 'Gestión de liga',
+    members: 'Participantes',
+    predictions: 'Pronósticos',
+    extras: 'Extras',
+    reminder: 'Recordatorio',
+    reminderSent: '✓ Enviado',
+    reminderSending: 'Enviando…',
+    reminderError: 'Error al enviar',
+    reminderCooldown: 'Recordatorio reciente',
+    noMembers: 'Sin participantes aún.',
+    submitted: 'Enviado',
+    pending: 'Pendiente',
+    inviteCode: 'Código: {{code}}',
+    noAdminLeagues: 'No eres administrador de ninguna liga.',
+    selectLeague: 'Seleccionar liga',
+  },
+
+  layout: {
+    freeLeagueErrorTitle: 'No se pudo crear la liga',
+    freeLeagueErrorDesc: 'Hubo un problema creando "{{name}}". Reintenta o cancela para hacerlo más tarde desde el selector de liga.',
+    freeLeagueRetry: 'Reintentar',
+  },
+
   payment: {
     payBtn: 'Pagar {{price}} · Crear liga',
     processing: 'Procesando…',
@@ -519,6 +552,7 @@ export default {
     errorProcessing: 'No se pudo procesar el pago.',
     errorCreating: 'No se pudo crear la liga.',
     errorInitiate: 'No se pudo iniciar el pago.',
+    confirmFailedSupport: 'El pago se realizó correctamente pero no se pudo crear la liga ({{err}}). Tu pago está registrado y nos pondremos en contacto contigo. Si necesitas ayuda urgente, contacta con soporte indicando este ID: {{id}}',
     notConfigured: 'Pago no configurado',
     notConfiguredDesc: 'Falta VITE_STRIPE_PUBLISHABLE_KEY en el entorno.',
     createTitle: 'Crear liga: {{name}}',

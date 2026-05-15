@@ -12,6 +12,7 @@ import Resultados from './pages/Resultados'
 import Bracket from './pages/Bracket'
 import Reglas from './pages/Reglas'
 import Extras from './pages/Extras'
+import AdminLeague from './pages/AdminLeague'
 import JoinLeague from './pages/JoinLeague'
 import Privacidad from './pages/Privacidad'
 import Spinner from './components/Spinner'
@@ -57,6 +58,7 @@ export default function App() {
             <Route path="/bracket"       element={<Bracket />} />
             <Route path="/reglas"        element={<Reglas />} />
             <Route path="/perfil"        element={<Perfil />} />
+            <Route path="/admin-liga"    element={<AdminLeague />} />
           </Route>
           <Route path="/join/:code"  element={<JoinLeague />} />
           <Route path="/privacidad" element={<Privacidad />} />

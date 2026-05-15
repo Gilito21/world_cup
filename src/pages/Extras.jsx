@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
+import { ExtrasSkeleton } from '../components/Skeleton'
 import LeagueModal from '../components/LeagueModal'
 import PaymentModal from '../components/PaymentModal'
 import LeagueCreatedModal from '../components/LeagueCreatedModal'
@@ -129,9 +130,15 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
       )}
 
       {isPastCutoff && (
-        <div className="flex items-center gap-2 text-sm text-red-500 font-medium">
-          <span>🔒</span>
-          <span>{t('extras.closedMsg')}</span>
+        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 space-y-1">
+          <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
+            <span>🔒</span>{t('extras.closedMsg')}
+          </p>
+          <p className="text-xs text-red-500">
+            {answeredCount > 0
+              ? t('extras.missedDeadlinePartial', { n: answeredCount, total: totalCount })
+              : t('extras.missedDeadline')}
+          </p>
         </div>
       )}
 
@@ -519,13 +526,10 @@ export default function Extras() {
     setSubmitting(true)
     setError('')
     try {
-      // 1. Borrar respuestas previas y reinsertar todas
-      const delQuery = leagueIdForPred
-        ? supabase.from('special_predictions').delete().eq('user_id', user.id).eq('league_id', leagueIdForPred)
-        : supabase.from('special_predictions').delete().eq('user_id', user.id).is('league_id', null)
-      const { error: delErr } = await delQuery
-      if (delErr) throw delErr
-
+      // Upsert all answers in one atomic call so we never end up in a
+      // half-deleted state if the request fails mid-flight. The DB has
+      // a UNIQUE (user_id, league_id, question_key) NULLS NOT DISTINCT
+      // index so existing rows are updated in place.
       const rows = questions
         .filter(q => answers[q.key])
         .map(q => ({
@@ -535,11 +539,14 @@ export default function Extras() {
           answer_choice: answers[q.key]?.answer_choice ?? null,
           answer_player: answers[q.key]?.answer_player ?? null,
           answer_number: answers[q.key]?.answer_number ?? null,
+          updated_at:    new Date().toISOString(),
         }))
 
       if (rows.length > 0) {
-        const { error: insErr } = await supabase.from('special_predictions').insert(rows)
-        if (insErr) throw insErr
+        const { error: upErr } = await supabase
+          .from('special_predictions')
+          .upsert(rows, { onConflict: 'user_id,league_id,question_key' })
+        if (upErr) throw upErr
       }
 
       // 2. Registrar el envío
@@ -574,7 +581,11 @@ export default function Extras() {
   const totalPoints = useMemo(() => questions.reduce((s, q) => s + q.points, 0), [questions])
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>
+    return (
+      <div className="space-y-3 py-2">
+        <ExtrasSkeleton count={4} />
+      </div>
+    )
   }
 
   if (!leagueLoading && leagues.length === 0) {

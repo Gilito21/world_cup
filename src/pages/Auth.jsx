@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
+import { appUrl } from '../lib/appUrl'
 import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from '../components/Spinner'
 import ReportButton from '../components/ReportButton'
@@ -34,6 +35,9 @@ const COMPANY_ALIASES = {
 function expandAliases(query) {
   const lower = query.toLowerCase().trim()
   const terms = [query]
+  // Require at least 2 characters to avoid over-broad matches (typing 'e'
+  // shouldn't expand to every alias starting with 'e').
+  if (lower.length < 2) return terms
   for (const [abbrev, fullNames] of Object.entries(COMPANY_ALIASES)) {
     if (lower === abbrev || abbrev.startsWith(lower) || lower.startsWith(abbrev)) {
       terms.push(...fullNames)
@@ -75,7 +79,7 @@ function ForgotPassword({ onBack }) {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const redirectTo = `${window.location.origin}/reset-password`
+    const redirectTo = `${appUrl()}/reset-password`
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
     setLoading(false)
     if (err) { setError(err.message); return }
@@ -262,6 +266,17 @@ export default function Auth() {
     setSuccess('')
     setLoading(true)
 
+    // Clear stale signup intents from any previous attempt. The user may
+    // have switched leagueMode between attempts ('create' → 'none', or
+    // changed leagueName/joinCode); the values from the prior attempt
+    // would otherwise be picked up by Layout / LeagueContext after auth.
+    if (mode === 'register') {
+      try {
+        localStorage.removeItem('porra-pending-league-create')
+        localStorage.removeItem('porra-invite-code')
+      } catch {}
+    }
+
     try {
       if (mode === 'login') {
         await signIn(form.email, form.password)
@@ -283,6 +298,14 @@ export default function Auth() {
         } catch (signUpErr) {
           localStorage.removeItem('porra-pending-league-create')
           throw signUpErr
+        }
+
+        // Supabase returns an obfuscated user with empty identities[] when the
+        // email is already registered (anti-enumeration). Treat as error so we
+        // don't show a false "account created" success banner.
+        if (authData?.user && authData.user.identities?.length === 0) {
+          localStorage.removeItem('porra-pending-league-create')
+          throw new Error('User already registered')
         }
 
         if (authData?.session && leagueMode === 'join') {
