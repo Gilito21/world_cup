@@ -4,6 +4,7 @@ import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { getCache, setCache } from '../lib/dataCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 import UpcomingAlert from '../components/UpcomingAlert'
 import { Flag, teamName } from '../utils/teams'
@@ -11,20 +12,16 @@ import { computePredictedKnockout } from '../utils/tournament'
 
 const STAGE_ORDER = ['group', 'round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
 
-const STAGE_INFO = {
-  group:         { icon: '⚽', short: 'Grupos',        full: 'Fase de grupos' },
-  round_of_32:   { icon: '🎽', short: 'Dieciseisavos', full: 'Dieciseisavos' },
-  round_of_16:   { icon: '🎯', short: 'Octavos',       full: 'Octavos de final' },
-  quarter_final: { icon: '⚔️',  short: 'Cuartos',       full: 'Cuartos de final' },
-  semi_final:    { icon: '⭐',  short: 'Semis',          full: 'Semifinales' },
-  third_place:   { icon: '🥉', short: '3er puesto',    full: 'Tercer puesto' },
-  final:         { icon: '🏆', short: 'Final',          full: 'Gran Final' },
-}
-
-const STATUS_BADGE = {
-  scheduled: null,
-  live:     { label: 'EN VIVO',    cls: 'bg-red-500/20 text-red-400 border-red-500/30 animate-pulse' },
-  finished: { label: 'Finalizado', cls: 'bg-stone-200 text-stone-500 border-stone-300' },
+function buildStageInfo(t) {
+  return {
+    group:         { icon: '⚽', short: t('stages.groupShort'),         full: t('stages.group') },
+    round_of_32:   { icon: '🎽', short: t('stages.round_of_32Short'),   full: t('stages.round_of_32') },
+    round_of_16:   { icon: '🎯', short: t('stages.round_of_16Short'),   full: t('stages.round_of_16') },
+    quarter_final: { icon: '⚔️',  short: t('stages.quarter_finalShort'), full: t('stages.quarter_final') },
+    semi_final:    { icon: '⭐',  short: t('stages.semi_finalShort'),    full: t('stages.semi_final') },
+    third_place:   { icon: '🥉', short: t('stages.third_placeShort'),   full: t('stages.third_place') },
+    final:         { icon: '🏆', short: t('stages.finalShort'),         full: t('stages.final') },
+  }
 }
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
@@ -40,8 +37,8 @@ function getTimeLeft(ts) {
   }
 }
 
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('es-ES', {
+function formatDate(dateStr, locale) {
+  return new Date(dateStr).toLocaleDateString(locale, {
     weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
   })
 }
@@ -71,12 +68,13 @@ function Countdown({ matchDate }) {
 }
 
 function CutoffCountdown({ cutoffTime }) {
+  const { t } = useLang()
   const [left, setLeft] = useState(() => getTimeLeft(cutoffTime))
   useEffect(() => {
-    const t = setInterval(() => setLeft(getTimeLeft(cutoffTime)), 1000)
-    return () => clearInterval(t)
+    const timer = setInterval(() => setLeft(getTimeLeft(cutoffTime)), 1000)
+    return () => clearInterval(timer)
   }, [cutoffTime])
-  if (!left) return <span className="font-semibold text-red-500">¡Cerrado!</span>
+  if (!left) return <span className="font-semibold text-red-500">{t('pronosticos.closedLabel')}</span>
   const { days, hours, minutes, seconds } = left
   return (
     <span className="font-mono font-semibold text-stone-700">
@@ -112,6 +110,7 @@ function ScoreInput({ value, onChange, disabled }) {
 // ─── SUBMIT PANEL ─────────────────────────────────────────────────────────────
 
 function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submittedAt, onSubmit, submitting }) {
+  const { t, dateLocale } = useLang()
   const pct          = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0
   const isPastCutoff = !!(cutoffTime && Date.now() >= cutoffTime)
   const isComplete   = filledCount === totalCount && totalCount > 0
@@ -122,15 +121,15 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
       <div className="card p-3 sm:p-4 bg-green-50/80 border-green-200 flex items-center gap-3">
         <span className="text-2xl sm:text-3xl flex-shrink-0">✅</span>
         <div className="min-w-0">
-          <p className="font-bold text-green-700 text-sm sm:text-base">Pronóstico enviado</p>
+          <p className="font-bold text-green-700 text-sm sm:text-base">{t('pronosticos.submitted')}</p>
           <p className="text-[11px] sm:text-xs text-green-600 mt-0.5">
             {submittedAt
-              ? new Date(submittedAt).toLocaleDateString('es-ES', {
+              ? new Date(submittedAt).toLocaleDateString(dateLocale, {
                   day: 'numeric', month: 'short',
                   hour: '2-digit', minute: '2-digit',
                 })
               : ''}
-            {' · '}{totalCount} partidos · No modificable
+            {' · '}{t('pronosticos.submittedDesc', { n: totalCount })}
           </p>
         </div>
       </div>
@@ -142,7 +141,7 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
       {/* Progress bar */}
       <div>
         <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
-          <span className="text-stone-500 font-medium truncate">Progreso del pronóstico</span>
+          <span className="text-stone-500 font-medium truncate">{t('pronosticos.progressLabel')}</span>
           <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-stone-600'}`}>
             {filledCount} / {totalCount}
           </span>
@@ -158,7 +157,7 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
       {/* Cutoff countdown */}
       {cutoffTime && !isPastCutoff && (
         <p className="text-xs text-stone-400 flex items-center gap-1.5 flex-wrap">
-          <span>⏰ El plazo de envío cierra 1 hora antes del primer partido:</span>
+          <span>{t('pronosticos.cutoffNote')}</span>
           <CutoffCountdown cutoffTime={cutoffTime} />
         </p>
       )}
@@ -166,7 +165,7 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
       {isPastCutoff && (
         <div className="flex items-center gap-2 text-sm text-red-500 font-medium">
           <span>🔒</span>
-          <span>El período de pronósticos ha cerrado — ya no se aceptan envíos.</span>
+          <span>{t('pronosticos.closedMsg')}</span>
         </div>
       )}
 
@@ -179,14 +178,14 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
         >
           {submitting ? <Spinner size="sm" /> : <span>🏆</span>}
           {isComplete
-            ? 'Enviar pronóstico definitivo'
-            : `Falta completar ${totalCount - filledCount} partido${totalCount - filledCount !== 1 ? 's' : ''}`}
+            ? t('pronosticos.submitBtn')
+            : t('pronosticos.submitBtnPending', { n: totalCount - filledCount, s: totalCount - filledCount !== 1 ? 's' : '' })}
         </button>
       )}
 
       {!isComplete && !isPastCutoff && (
         <p className="text-xs text-center text-stone-400">
-          Debes rellenar el resultado de <strong>todos</strong> los partidos (grupos + eliminatorias) antes de poder enviar.
+          {t('pronosticos.submitHint')}
         </p>
       )}
     </div>
@@ -196,17 +195,17 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
 // ─── CONFIRM MODAL ────────────────────────────────────────────────────────────
 
 function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
+  const { t } = useLang()
   return (
     <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="card p-6 max-w-sm w-full space-y-5 shadow-2xl">
         <div className="text-center space-y-2">
           <span className="text-5xl">🏆</span>
-          <h3 className="text-xl font-bold text-stone-900">¿Enviar pronóstico?</h3>
+          <h3 className="text-xl font-bold text-stone-900">{t('pronosticos.confirmTitle')}</h3>
           <p className="text-stone-500 text-sm">
-            Estás a punto de enviar tus <strong>{totalCount} pronósticos</strong>.
-            Una vez enviado <strong>no podrás modificar ningún resultado</strong>.
+            {t('pronosticos.confirmBody', { n: totalCount })}
           </p>
-          <p className="text-xs text-stone-400">Esta acción es irreversible.</p>
+          <p className="text-xs text-stone-400">{t('pronosticos.confirmIrreversible')}</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -214,7 +213,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
             disabled={submitting}
             className="btn-secondary flex-1"
           >
-            Cancelar
+            {t('common.cancel')}
           </button>
           <button
             onClick={onConfirm}
@@ -222,7 +221,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
             className="btn-primary flex-1 flex items-center justify-center gap-2"
           >
             {submitting && <Spinner size="sm" />}
-            Confirmar envío
+            {t('common.confirm')}
           </button>
         </div>
       </div>
@@ -233,6 +232,14 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
 // ─── MATCH CARD ───────────────────────────────────────────────────────────────
 
 function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, submitted, isPastCutoff }) {
+  const { t, dateLocale } = useLang()
+  const STAGE_INFO = buildStageInfo(t)
+  const STATUS_BADGE = useMemo(() => ({
+    scheduled: null,
+    live:     { label: t('pronosticos.liveLabel'),     cls: 'bg-red-500/20 text-red-400 border-red-500/30 animate-pulse' },
+    finished: { label: t('pronosticos.finishedLabel'), cls: 'bg-stone-200 text-stone-500 border-stone-300' },
+  }), [t])
+
   const isFinished  = match.status === 'finished'
   const isLocked    = submitted || isPastCutoff || isFinished ||
                       match.status !== 'scheduled' ||
@@ -281,7 +288,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
       {/* Header row */}
       <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-3">
         <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-          <span className="text-[11px] sm:text-xs text-stone-500 truncate">{formatDate(match.match_date)}</span>
+          <span className="text-[11px] sm:text-xs text-stone-500 truncate">{formatDate(match.match_date, dateLocale)}</span>
           {match.group_name && (
             <span className="text-[11px] sm:text-xs text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
               {match.group_name}
@@ -359,7 +366,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
       {/* Tiebreaker selector: knockout draw predictions only */}
       {isKnockout && isDraw && !isFinished && (
         <div className="mt-3 pt-3 border-t border-stone-100 flex flex-col items-center gap-2">
-          <span className="text-xs text-stone-500 font-medium">¿Quién pasa a la siguiente ronda?</span>
+          <span className="text-xs text-stone-500 font-medium">{t('pronosticos.tiebreaker')}</span>
           <div className="flex gap-2">
             <button
               onClick={() => !isLocked && onTiebreakerChange(match.id, 'home')}
@@ -387,7 +394,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             </button>
           </div>
           {!tiebreaker && !isLocked && (
-            <span className="text-xs text-amber-600 font-medium">Selecciona quién avanza</span>
+            <span className="text-xs text-amber-600 font-medium">{t('pronosticos.tiebreakerRequired')}</span>
           )}
         </div>
       )}
@@ -396,20 +403,20 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
       {isFinished && prediction && (
         <div className="mt-3 pt-3 border-t border-stone-200 text-center text-xs text-stone-500 space-y-1">
           <div>
-            Tu pronóstico:{' '}
+            {t('pronosticos.myPrediction')}{' '}
             <span className="text-stone-700 font-medium">
               {teamName(displayHome)} {prediction.home_score} – {prediction.away_score} {teamName(displayAway)}
             </span>
           </div>
           {isKnockout && match.home_score === match.away_score && match.winner && (
             <div>
-              Avanzó:{' '}
+              {t('pronosticos.advanced')}{' '}
               <span className="font-medium text-stone-600">
                 {match.winner === 'home' ? teamName(displayHome) : teamName(displayAway)}
               </span>
               {prediction.tiebreaker && (
                 <span className={`ml-1.5 font-medium ${prediction.tiebreaker === match.winner ? 'text-green-600' : 'text-red-500'}`}>
-                  {`(pronosticaste ${prediction.tiebreaker === 'home' ? teamName(displayHome) : teamName(displayAway)} `}
+                  {`(${t('pronosticos.youPredicted', { team: prediction.tiebreaker === 'home' ? teamName(displayHome) : teamName(displayAway) })} `}
                   {prediction.tiebreaker === match.winner ? '✓)' : '✗)'}
                 </span>
               )}
@@ -424,7 +431,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           <div className="flex items-center justify-center gap-1">
             <span>🔒</span>
             <span>
-              Pronóstico enviado:{' '}
+              {t('pronosticos.lockNote')}{' '}
               <span className="font-medium text-stone-600">
                 {(home || prediction?.home_score) ?? '?'} – {(away || prediction?.away_score) ?? '?'}
               </span>
@@ -432,7 +439,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           </div>
           {isKnockout && tiebreaker && isDraw && (
             <div>
-              Avanza:{' '}
+              {t('pronosticos.advancesNote')}{' '}
               <span className="font-medium text-stone-600">
                 {tiebreaker === 'home' ? teamName(displayHome) : teamName(displayAway)}
               </span>
@@ -445,17 +452,17 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
       {!submitted && !isLocked && !isFinished && (
         <div className="mt-3 pt-3 border-t border-stone-200 flex items-center justify-between">
           <span className="text-xs text-stone-400">
-            {!prediction && (home === '' || away === '') ? 'Sin resultado' :
-             !prediction ? 'Borrador sin guardar' :
-             changed     ? 'Cambios sin guardar' :
-                           '✓ Borrador guardado'}
+            {!prediction && (home === '' || away === '') ? t('pronosticos.noDraft') :
+             !prediction ? t('pronosticos.unsavedDraft') :
+             changed     ? t('pronosticos.unsavedChanges') :
+                           t('pronosticos.draftSaved')}
           </span>
           <button
             onClick={handleSave}
             disabled={saving || home === '' || away === '' || (!changed && !!prediction)}
             className="text-xs text-stone-400 hover:text-amber-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            {saving ? <Spinner size="sm" /> : saved && !changed ? 'Guardado' : 'Guardar borrador'}
+            {saving ? <Spinner size="sm" /> : saved && !changed ? t('common.saved') : t('common.saveDraft')}
           </button>
         </div>
       )}
@@ -466,6 +473,9 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 // ─── SIDEBAR DE FASES ─────────────────────────────────────────────────────────
 
 function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
+  const { t } = useLang()
+  const STAGE_INFO = buildStageInfo(t)
+
   return (
     <aside className="hidden md:block flex-shrink-0">
       <nav className="sticky top-24 group/nav w-11 hover:w-52 transition-all duration-200 overflow-hidden">
@@ -513,7 +523,10 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
 export default function Pronosticos() {
   const { user }                  = useAuth()
   const { activeLeague, leagues, loading: leagueLoading } = useLeague()
+  const { t, dateLocale }         = useLang()
   const predictionMode = activeLeague?.prediction_mode ?? 'global'
+
+  const STAGE_INFO = useMemo(() => buildStageInfo(t), [t])
 
   const [matches,     setMatches]     = useState(() => getMatchCache() ?? [])
   const [predictions, setPredictions] = useState({})
@@ -673,7 +686,7 @@ export default function Pronosticos() {
       : await supabase.from('predictions').insert(payload).select().single()
 
     if (err) {
-      setError('Error al guardar el borrador.')
+      setError(t('pronosticos.errSaveDraft'))
       return false
     }
     setPredictions(p => {
@@ -684,7 +697,7 @@ export default function Pronosticos() {
     })
     setDrafts(d => ({ ...d, [matchId]: { home: String(data.home_score), away: String(data.away_score), tiebreaker: data.tiebreaker ?? null } }))
     return true
-  }, [predictions, user.id, activeLeague, predictionMode])
+  }, [predictions, user.id, activeLeague, predictionMode, t])
 
   const handleDraftChange = useCallback((matchId, home, away) => {
     setDrafts(d => ({ ...d, [matchId]: { ...(d[matchId] ?? {}), home, away } }))
@@ -708,7 +721,7 @@ export default function Pronosticos() {
       const { data: sourcePreds } = await sourceQuery
 
       if (!sourcePreds?.length) {
-        setError('Esa liga no tiene pronósticos guardados todavía.')
+        setError(t('pronosticos.errNoPredictions'))
         return
       }
 
@@ -746,11 +759,11 @@ export default function Pronosticos() {
       const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
       setCache(`preds:${user.id}:${leagueKey}`, map)
     } catch {
-      setError('Error al copiar los pronósticos.')
+      setError(t('pronosticos.errCopy'))
     } finally {
       setCopying(false)
     }
-  }, [user.id, activeLeague, leagues, predictionMode])
+  }, [user.id, activeLeague, leagues, predictionMode, t])
 
   // ── Final submission ─────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
@@ -772,7 +785,7 @@ export default function Pronosticos() {
           toSave.map(m => handleSave(m.id, Number(drafts[m.id].home), Number(drafts[m.id].away), drafts[m.id].tiebreaker ?? null))
         )
         if (results.some(r => r === false)) {
-          setError('Error guardando algunos pronósticos. Inténtalo de nuevo.')
+          setError(t('pronosticos.errSaveMultiple'))
           return
         }
       }
@@ -792,11 +805,11 @@ export default function Pronosticos() {
       setCache(`sub:${user.id}:${leagueKey}`, { submitted: true, submittedAt: submittedAtNow })
       setShowConfirm(false)
     } catch {
-      setError('Error al enviar el pronóstico. Inténtalo de nuevo.')
+      setError(t('pronosticos.errSubmit'))
     } finally {
       setSubmitting(false)
     }
-  }, [matches, drafts, predictions, handleSave, user.id, activeLeague])
+  }, [matches, drafts, predictions, handleSave, user.id, activeLeague, t])
 
   // ── Derived values ──────────────────────────────────────────────────────────
   const otherLeagues    = leagues.filter(l => l.id !== activeLeague?.id)
@@ -829,7 +842,7 @@ export default function Pronosticos() {
 
   const filtered = matches.filter(m => m.stage === activeStage)
   const grouped  = filtered.reduce((acc, m) => {
-    const day = new Date(m.match_date).toLocaleDateString('es-ES', {
+    const day = new Date(m.match_date).toLocaleDateString(dateLocale, {
       weekday: 'long', day: 'numeric', month: 'long',
     })
     ;(acc[day] = acc[day] ?? []).push(m)
@@ -854,9 +867,9 @@ export default function Pronosticos() {
 
       {/* Page header */}
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Mis pronósticos</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">{t('pronosticos.title')}</h2>
         <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
-          Rellena todos los partidos (grupos + eliminatorias) y envía el pronóstico completo de una vez.
+          {t('pronosticos.subtitle')}
         </p>
       </div>
 
@@ -877,11 +890,9 @@ export default function Pronosticos() {
       {activeLeague && !hasPredictions && !isSubmitted && otherLeagues.length > 0 && (
         <div className="card p-4 border-amber-500/20 bg-amber-500/5 space-y-3">
           <div>
-            <p className="text-sm font-semibold text-stone-800">¿Reutilizar borradores de otra liga?</p>
+            <p className="text-sm font-semibold text-stone-800">{t('pronosticos.reuseTitle')}</p>
             <p className="text-xs text-stone-500 mt-0.5">
-              Aún no tienes borradores en{' '}
-              <span className="font-medium text-amber-600">{activeLeague.name}</span>.
-              Puedes copiar los de otra liga como punto de partida.
+              {t('pronosticos.reuseBody', { league: activeLeague.name })}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -893,7 +904,7 @@ export default function Pronosticos() {
                 className="btn-secondary text-sm px-3 py-1.5 flex items-center gap-1.5"
               >
                 {copying ? <Spinner size="sm" /> : '📋'}
-                Copiar de "{l.name}"
+                {t('pronosticos.copyFrom', { name: l.name })}
               </button>
             ))}
           </div>
@@ -911,7 +922,7 @@ export default function Pronosticos() {
       {matches.length === 0 ? (
         <div className="card p-6 sm:p-10 text-center">
           <div className="text-3xl sm:text-4xl mb-3">📅</div>
-          <p className="text-stone-500 text-sm">Los partidos se cargarán próximamente.</p>
+          <p className="text-stone-500 text-sm">{t('pronosticos.noMatches')}</p>
           <p className="text-stone-400 text-xs mt-1">
             Ejecuta <code className="bg-stone-100 px-1 rounded">npm run seed-matches</code> para importarlos.
           </p>
@@ -961,7 +972,7 @@ export default function Pronosticos() {
               <span className="text-xl">{STAGE_INFO[activeStage]?.icon}</span>
               <h3 className="text-lg font-bold text-stone-800">{STAGE_INFO[activeStage]?.full}</h3>
               <span className="text-sm text-stone-400">
-                · {filtered.length} partido{filtered.length !== 1 ? 's' : ''}
+                {t('pronosticos.matchCount', { n: filtered.length, s: filtered.length !== 1 ? 's' : '' })}
               </span>
               {!isSubmitted && (
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ml-1 ${
@@ -970,8 +981,8 @@ export default function Pronosticos() {
                     : 'bg-amber-100 text-amber-600'
                 }`}>
                   {unfilledCount(activeStage) === 0
-                    ? '✓ Completo'
-                    : `${unfilledCount(activeStage)} sin rellenar`}
+                    ? t('pronosticos.completeLabel')
+                    : t('pronosticos.unfilledLabel', { n: unfilledCount(activeStage) })}
                 </span>
               )}
             </div>

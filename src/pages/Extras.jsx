@@ -3,6 +3,7 @@ import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 
 // Twemoji CDN URL for any emoji string (works on all browsers/OS)
@@ -48,12 +49,13 @@ function getTimeLeft(ts) {
 }
 
 function CutoffCountdown({ cutoffTime }) {
+  const { t } = useLang()
   const [left, setLeft] = useState(() => getTimeLeft(cutoffTime))
   useEffect(() => {
-    const t = setInterval(() => setLeft(getTimeLeft(cutoffTime)), 1000)
-    return () => clearInterval(t)
+    const timer = setInterval(() => setLeft(getTimeLeft(cutoffTime)), 1000)
+    return () => clearInterval(timer)
   }, [cutoffTime])
-  if (!left) return <span className="font-semibold text-red-500">¡Cerrado!</span>
+  if (!left) return <span className="font-semibold text-red-500">{t('extras.closedLabel')}</span>
   const { days, hours, minutes, seconds } = left
   return (
     <span className="font-mono font-semibold text-stone-700">
@@ -65,11 +67,12 @@ function CutoffCountdown({ cutoffTime }) {
 
 // ─── Panel de envío ────────────────────────────────────────────────────────
 function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submittedAt, onSubmit, submitting }) {
+  const { t, dateLocale } = useLang()
   const [, force] = useState(0)
   useEffect(() => {
     if (!cutoffTime) return
-    const t = setInterval(() => force(n => n + 1), 1000)
-    return () => clearInterval(t)
+    const timer = setInterval(() => force(n => n + 1), 1000)
+    return () => clearInterval(timer)
   }, [cutoffTime])
 
   const isPastCutoff = !!(cutoffTime && Date.now() >= cutoffTime)
@@ -82,15 +85,15 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
       <div className="card p-3 sm:p-4 bg-green-50/80 border-green-200 flex items-center gap-3">
         <span className="text-2xl sm:text-3xl flex-shrink-0">✅</span>
         <div className="min-w-0">
-          <p className="font-bold text-green-700 text-sm sm:text-base">Respuestas extra enviadas</p>
+          <p className="font-bold text-green-700 text-sm sm:text-base">{t('extras.submitted')}</p>
           <p className="text-[11px] sm:text-xs text-green-600 mt-0.5">
             {submittedAt
-              ? new Date(submittedAt).toLocaleDateString('es-ES', {
+              ? new Date(submittedAt).toLocaleDateString(dateLocale, {
                   day: 'numeric', month: 'short',
                   hour: '2-digit', minute: '2-digit',
                 })
               : ''}
-            {' · '}{totalCount} preguntas · No modificable
+            {' · '}{t('extras.submittedDesc', { n: totalCount })}
           </p>
         </div>
       </div>
@@ -102,7 +105,7 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
       {/* Progress bar */}
       <div>
         <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
-          <span className="text-stone-500 font-medium">Progreso de las respuestas</span>
+          <span className="text-stone-500 font-medium">{t('extras.progressLabel')}</span>
           <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-stone-600'}`}>
             {answeredCount} / {totalCount}
           </span>
@@ -117,7 +120,7 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
 
       {cutoffTime && !isPastCutoff && (
         <p className="text-xs text-stone-400 flex items-center gap-1.5 flex-wrap">
-          <span>⏰ El plazo cierra 1 hora antes del primer partido:</span>
+          <span>{t('extras.cutoffNote')}</span>
           <CutoffCountdown cutoffTime={cutoffTime} />
         </p>
       )}
@@ -125,7 +128,7 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
       {isPastCutoff && (
         <div className="flex items-center gap-2 text-sm text-red-500 font-medium">
           <span>🔒</span>
-          <span>El período de pronósticos extra ha cerrado.</span>
+          <span>{t('extras.closedMsg')}</span>
         </div>
       )}
 
@@ -137,14 +140,14 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
         >
           {submitting ? <Spinner size="sm" /> : <span>🎲</span>}
           {isComplete
-            ? 'Enviar respuestas extra'
-            : `Falta${totalCount - answeredCount !== 1 ? 'n' : ''} ${totalCount - answeredCount} pregunta${totalCount - answeredCount !== 1 ? 's' : ''} por responder`}
+            ? t('extras.submitBtn')
+            : t('extras.pendingBtn', { n: totalCount - answeredCount !== 1 ? 'n' : '', count: totalCount - answeredCount, s: totalCount - answeredCount !== 1 ? 's' : '' })}
         </button>
       )}
 
       {!isComplete && !isPastCutoff && (
         <p className="text-xs text-center text-stone-400">
-          Responde todas las preguntas antes de poder enviar.
+          {t('extras.allRequired')}
         </p>
       )}
     </div>
@@ -153,12 +156,13 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
 
 // ─── Modal de confirmación ─────────────────────────────────────────────────
 function ConfirmModal({ onConfirm, onCancel, submitting }) {
+  const { t } = useLang()
   return (
     <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 animate-slide-up">
-        <h3 className="text-xl font-bold text-stone-900">¿Enviar respuestas extra?</h3>
+        <h3 className="text-xl font-bold text-stone-900">{t('extras.confirmTitle')}</h3>
         <p className="text-stone-500 text-sm leading-relaxed">
-          Una vez enviadas <strong className="text-stone-800">no podrás modificarlas</strong>. Comprueba que estás conforme antes de confirmar.
+          {t('extras.confirmBody')}
         </p>
         <div className="flex gap-3 pt-1">
           <button
@@ -166,7 +170,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting }) {
             disabled={submitting}
             className="flex-1 btn-secondary text-sm"
           >
-            Revisar
+            {t('extras.review')}
           </button>
           <button
             onClick={onConfirm}
@@ -174,7 +178,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting }) {
             className="flex-1 btn-primary flex items-center justify-center gap-2 text-sm"
           >
             {submitting && <Spinner size="sm" />}
-            Enviar definitivamente
+            {t('extras.sendFinal')}
           </button>
         </div>
       </div>
@@ -225,6 +229,7 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
 
 // ─── Pregunta tipo "player" ────────────────────────────────────────────────
 function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
+  const { t } = useLang()
   const trimmed   = (draft ?? '').trim()
   const isDirty   = trimmed !== (value ?? '')
   const canSubmit = !!trimmed && isDirty && !locked
@@ -237,7 +242,7 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
           value={draft ?? ''}
           onChange={e => onDraft(e.target.value)}
           disabled={locked}
-          placeholder="Escribe el nombre del jugador…"
+          placeholder={t('extras.playerPlaceholder')}
           className="input flex-1"
           maxLength={80}
           enterKeyHint="done"
@@ -248,13 +253,13 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
           disabled={!canSubmit}
           className="btn-primary text-sm px-4"
         >
-          {value && !isDirty ? '✓' : 'Guardar'}
+          {value && !isDirty ? '✓' : t('extras.saveBtn')}
         </button>
       </div>
 
       {!locked && (
         <div>
-          <p className="text-xs text-stone-500 mb-2">Sugerencias:</p>
+          <p className="text-xs text-stone-500 mb-2">{t('extras.suggestions')}</p>
           <div className="flex flex-wrap gap-1.5">
             {MVP_SUGGESTIONS.map(s => {
               const isCurrent = (value ?? '').trim().toLowerCase() === s.name.toLowerCase()
@@ -278,7 +283,7 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
       )}
 
       {value && !isDirty && (
-        <p className="text-xs text-green-600">Guardado en borrador: <strong>{value}</strong></p>
+        <p className="text-xs text-green-600">{t('extras.draftSaved', { val: value })}</p>
       )}
     </div>
   )
@@ -286,6 +291,7 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
 
 // ─── Pregunta tipo "number" ────────────────────────────────────────────────
 function NumberQuestion({ value, draft, onDraft, onSave, locked }) {
+  const { t } = useLang()
   const parsed    = draft === '' || draft == null ? null : parseInt(draft, 10)
   const isValid   = parsed !== null && Number.isFinite(parsed) && parsed >= 0 && parsed <= 9999
   const isDirty   = parsed !== value
@@ -314,19 +320,18 @@ function NumberQuestion({ value, draft, onDraft, onSave, locked }) {
           disabled={!canSubmit}
           className="btn-primary text-sm px-4"
         >
-          {value != null && !isDirty ? '✓' : 'Guardar'}
+          {value != null && !isDirty ? '✓' : t('extras.saveBtn')}
         </button>
       </div>
 
       {!locked && (
         <p className="text-xs text-stone-500 leading-relaxed">
-          💡 Referencia: en Qatar 2022 hubo <strong>~227 amarillas y 4 rojas</strong> (≈ 235 puntos).
-          Con más partidos en 2026, el rango habitual está entre <strong>300 y 500</strong>.
+          {t('extras.referenceNote')}
         </p>
       )}
 
       {value != null && !isDirty && (
-        <p className="text-xs text-green-600">Guardado en borrador: <strong className="tabular-nums">{value}</strong></p>
+        <p className="text-xs text-green-600">{t('extras.draftSaved', { val: value })}</p>
       )}
     </div>
   )
@@ -376,6 +381,7 @@ function QuestionCard({ question, answer, draft, onDraft, onSelect, onSave, lock
 export default function Extras() {
   const { user }         = useAuth()
   const { activeLeague, loading: leagueLoading } = useLeague()
+  const { t, dateLocale } = useLang()
   const predictionMode   = activeLeague?.prediction_mode ?? 'global'
   const leagueIdForPred  = predictionMode === 'per_league' ? activeLeague?.id ?? null : null
 
@@ -528,7 +534,7 @@ export default function Extras() {
       setSubmittedAt(now)
       setShowConfirm(false)
     } catch (e) {
-      setError(e.message ?? 'Error al enviar las respuestas.')
+      setError(e.message ?? t('extras.errSend'))
     } finally {
       setSubmitting(false)
     }
@@ -556,9 +562,9 @@ export default function Extras() {
     return (
       <div className="card p-6 sm:p-8 text-center space-y-2">
         <span className="text-3xl sm:text-4xl">🎲</span>
-        <h2 className="text-base sm:text-lg font-bold text-stone-900">Únete a una liga primero</h2>
+        <h2 className="text-base sm:text-lg font-bold text-stone-900">{t('extras.noLeague')}</h2>
         <p className="text-stone-500 text-xs sm:text-sm">
-          Las preguntas extra están vinculadas a tu liga (o al modo global).
+          {t('extras.noLeagueDesc')}
         </p>
       </div>
     )
@@ -572,22 +578,22 @@ export default function Extras() {
         <div className="flex items-start gap-2.5 sm:gap-3">
           <span className="text-xl sm:text-3xl">🎲</span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base sm:text-xl font-bold text-stone-900">Preguntas extra</h1>
+            <h1 className="text-base sm:text-xl font-bold text-stone-900">{t('extras.title')}</h1>
             <p className="text-[11px] sm:text-sm text-stone-500 mt-0.5">
-              Responde el borrador y envíalo cuando estés listo. <strong>Una vez enviado no se puede cambiar.</strong>
+              {t('extras.subtitle')}
             </p>
           </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-stone-500">Cierre:</span>
+            <span className="text-stone-500">{t('extras.deadlineLabel')}</span>
             {cutoffTime
               ? <CutoffCountdown cutoffTime={cutoffTime} />
               : <span className="text-stone-400">—</span>}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-stone-500">Máx puntos:</span>
+            <span className="text-stone-500">{t('extras.maxPtsLabel')}</span>
             <span className="font-bold text-amber-600">+{totalPoints}</span>
           </div>
         </div>

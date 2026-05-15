@@ -1,23 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { getCache, setCache } from '../lib/dataCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 
-const STAGES = {
-  group:         'Fase de grupos',
-  round_of_32:  'Ronda de 32',
-  round_of_16:  'Octavos de final',
-  quarter_final: 'Cuartos de final',
-  semi_final:    'Semifinales',
-  third_place:   'Tercer puesto',
-  final:         'Gran Final',
-}
-
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('es-ES', {
+function formatDate(dateStr, locale) {
+  return new Date(dateStr).toLocaleDateString(locale, {
     weekday: 'long', day: 'numeric', month: 'long',
   })
 }
@@ -70,6 +61,7 @@ function PredRow({ entry, realHome, realAway }) {
 // ── Tarjeta de partido finalizado ────────────────────────────────────────────
 function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
   const { user }   = useAuth()
+  const { t, dateLocale } = useLang()
   const winner     = getWinner(match.home_score, match.away_score)
   const [expanded, setExpanded]     = useState(false)
   const [allPreds, setAllPreds]     = useState(null)
@@ -117,13 +109,13 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-stone-500 capitalize">{formatDate(match.match_date)}</span>
+            <span className="text-xs text-stone-500 capitalize">{formatDate(match.match_date, dateLocale)}</span>
             {match.group_name && (
-              <span className="text-xs text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">Grupo {match.group_name}</span>
+              <span className="text-xs text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">{t('resultados.stageGroupPrefix')}{match.group_name}</span>
             )}
           </div>
           <span className="text-xs text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full border border-stone-300">
-            {STAGES[match.stage] ?? match.stage}
+            {t(`stages.${match.stage}`) ?? match.stage}
           </span>
         </div>
 
@@ -154,7 +146,7 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
           <div className="text-xs text-stone-500">
             {myPrediction ? (
               <>
-                Tu pronóstico:{' '}
+                {t('resultados.myPrediction')}{' '}
                 <span className="text-stone-700 font-medium font-mono">
                   {myPrediction.home_score} - {myPrediction.away_score}
                 </span>
@@ -168,7 +160,7 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
                 </span>
               </>
             ) : (
-              <span className="italic">Sin pronóstico</span>
+              <span className="italic">{t('resultados.noPrediction')}</span>
             )}
           </div>
 
@@ -177,7 +169,7 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
             className="flex items-center gap-1.5 text-xs text-amber-500 hover:text-amber-400 transition-colors flex-shrink-0"
           >
             <span>{expanded ? '▲' : '▼'}</span>
-            <span>{expanded ? 'Ocultar' : 'Ver todos'}</span>
+            <span>{expanded ? t('resultados.hide') : t('resultados.seeAll')}</span>
           </button>
         </div>
       </div>
@@ -191,10 +183,10 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
             <>
               {/* Resumen rápido */}
               <div className="flex gap-3 mb-3 text-xs text-stone-500">
-                <span>{stats.total} pronósticos</span>
-                <span className="text-amber-400">🎯 {stats.exact} exactos</span>
-                <span className="text-blue-400">✓ {stats.correct} correctos</span>
-                <span>✗ {stats.wrong} fallados</span>
+                <span>{t('resultados.quickTotal', { n: stats.total })}</span>
+                <span className="text-amber-400">{t('resultados.quickExact', { n: stats.exact })}</span>
+                <span className="text-blue-400">{t('resultados.quickCorrect', { n: stats.correct })}</span>
+                <span>{t('resultados.quickWrong', { n: stats.wrong })}</span>
               </div>
               {/* Lista de pronósticos */}
               <div className="space-y-1.5">
@@ -210,7 +202,7 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
             </>
           ) : (
             <p className="text-stone-500 text-sm text-center py-3 italic">
-              Nadie pronosticó este partido.
+              {t('resultados.noPredictions')}
             </p>
           )}
         </div>
@@ -227,8 +219,19 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
 export default function Resultados() {
   const { user }                   = useAuth()
   const { activeLeague }           = useLeague()
+  const { t, dateLocale }          = useLang()
   const predictionMode             = activeLeague?.prediction_mode ?? 'global'
   const leagueId                   = predictionMode === 'per_league' ? activeLeague?.id : null
+
+  const STAGES = useMemo(() => ({
+    group:         t('stages.group'),
+    round_of_32:   t('stages.round_of_32'),
+    round_of_16:   t('stages.round_of_16'),
+    quarter_final: t('stages.quarter_final'),
+    semi_final:    t('stages.semi_final'),
+    third_place:   t('stages.third_place'),
+    final:         t('stages.final'),
+  }), [t])
 
   const [matches, setMatches]         = useState(() => {
     const cached = getMatchCache()
@@ -312,19 +315,19 @@ export default function Resultados() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">Resultados</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">{t('resultados.title')}</h2>
         <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
-          Partidos finalizados · Toca un partido para ver los pronósticos de todos
+          {t('resultados.subtitle')}
         </p>
       </div>
 
       {matches.length > 0 && (
         <div className="grid grid-cols-4 gap-2 sm:gap-3">
           {[
-            { label: 'Puntos',    short: 'Pts',  value: stats.points,  color: 'text-amber-400', icon: '⭐' },
-            { label: 'Exactos',   short: 'Ex.',  value: stats.exact,   color: 'text-amber-300', icon: '🎯' },
-            { label: 'Correctos', short: 'Cor.', value: stats.correct, color: 'text-blue-400',  icon: '✓' },
-            { label: 'Fallados',  short: 'Fal.', value: stats.wrong,   color: 'text-stone-400', icon: '✗' },
+            { label: t('resultados.statPoints'),  short: t('resultados.statPointsShort'),  value: stats.points,  color: 'text-amber-400', icon: '⭐' },
+            { label: t('resultados.statExact'),    short: t('resultados.statExactShort'),   value: stats.exact,   color: 'text-amber-300', icon: '🎯' },
+            { label: t('resultados.statCorrect'),  short: t('resultados.statCorrectShort'), value: stats.correct, color: 'text-blue-400',  icon: '✓' },
+            { label: t('resultados.statWrong'),    short: t('resultados.statWrongShort'),   value: stats.wrong,   color: 'text-stone-400', icon: '✗' },
           ].map(({ label, short, value, color, icon }) => (
             <div key={label} className="card p-2.5 sm:p-4 text-center">
               <div className="text-sm sm:text-lg mb-0.5">{icon}</div>
@@ -341,16 +344,16 @@ export default function Resultados() {
       {matches.length === 0 ? (
         <div className="card p-6 sm:p-10 text-center">
           <div className="text-3xl sm:text-4xl mb-3">⏳</div>
-          <p className="text-stone-400 text-sm">Aún no hay partidos finalizados.</p>
-          <p className="text-stone-400 text-xs sm:text-sm mt-1">El Mundial empieza el 11 de junio. ¡Prepara tus pronósticos!</p>
+          <p className="text-stone-400 text-sm">{t('resultados.noMatchesYet')}</p>
+          <p className="text-stone-400 text-xs sm:text-sm mt-1">{t('resultados.worldCupStart')}</p>
         </div>
       ) : (
         <>
           <div className="flex gap-2 flex-wrap">
             {[
-              { key: 'all',         label: `Todos (${matches.length})` },
-              { key: 'predicted',   label: `Con pronóstico (${matches.filter(m => predictions[m.id]).length})` },
-              { key: 'unpredicted', label: `Sin pronóstico (${matches.filter(m => !predictions[m.id]).length})` },
+              { key: 'all',         label: t('resultados.filterAll', { n: matches.length }) },
+              { key: 'predicted',   label: t('resultados.filterWith', { n: matches.filter(m => predictions[m.id]).length }) },
+              { key: 'unpredicted', label: t('resultados.filterWithout', { n: matches.filter(m => !predictions[m.id]).length }) },
             ].map(({ key, label }) => (
               <button
                 key={key}
@@ -367,7 +370,7 @@ export default function Resultados() {
           {Object.entries(grouped).map(([stage, stageMatches]) => (
             <div key={stage}>
               <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
-                {stage} · {stageMatches.length} partido{stageMatches.length !== 1 ? 's' : ''}
+                {stage} · {t('resultados.stageMatchCount', { n: stageMatches.length, s: stageMatches.length !== 1 ? 's' : '' })}
               </h3>
               <div className="space-y-3">
                 {stageMatches.map(m => (
