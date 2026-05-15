@@ -14,6 +14,7 @@ export default function LeagueSwitcher() {
   // Cuando LeagueModal pide pasar al pago, sube el nombre aquí:
   const [paymentName, setPaymentName] = useState(null)
   // Liga recién creada (founder bypass o tras pago) — muestra el código.
+  // También usada para mostrar el modal de compartir de ligas existentes.
   const [createdLeague, setCreatedLeague] = useState(null)
   const ref = useRef(null)
 
@@ -106,28 +107,36 @@ export default function LeagueSwitcher() {
             </div>
 
             {leagues.map(league => (
-              <button
-                key={league.id}
-                onClick={() => { setActiveLeague(league); setOpen(false) }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-stone-100 transition-colors ${
-                  activeLeague?.id === league.id ? 'bg-stone-100' : ''
-                }`}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    {league.role === 'admin' && <span className="text-xs">👑</span>}
-                    <span className="text-sm font-medium text-stone-900 truncate">{league.name}</span>
-                  </div>
-                  {league.role === 'admin' && (
-                    <div className="text-xs text-stone-400 font-mono mt-0.5">
-                      {t('league.codeLabel')} <span className="text-amber-500/80 tracking-wider">{league.invite_code}</span>
+              <div key={league.id} className={`flex items-center ${activeLeague?.id === league.id ? 'bg-stone-100' : ''}`}>
+                <button
+                  onClick={() => { setActiveLeague(league); setOpen(false) }}
+                  className="flex-1 flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-stone-100 transition-colors min-w-0"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      {league.role === 'admin' && <span className="text-xs">👑</span>}
+                      <span className="text-sm font-medium text-stone-900 truncate">{league.name}</span>
                     </div>
+                    {league.role === 'admin' && (
+                      <div className="text-xs text-stone-400 font-mono mt-0.5">
+                        {t('league.codeLabel')} <span className="text-amber-500/80 tracking-wider">{league.invite_code}</span>
+                      </div>
+                    )}
+                  </div>
+                  {activeLeague?.id === league.id && (
+                    <span className="text-amber-400 text-sm flex-shrink-0">✓</span>
                   )}
-                </div>
-                {activeLeague?.id === league.id && (
-                  <span className="text-amber-400 text-sm flex-shrink-0">✓</span>
+                </button>
+                {league.role === 'admin' && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setOpen(false); setCreatedLeague(league) }}
+                    className="flex-shrink-0 px-2.5 py-2.5 text-stone-400 hover:text-amber-500 hover:bg-amber-50 transition-colors rounded-r-lg"
+                    title={t('league.shareBtn')}
+                  >
+                    📤
+                  </button>
                 )}
-              </button>
+              </div>
             ))}
 
             <div className="border-t border-stone-200 mt-1.5 pt-1.5">

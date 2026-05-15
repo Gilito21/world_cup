@@ -158,6 +158,8 @@ export default {
     errUsernameChecking: 'Hold on, checking username availability…',
     errLeagueNameShort: 'League name must be at least 2 characters.',
     errLeagueCodeLength: 'League code must be exactly 8 characters.',
+    errLeagueNotFound: 'Invalid league code. Double-check it and try again.',
+    errLeagueFull: 'This league is full (40 participants max).',
   },
 
   league: {
@@ -191,6 +193,11 @@ export default {
     joining: 'Joining the league…',
     goHome: 'Go to home',
     leagueCodeLabel: 'League code',
+    share: 'Share',
+    shareBtn: 'Share league',
+    shareMsg: 'Join my league "{{name}}" on World Cup Predictor 2026!\n\nCode: {{code}}\n{{link}}',
+    shareCardJoin: 'Join my league!',
+    downloadImage: 'Save image',
   },
 
   stages: {

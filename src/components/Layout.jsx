@@ -101,10 +101,10 @@ export default function Layout() {
   const MOBILE_NAV = NAV.filter(n => n.to !== '/reglas')
 
   // Pending payment intent: si el usuario eligió "Crear liga" durante el
-  // signup, Auth.jsx dejó el nombre en sessionStorage y aquí abrimos el
+  // signup, Auth.jsx dejó el nombre en localStorage y aquí abrimos el
   // modal de pago una vez ya está autenticado.
   const [pendingPaymentName, setPendingPaymentName] = useState(() => {
-    try { return sessionStorage.getItem('porra-pending-league-create') } catch { return null }
+    try { return localStorage.getItem('porra-pending-league-create') } catch { return null }
   })
 
   // Si el usuario logueado es founder y hay intención pendiente, crea la
@@ -118,7 +118,7 @@ export default function Layout() {
         body: { league_name: pendingPaymentName },
       })
       if (cancelled) return
-      sessionStorage.removeItem('porra-pending-league-create')
+      localStorage.removeItem('porra-pending-league-create')
       setPendingPaymentName(null)
       if (!error && data?.league && onLeagueCreated) {
         await onLeagueCreated(data.league)
@@ -133,7 +133,7 @@ export default function Layout() {
   }
 
   async function handlePaymentSuccess(league) {
-    sessionStorage.removeItem('porra-pending-league-create')
+    localStorage.removeItem('porra-pending-league-create')
     setPendingPaymentName(null)
     if (onLeagueCreated) await onLeagueCreated(league)
   }
@@ -141,7 +141,7 @@ export default function Layout() {
   function handlePaymentClose() {
     // Si cancelan, limpiamos la intención para que no reaparezca
     // en cada recarga. Pueden volver a intentar desde el menú de ligas.
-    sessionStorage.removeItem('porra-pending-league-create')
+    localStorage.removeItem('porra-pending-league-create')
     setPendingPaymentName(null)
   }
 

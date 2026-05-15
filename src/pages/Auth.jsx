@@ -130,6 +130,7 @@ function ForgotPassword({ onBack }) {
 }
 
 function CopyLinkButton({ text }) {
+  const { t } = useLang()
   const [copied, setCopied] = useState(false)
   async function handleCopy() {
     await navigator.clipboard.writeText(text)
@@ -138,7 +139,7 @@ function CopyLinkButton({ text }) {
   }
   return (
     <button onClick={handleCopy} className="btn-secondary text-xs px-3 py-2 flex-shrink-0">
-      {copied ? '✓' : 'Copiar'}
+      {copied ? '✓' : t('common.copy')}
     </button>
   )
 }
@@ -275,14 +276,14 @@ export default function Auth() {
         if (leagueMode === 'join' && joinCode.trim().length !== 8) throw new Error(t('auth.errLeagueCodeLength'))
 
         if (leagueMode === 'create') {
-          sessionStorage.setItem('porra-pending-league-create', leagueName.trim())
+          localStorage.setItem('porra-pending-league-create', leagueName.trim())
         }
 
         let authData
         try {
           ;({ data: authData } = await signUp(form.email, form.password, form.username.trim(), company.trim()))
         } catch (signUpErr) {
-          sessionStorage.removeItem('porra-pending-league-create')
+          localStorage.removeItem('porra-pending-league-create')
           throw signUpErr
         }
 
@@ -291,10 +292,11 @@ export default function Auth() {
         }
 
         if (!authData?.session) {
-          // Email confirmation required — guardamos el código para que
-          // LeagueContext lo procese automáticamente tras el login.
+          // Email confirmation required — guardamos el código en localStorage
+          // (no sessionStorage) para que sobreviva si el usuario abre el link
+          // de confirmación en otra pestaña o ventana.
           if (leagueMode === 'join' && joinCode.trim()) {
-            sessionStorage.setItem('porra-invite-code', joinCode.trim().toUpperCase())
+            localStorage.setItem('porra-invite-code', joinCode.trim().toUpperCase())
           }
           setSuccess(t('auth.successCreated'))
         }
@@ -316,18 +318,18 @@ export default function Auth() {
     if (leagueMode !== 'join') return
     const { data: league, error: findError } = await supabase
       .from('leagues').select('id').eq('invite_code', joinCode.trim().toUpperCase()).single()
-    if (findError || !league) throw new Error('Código de liga inválido. Comprueba que esté bien escrito.')
+    if (findError || !league) throw new Error(t('auth.errLeagueNotFound'))
     const { count } = await supabase
       .from('league_members')
       .select('*', { count: 'exact', head: true })
       .eq('league_id', league.id)
-    if (count >= 40) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
+    if (count >= 40) throw new Error(t('auth.errLeagueFull'))
     const { error: memberError } = await supabase
       .from('league_members').insert({ league_id: league.id, user_id: userId, role: 'member' })
     if (memberError) {
-      if (memberError.message?.includes('league_full')) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
+      if (memberError.message?.includes('league_full')) throw new Error(t('auth.errLeagueFull'))
       if (memberError.code === '23505') return // ya es miembro, ok
-      throw new Error(`No se pudo unir a la liga: ${memberError.message}`)
+      throw new Error(t('league.cantJoin'))
     }
   }
 

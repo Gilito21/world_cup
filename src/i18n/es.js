@@ -158,6 +158,8 @@ export default {
     errUsernameChecking: 'Espera, comprobando disponibilidad del nombre...',
     errLeagueNameShort: 'El nombre de liga debe tener al menos 2 caracteres.',
     errLeagueCodeLength: 'El código de liga debe tener 8 caracteres.',
+    errLeagueNotFound: 'Código de liga inválido. Comprueba que esté bien escrito.',
+    errLeagueFull: 'Esta liga ya tiene el máximo de 40 participantes.',
   },
 
   league: {
@@ -191,6 +193,11 @@ export default {
     joining: 'Uniéndote a la liga…',
     goHome: 'Ir al inicio',
     leagueCodeLabel: 'Código liga',
+    share: 'Compartir',
+    shareBtn: 'Compartir liga',
+    shareMsg: '¡Únete a mi liga "{{name}}" en la Porra Mundial 2026!\n\nCódigo: {{code}}\n{{link}}',
+    shareCardJoin: '¡Únete a mi liga!',
+    downloadImage: 'Guardar imagen',
   },
 
   stages: {
