@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { stripePromise, LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import { useLang } from '../contexts/LangContext'
 import Spinner from './Spinner'
+import useScrollLock from '../lib/useScrollLock'
 
 // ── Formulario interno: tiene acceso a useStripe/useElements ──
 function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
@@ -101,6 +102,7 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
 
 // ── Wrapper que carga el clientSecret y monta <Elements> ──
 export default function PaymentModal({ leagueName, onSuccess, onClose }) {
+  useScrollLock()
   const { t } = useLang()
   const [clientSecret,   setClientSecret]   = useState(null)
   const [paymentIntentId, setPaymentIntentId] = useState(null)
@@ -163,7 +165,7 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
       <div className="relative bg-gradient-to-br from-amber-500 via-amber-400 to-orange-400 p-5 sm:p-6 text-stone-950">
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/30 hover:bg-white/50 backdrop-blur-sm flex items-center justify-center text-stone-900 transition-colors"
+          className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/30 hover:bg-white/50 active:bg-white/60 backdrop-blur-sm flex items-center justify-center text-stone-900 transition-colors"
           aria-label={t('common.close')}
         >
           ✕

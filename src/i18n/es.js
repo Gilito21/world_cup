@@ -203,6 +203,7 @@ export default {
     leagueCodeLabel: 'Código liga',
     share: 'Compartir',
     shareBtn: 'Compartir liga',
+    shareWhatsApp: 'Compartir por WhatsApp',
     shareMsg: '¡Únete a mi liga "{{name}}" en la Porra Mundial 2026!\n\nCódigo: {{code}}\n{{link}}',
     shareCardJoin: '¡Únete a mi liga!',
     downloadImage: 'Guardar imagen',
@@ -530,6 +531,21 @@ export default {
     inviteCode: 'Código: {{code}}',
     noAdminLeagues: 'No eres administrador de ninguna liga.',
     selectLeague: 'Seleccionar liga',
+  },
+
+  preview: {
+    openLabel: 'Ver detalles del partido',
+    upcoming: 'Por jugar',
+    yourPrediction: 'Tu pronóstico',
+    pointsEarned: 'Puntos',
+    noPrediction: 'No enviaste pronóstico para este partido.',
+    lockedTitle: 'Pronósticos ocultos',
+    lockedDesc: 'Verás los pronósticos del resto de la liga cuando empiece el partido.',
+    leagueConsensus: 'Consenso de la liga ({{n}} pronósticos)',
+    topScore: 'Marcador más votado: {{score}} ({{n}} votos)',
+    members: 'Pronósticos de la liga',
+    noLeaguePredictions: 'Nadie de la liga ha pronosticado este partido.',
+    draw: 'Empate',
   },
 
   layout: {

@@ -1,26 +1,37 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
 import { useAuth } from './contexts/AuthContext'
 import { LeagueProvider } from './contexts/LeagueContext'
 import Layout from './components/Layout'
-import Auth from './pages/Auth'
-import Landing from './pages/Landing'
-import ResetPassword from './pages/ResetPassword'
-import Perfil from './pages/Perfil'
-import Pronosticos from './pages/Pronosticos'
-import Clasificacion from './pages/Clasificacion'
-import Resultados from './pages/Resultados'
-import Bracket from './pages/Bracket'
-import Reglas from './pages/Reglas'
-import Extras from './pages/Extras'
-import AdminLeague from './pages/AdminLeague'
-import JoinLeague from './pages/JoinLeague'
-import Privacidad from './pages/Privacidad'
 import Spinner from './components/Spinner'
-import NotFound from './pages/NotFound'
+
+// Landing + Auth are the cold-cache entry points for non-logged-in visitors,
+// so we keep them eager. Everything else is lazy — Pronosticos is the most
+// common post-login destination and its bundle is fetched in parallel with
+// auth/profile resolution so it lands before the user can see the fallback.
+import Landing from './pages/Landing'
+import Auth from './pages/Auth'
+
+const Pronosticos    = lazy(() => import('./pages/Pronosticos'))
+const Clasificacion  = lazy(() => import('./pages/Clasificacion'))
+const Resultados     = lazy(() => import('./pages/Resultados'))
+const Bracket        = lazy(() => import('./pages/Bracket'))
+const Reglas         = lazy(() => import('./pages/Reglas'))
+const Extras         = lazy(() => import('./pages/Extras'))
+const Perfil         = lazy(() => import('./pages/Perfil'))
+const AdminLeague    = lazy(() => import('./pages/AdminLeague'))
+const JoinLeague     = lazy(() => import('./pages/JoinLeague'))
+const ResetPassword  = lazy(() => import('./pages/ResetPassword'))
+const Privacidad     = lazy(() => import('./pages/Privacidad'))
+const NotFound       = lazy(() => import('./pages/NotFound'))
+
+function FullPageSpinner() {
+  return <div className="flex items-center justify-center h-screen bg-stone-50"><Spinner size="lg" /></div>
+}
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="flex items-center justify-center h-screen"><Spinner /></div>
+  if (loading) return <FullPageSpinner />
   if (!user) return <Navigate to="/auth" replace />
   return children
 }
@@ -35,35 +46,35 @@ export default function App() {
   return (
     <LeagueProvider>
       {loading ? (
-        <div className="flex items-center justify-center h-screen bg-stone-50">
-          <Spinner size="lg" />
-        </div>
+        <FullPageSpinner />
       ) : (
-        <Routes>
-          <Route path="/"               element={user ? <Navigate to="/pronosticos" replace /> : <Landing />} />
-          <Route path="/auth"           element={user ? <Navigate to="/pronosticos" replace /> : <Auth />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          {/* Layout sin path para no competir con el route "/" de Landing */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/pronosticos"   element={<Pronosticos />} />
-            <Route path="/extras"        element={<Extras />} />
-            <Route path="/clasificacion" element={<Clasificacion />} />
-            <Route path="/resultados"    element={<Resultados />} />
-            <Route path="/bracket"       element={<Bracket />} />
-            <Route path="/reglas"        element={<Reglas />} />
-            <Route path="/perfil"        element={<Perfil />} />
-            <Route path="/admin-liga"    element={<AdminLeague />} />
-          </Route>
-          <Route path="/join/:code"  element={<JoinLeague />} />
-          <Route path="/privacidad" element={<Privacidad />} />
-          <Route path="*"           element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<FullPageSpinner />}>
+          <Routes>
+            <Route path="/"               element={user ? <Navigate to="/pronosticos" replace /> : <Landing />} />
+            <Route path="/auth"           element={user ? <Navigate to="/pronosticos" replace /> : <Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            {/* Layout sin path para no competir con el route "/" de Landing */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/pronosticos"   element={<Pronosticos />} />
+              <Route path="/extras"        element={<Extras />} />
+              <Route path="/clasificacion" element={<Clasificacion />} />
+              <Route path="/resultados"    element={<Resultados />} />
+              <Route path="/bracket"       element={<Bracket />} />
+              <Route path="/reglas"        element={<Reglas />} />
+              <Route path="/perfil"        element={<Perfil />} />
+              <Route path="/admin-liga"    element={<AdminLeague />} />
+            </Route>
+            <Route path="/join/:code"  element={<JoinLeague />} />
+            <Route path="/privacidad" element={<Privacidad />} />
+            <Route path="*"           element={<NotFound />} />
+          </Routes>
+        </Suspense>
       )}
     </LeagueProvider>
   )
