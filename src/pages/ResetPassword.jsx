@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useLang } from '../contexts/LangContext'
+import LangToggle from '../components/LangToggle'
 import Spinner from '../components/Spinner'
 
 export default function ResetPassword() {
@@ -38,11 +39,12 @@ export default function ResetPassword() {
 
     if (err) { setError(err.message); return }
     setStep('done')
-    redirectTimer.current = setTimeout(() => navigate('/auth'), 3000)
+    redirectTimer.current = setTimeout(() => navigate('/pronosticos', { replace: true }), 3000)
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4 relative">
+      <LangToggle className="absolute top-4 right-4" />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
       </div>
