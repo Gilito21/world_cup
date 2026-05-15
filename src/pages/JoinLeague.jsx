@@ -12,6 +12,7 @@ export default function JoinLeague() {
   const { t }                           = useLang()
   const navigate                        = useNavigate()
   const [error, setError]               = useState('')
+  const [errorCode, setErrorCode]       = useState('')
 
   useEffect(() => {
     if (authLoading) return
@@ -28,17 +29,21 @@ export default function JoinLeague() {
         if (err.code === 'already_member') {
           navigate('/clasificacion', { replace: true })
         } else {
+          setErrorCode(err.code ?? '')
           setError(err.message ?? t('league.invalidCode'))
         }
       })
   }, [authLoading, user])
 
   if (error) {
+    const isFull = errorCode === 'league_full'
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
         <div className="card p-6 sm:p-8 max-w-sm w-full text-center space-y-3 sm:space-y-4">
-          <div className="text-3xl sm:text-4xl">⚠️</div>
-          <p className="text-stone-900 font-semibold text-sm sm:text-base">{t('league.cantJoin')}</p>
+          <div className="text-3xl sm:text-4xl">{isFull ? '😔' : '⚠️'}</div>
+          <p className="text-stone-900 font-semibold text-sm sm:text-base">
+            {isFull ? t('league.fullTitle') : t('league.cantJoin')}
+          </p>
           <p className="text-stone-500 text-xs sm:text-sm">{error}</p>
           <button onClick={() => navigate('/pronosticos')} className="btn-primary w-full">{t('league.goHome')}</button>
         </div>

@@ -137,7 +137,7 @@ export function LeagueProvider({ children }) {
       .from('league_members')
       .select('*', { count: 'exact', head: true })
       .eq('league_id', league.id)
-    if (count >= 40) throw new Error(t('league.full'))
+    if (count >= 40) { const e = new Error(t('league.full')); e.code = 'league_full'; throw e }
 
     const { error: memberError } = await supabase
       .from('league_members')
@@ -145,7 +145,7 @@ export function LeagueProvider({ children }) {
 
     if (memberError) {
       if (memberError.code === '23505')  { const e = new Error(t('league.alreadyMember')); e.code = 'already_member'; throw e }
-      if (memberError.message?.includes('league_full')) throw new Error(t('league.full'))
+      if (memberError.message?.includes('league_full')) { const e = new Error(t('league.full')); e.code = 'league_full'; throw e }
       throw memberError
     }
 

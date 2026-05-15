@@ -166,9 +166,15 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
       )}
 
       {isPastCutoff && (
-        <div className="flex items-center gap-2 text-sm text-red-500 font-medium">
-          <span>🔒</span>
-          <span>{t('pronosticos.closedMsg')}</span>
+        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 space-y-1">
+          <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
+            <span>🔒</span>{t('pronosticos.closedMsg')}
+          </p>
+          <p className="text-xs text-red-500">
+            {filledCount > 0
+              ? t('pronosticos.missedDeadlinePartial', { n: filledCount, total: totalCount })
+              : t('pronosticos.missedDeadline')}
+          </p>
         </div>
       )}
 

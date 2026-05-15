@@ -1,5 +1,21 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase, sq } from '../lib/supabase'
+import { appUrl } from '../lib/appUrl'
+
+const PROFILE_CACHE_KEY = 'porra-profile-cache'
+
+function readCachedProfile(userId) {
+  try {
+    const raw = localStorage.getItem(PROFILE_CACHE_KEY)
+    if (!raw) return null
+    const obj = JSON.parse(raw)
+    return obj?.id === userId ? obj : null
+  } catch { return null }
+}
+
+function writeCachedProfile(profile) {
+  try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile)) } catch {}
+}
 
 const AuthContext = createContext({})
 
@@ -31,8 +47,11 @@ export function AuthProvider({ children }) {
       }
       userIdRef.current = nextId
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      else setLoading(false)
+      if (session?.user) {
+        const cached = readCachedProfile(session.user.id)
+        if (cached) { setProfile(cached); setLoading(false) }
+        fetchProfile(session.user.id)
+      } else setLoading(false)
     }).catch(() => {
       clearTimeout(timeout)
       setLoading(false)
@@ -90,7 +109,7 @@ export function AuthProvider({ children }) {
       )
       // Solo actualizamos profile si llegan datos reales — nunca lo
       // reseteamos a null en timeouts/errores.
-      if (data) setProfile(data)
+      if (data) { setProfile(data); writeCachedProfile(data) }
     } finally {
       fetchingRef.current = false
       setLoading(false)
@@ -103,7 +122,7 @@ export function AuthProvider({ children }) {
       password,
       options: {
         data: { username, company: company || null },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: appUrl(),
       },
     })
     if (error) throw error
@@ -121,6 +140,7 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
+    try { localStorage.removeItem(PROFILE_CACHE_KEY) } catch {}
     await supabase.auth.signOut()
   }
 

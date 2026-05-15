@@ -129,9 +129,15 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
       )}
 
       {isPastCutoff && (
-        <div className="flex items-center gap-2 text-sm text-red-500 font-medium">
-          <span>🔒</span>
-          <span>{t('extras.closedMsg')}</span>
+        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 space-y-1">
+          <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
+            <span>🔒</span>{t('extras.closedMsg')}
+          </p>
+          <p className="text-xs text-red-500">
+            {answeredCount > 0
+              ? t('extras.missedDeadlinePartial', { n: answeredCount, total: totalCount })
+              : t('extras.missedDeadline')}
+          </p>
         </div>
       )}
 

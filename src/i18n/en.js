@@ -37,6 +37,7 @@ export default {
     signOutFull: 'Sign out',
     profile: 'Profile',
     totalPts: '{{n}} pts total',
+    adminLeague: 'My League',
   },
 
   landing: {
@@ -192,6 +193,7 @@ export default {
     joinShort: 'Join',
     toLeague: 'league',
     cantJoin: 'Could not join the league',
+    fullTitle: 'League is full',
     invalidCode: 'Invalid invite code.',
     joining: 'Joining the league…',
     goHome: 'Go to home',
@@ -232,6 +234,8 @@ export default {
     cutoffNote: '⏰ Submissions close 1 hour before the first match:',
     closedLabel: 'Closed!',
     closedMsg: 'The prediction window has closed — no more submissions accepted.',
+    missedDeadline: 'You didn\'t submit your prediction before the deadline.',
+    missedDeadlinePartial: 'You had {{n}} of {{total}} matches filled in when the deadline passed.',
     submitBtn: 'Submit final prediction',
     submitBtnPending: '{{n}} match{{s}} still to fill in',
     submitHint: 'You must fill in every match result (group stage + knockout rounds) before you can submit.',
@@ -312,6 +316,8 @@ export default {
     cutoffNote: '⏰ Deadline is 1 hour before the first match:',
     closedLabel: 'Closed!',
     closedMsg: 'The bonus predictions window has closed.',
+    missedDeadline: 'You didn\'t submit your bonus answers before the deadline.',
+    missedDeadlinePartial: 'You had {{n}} of {{total}} questions answered when the deadline passed.',
     submitBtn: 'Submit bonus answers',
     pendingBtn: '{{count}} question{{s}} still unanswered',
     allRequired: 'Answer all questions before submitting.',
@@ -503,6 +509,24 @@ export default {
     normalTitle: '{{n}} match{{s}} in the next {{h}}h without a prediction',
     moreMatches: 'and {{n}} more…',
     closeBtn: 'Dismiss',
+  },
+
+  adminLeague: {
+    title: 'League management',
+    members: 'Members',
+    predictions: 'Predictions',
+    extras: 'Extras',
+    reminder: 'Send reminder',
+    reminderSent: '✓ Sent',
+    reminderSending: 'Sending…',
+    reminderError: 'Failed to send',
+    reminderCooldown: 'Recently reminded',
+    noMembers: 'No members yet.',
+    submitted: 'Submitted',
+    pending: 'Pending',
+    inviteCode: 'Code: {{code}}',
+    noAdminLeagues: 'You are not admin of any league.',
+    selectLeague: 'Select league',
   },
 
   payment: {

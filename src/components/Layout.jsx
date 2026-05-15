@@ -81,7 +81,8 @@ function MobileUserMenu({ profile, onSignOut }) {
 
 export default function Layout() {
   const { user, profile, signOut } = useAuth()
-  const { activeLeague, onLeagueCreated } = useLeague()
+  const { activeLeague, leagues, onLeagueCreated } = useLeague()
+  const isLeagueAdmin = leagues.some(l => l.role === 'admin')
   const { t } = useLang()
   const navigate = useNavigate()
 
@@ -95,10 +96,11 @@ export default function Layout() {
     { to: '/resultados',    label: t('nav.results'),     short: t('nav.resultsShort'),     icon: '📋' },
     { to: '/bracket',       label: t('nav.bracket'),     short: t('nav.bracket'),          icon: '⚽' },
     { to: '/reglas',        label: t('nav.rules'),       short: t('nav.rulesShort'),       icon: '📖' },
+    ...(isLeagueAdmin ? [{ to: '/admin-liga', label: t('nav.adminLeague'), short: t('nav.adminLeague'), icon: '⚙️' }] : []),
   ]
 
-  // Bottom-bar (móvil): un máximo de 5 ítems para no saturar.
-  const MOBILE_NAV = NAV.filter(n => n.to !== '/reglas')
+  // Bottom-bar (móvil): un máximo de 5 ítems para no saturar (excluir reglas y admin).
+  const MOBILE_NAV = NAV.filter(n => n.to !== '/reglas' && n.to !== '/admin-liga')
 
   // Pending payment intent: si el usuario eligió "Crear liga" durante el
   // signup, Auth.jsx dejó el nombre en localStorage y aquí abrimos el

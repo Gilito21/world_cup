@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
+import { appUrl } from '../lib/appUrl'
 import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from '../components/Spinner'
 import ReportButton from '../components/ReportButton'
@@ -75,7 +76,7 @@ function ForgotPassword({ onBack }) {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const redirectTo = `${window.location.origin}/reset-password`
+    const redirectTo = `${appUrl()}/reset-password`
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
     setLoading(false)
     if (err) { setError(err.message); return }

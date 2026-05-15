@@ -37,6 +37,7 @@ export default {
     signOutFull: 'Cerrar sesión',
     profile: 'Perfil',
     totalPts: '{{n}} pts totales',
+    adminLeague: 'Mi Liga',
   },
 
   landing: {
@@ -192,6 +193,7 @@ export default {
     joinShort: 'Unirse',
     toLeague: 'a liga',
     cantJoin: 'No se pudo unir a la liga',
+    fullTitle: 'Liga completa',
     invalidCode: 'Código de invitación inválido.',
     joining: 'Uniéndote a la liga…',
     goHome: 'Ir al inicio',
@@ -232,6 +234,8 @@ export default {
     cutoffNote: '⏰ El plazo de envío cierra 1 hora antes del primer partido:',
     closedLabel: '¡Cerrado!',
     closedMsg: 'El período de pronósticos ha cerrado — ya no se aceptan envíos.',
+    missedDeadline: 'No enviaste tu pronóstico antes del cierre.',
+    missedDeadlinePartial: 'Tenías {{n}} de {{total}} partidos rellenos cuando cerró el plazo.',
     submitBtn: 'Enviar pronóstico definitivo',
     submitBtnPending: 'Falta completar {{n}} partido{{s}}',
     submitHint: 'Debes rellenar el resultado de todos los partidos (grupos + eliminatorias) antes de poder enviar.',
@@ -312,6 +316,8 @@ export default {
     cutoffNote: '⏰ El plazo cierra 1 hora antes del primer partido:',
     closedLabel: '¡Cerrado!',
     closedMsg: 'El período de pronósticos extra ha cerrado.',
+    missedDeadline: 'No enviaste tus respuestas extra antes del cierre.',
+    missedDeadlinePartial: 'Tenías {{n}} de {{total}} preguntas respondidas cuando cerró el plazo.',
     submitBtn: 'Enviar respuestas extra',
     pendingBtn: 'Falta{{n}} {{count}} pregunta{{s}} por responder',
     allRequired: 'Responde todas las preguntas antes de poder enviar.',
@@ -503,6 +509,24 @@ export default {
     normalTitle: '{{n}} partido{{s}} en las próximas {{h}}h sin pronóstico',
     moreMatches: 'y {{n}} más…',
     closeBtn: 'Cerrar aviso',
+  },
+
+  adminLeague: {
+    title: 'Gestión de liga',
+    members: 'Participantes',
+    predictions: 'Pronósticos',
+    extras: 'Extras',
+    reminder: 'Recordatorio',
+    reminderSent: '✓ Enviado',
+    reminderSending: 'Enviando…',
+    reminderError: 'Error al enviar',
+    reminderCooldown: 'Recordatorio reciente',
+    noMembers: 'Sin participantes aún.',
+    submitted: 'Enviado',
+    pending: 'Pendiente',
+    inviteCode: 'Código: {{code}}',
+    noAdminLeagues: 'No eres administrador de ninguna liga.',
+    selectLeague: 'Seleccionar liga',
   },
 
   payment: {
