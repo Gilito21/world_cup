@@ -174,8 +174,6 @@ export default function Auth() {
   const [leagueMode, setLeagueMode] = useState('none')
   const [leagueName, setLeagueName] = useState('')
   const [joinCode, setJoinCode]     = useState('')
-  const [createdCode, setCreatedCode] = useState('')
-
   // Pre-fill join code from invite link (?join=CODE)
   useEffect(() => {
     const code = searchParams.get('join')
@@ -337,7 +335,6 @@ export default function Auth() {
     setMode(newMode)
     setError('')
     setSuccess('')
-    setCreatedCode('')
     setLeagueMode('none')
     setUsernameStatus('idle')
     setCompany('')
@@ -346,41 +343,6 @@ export default function Auth() {
   }
 
   if (showForgot) return <ForgotPassword onBack={() => setShowForgot(false)} />
-
-  if (createdCode) {
-    const inviteLink = `${window.location.origin}/join/${createdCode}`
-    return (
-      <AuthBg>
-        <ReportButton />
-        <div className="relative w-full max-w-sm animate-slide-up space-y-4">
-          <div className="text-center">
-            <div className="text-5xl mb-2">🎉</div>
-            <h2 className="text-2xl font-bold text-stone-900">{t('auth.leagueCreatedTitle')}</h2>
-            <p className="text-stone-500 text-sm mt-1">{t('auth.leagueCreatedShare')}</p>
-          </div>
-          <div className="bg-white rounded-3xl shadow-xl shadow-stone-900/8 border border-stone-200 overflow-hidden">
-            <div className="bg-gradient-to-br from-amber-50 to-stone-50 px-6 py-5 border-b border-stone-100">
-              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 text-center">{t('auth.leagueCreatedCodeLabel')}</p>
-              <p className="text-4xl font-black tracking-[0.4em] text-amber-500 font-mono text-center break-all">{createdCode}</p>
-            </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">{t('auth.leagueCreatedDirectLink')}</p>
-                <div className="flex items-center gap-2">
-                  <p className="flex-1 text-xs text-stone-500 bg-stone-100 rounded-xl px-3 py-2 font-mono truncate">
-                    {inviteLink}
-                  </p>
-                  <CopyLinkButton text={inviteLink} />
-                </div>
-              </div>
-              <p className="text-stone-400 text-xs text-center">{t('auth.leagueCreatedAccountReady')}</p>
-              <button onClick={() => switchMode('login')} className="btn-primary w-full">{t('auth.startSession')}</button>
-            </div>
-          </div>
-        </div>
-      </AuthBg>
-    )
-  }
 
   return (
     <AuthBg>

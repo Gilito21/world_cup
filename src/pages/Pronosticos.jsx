@@ -7,6 +7,9 @@ import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 import UpcomingAlert from '../components/UpcomingAlert'
+import LeagueModal from '../components/LeagueModal'
+import PaymentModal from '../components/PaymentModal'
+import LeagueCreatedModal from '../components/LeagueCreatedModal'
 import { Flag, teamName } from '../utils/teams'
 import { computePredictedKnockout } from '../utils/tournament'
 
@@ -522,7 +525,7 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
 
 export default function Pronosticos() {
   const { user }                  = useAuth()
-  const { activeLeague, leagues, loading: leagueLoading } = useLeague()
+  const { activeLeague, leagues, loading: leagueLoading, onLeagueCreated } = useLeague()
   const { t, dateLocale }         = useLang()
   const predictionMode = activeLeague?.prediction_mode ?? 'global'
 
@@ -538,6 +541,11 @@ export default function Pronosticos() {
   const [activeStage, setActiveStage] = useState('group')
   const [error,       setError]       = useState('')
   const [copying,     setCopying]     = useState(false)
+
+  // No-league join modal state
+  const [showLeagueModal,  setShowLeagueModal]  = useState(false)
+  const [paymentName,      setPaymentName]      = useState(null)
+  const [createdLeague,    setCreatedLeague]    = useState(null)
 
   // Submission state
   const [isSubmitted,  setIsSubmitted]  = useState(false)
@@ -708,6 +716,17 @@ export default function Pronosticos() {
   }, [])
 
   // ── Copy predictions from another league ────────────────────────────────────
+  async function handleLeaguePaymentSuccess(league) {
+    setPaymentName(null)
+    if (onLeagueCreated) await onLeagueCreated(league)
+    setCreatedLeague(league)
+  }
+  async function handleFounderCreated(league) {
+    setShowLeagueModal(false)
+    if (onLeagueCreated) await onLeagueCreated(league)
+    setCreatedLeague(league)
+  }
+
   const copyFromLeague = useCallback(async (sourceLeagueId) => {
     setCopying(true)
     setError('')
@@ -873,17 +892,34 @@ export default function Pronosticos() {
         </p>
       </div>
 
-      {/* Submit panel — always visible */}
-      {matches.length > 0 && (
-        <SubmitPanel
-          filledCount={filledCount}
-          totalCount={totalCount}
-          cutoffTime={cutoffTime}
-          isSubmitted={isSubmitted}
-          submittedAt={submittedAt}
-          onSubmit={() => setShowConfirm(true)}
-          submitting={submitting}
-        />
+      {/* No-league gate: banner replacing the submit panel */}
+      {!leagueLoading && leagues.length === 0 ? (
+        <div className="card p-5 border-amber-500/30 bg-gradient-to-br from-amber-50 to-orange-50 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="text-3xl flex-shrink-0">🏆</div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-stone-900 text-sm sm:text-base">{t('pronosticos.noLeagueTitle')}</p>
+            <p className="text-stone-500 text-xs sm:text-sm mt-0.5">{t('pronosticos.noLeagueDesc')}</p>
+          </div>
+          <button
+            onClick={() => setShowLeagueModal(true)}
+            className="btn-primary text-sm px-4 py-2 flex-shrink-0 w-full sm:w-auto"
+          >
+            {t('pronosticos.noLeagueCta')}
+          </button>
+        </div>
+      ) : (
+        /* Submit panel — always visible when in a league */
+        matches.length > 0 && (
+          <SubmitPanel
+            filledCount={filledCount}
+            totalCount={totalCount}
+            cutoffTime={cutoffTime}
+            isSubmitted={isSubmitted}
+            submittedAt={submittedAt}
+            onSubmit={() => setShowConfirm(true)}
+            submitting={submitting}
+          />
+        )
       )}
 
       {/* Copy from league prompt */}
@@ -1012,6 +1048,27 @@ export default function Pronosticos() {
             ))}
           </div>
         </div>
+      )}
+
+      {showLeagueModal && (
+        <LeagueModal
+          onClose={() => setShowLeagueModal(false)}
+          onPaymentRequested={(name) => { setShowLeagueModal(false); setPaymentName(name) }}
+          onFounderCreated={handleFounderCreated}
+        />
+      )}
+      {paymentName && (
+        <PaymentModal
+          leagueName={paymentName}
+          onClose={() => setPaymentName(null)}
+          onSuccess={handleLeaguePaymentSuccess}
+        />
+      )}
+      {createdLeague && (
+        <LeagueCreatedModal
+          league={createdLeague}
+          onClose={() => setCreatedLeague(null)}
+        />
       )}
     </div>
   )

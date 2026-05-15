@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { useAuth } from './AuthContext'
+import { useLang } from './LangContext'
 
 const LeagueContext = createContext({})
 
@@ -11,6 +12,7 @@ function generateCode() {
 
 export function LeagueProvider({ children }) {
   const { user }  = useAuth()
+  const { t }     = useLang()
   const [leagues, setLeagues]           = useState([])
   const [activeLeague, setActiveLeagueState] = useState(null)
   const [loading, setLoading]           = useState(true)
@@ -124,26 +126,26 @@ export function LeagueProvider({ children }) {
       .eq('invite_code', code.toUpperCase().trim())
       .single()
 
-    if (error || !league) throw new Error('Código de liga inválido o no encontrado.')
+    if (error || !league) throw new Error(t('league.invalidCode'))
 
     // Comprobar si ya es miembro
     const already = leagues.find(l => l.id === league.id)
-    if (already) throw new Error('Ya eres miembro de esta liga.')
+    if (already) { const e = new Error(t('league.alreadyMember')); e.code = 'already_member'; throw e }
 
     // Comprobar aforo antes de insertar
     const { count } = await supabase
       .from('league_members')
       .select('*', { count: 'exact', head: true })
       .eq('league_id', league.id)
-    if (count >= 40) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
+    if (count >= 40) throw new Error(t('league.full'))
 
     const { error: memberError } = await supabase
       .from('league_members')
       .insert({ league_id: league.id, user_id: user.id, role: 'member' })
 
     if (memberError) {
-      if (memberError.code === '23505')  throw new Error('Ya eres miembro de esta liga.')
-      if (memberError.message?.includes('league_full')) throw new Error('Esta liga ya tiene el máximo de 40 participantes.')
+      if (memberError.code === '23505')  { const e = new Error(t('league.alreadyMember')); e.code = 'already_member'; throw e }
+      if (memberError.message?.includes('league_full')) throw new Error(t('league.full'))
       throw memberError
     }
 

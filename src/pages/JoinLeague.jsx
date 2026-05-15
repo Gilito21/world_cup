@@ -17,7 +17,7 @@ export default function JoinLeague() {
     if (authLoading) return
 
     if (!user) {
-      sessionStorage.setItem('porra-invite-code', code.toUpperCase())
+      localStorage.setItem('porra-invite-code', code.toUpperCase())
       navigate(`/auth?join=${code.toUpperCase()}`, { replace: true })
       return
     }
@@ -25,7 +25,7 @@ export default function JoinLeague() {
     joinLeague(code.toUpperCase())
       .then(() => navigate('/clasificacion', { replace: true }))
       .catch(err => {
-        if (err.message?.includes('Ya eres miembro')) {
+        if (err.code === 'already_member') {
           navigate('/clasificacion', { replace: true })
         } else {
           setError(err.message ?? t('league.invalidCode'))

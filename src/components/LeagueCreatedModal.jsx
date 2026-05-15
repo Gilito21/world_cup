@@ -24,7 +24,7 @@ function CopyButton({ text, label }) {
 }
 
 // Generates a downloadable PNG share card via canvas
-function generateShareImage({ leagueName, inviteCode, inviteLink, appName, joinText }) {
+function generateShareImage({ leagueName, inviteCode, inviteLink, appName, joinText, codeLabel }) {
   const W = 1080, H = 1080
   const canvas = document.createElement('canvas')
   canvas.width = W
@@ -95,7 +95,7 @@ function generateShareImage({ leagueName, inviteCode, inviteLink, appName, joinT
   // Code label
   ctx.font = '500 28px system-ui, -apple-system, sans-serif'
   ctx.fillStyle = 'rgba(0,0,0,0.5)'
-  ctx.fillText('CÓDIGO', cx, 530)
+  ctx.fillText(codeLabel.toUpperCase(), cx, 530)
 
   // Invite code (large monospace)
   ctx.font = 'bold 88px monospace'
@@ -155,7 +155,7 @@ function ShareCard({ leagueName, inviteCode, appName, joinText }) {
 // Modal de éxito tras crear una liga (founder o tras pago).
 // Muestra el código, el link y una tarjeta visual para compartir.
 export default function LeagueCreatedModal({ league, onClose }) {
-  const { t, lang } = useLang()
+  const { t } = useLang()
   const [shareStatus, setShareStatus] = useState('idle') // idle | copied | downloading
 
   useEffect(() => {
@@ -165,8 +165,9 @@ export default function LeagueCreatedModal({ league, onClose }) {
   }, [onClose])
 
   const inviteLink = `${window.location.origin}/join/${league.invite_code}`
-  const appName = lang === 'es' ? 'Porra Mundial 2026' : 'World Cup Predictor 2026'
+  const appName = t('common.appName')
   const joinText = t('league.shareCardJoin')
+  const codeLabel = t('league.inviteCode')
 
   async function handleShare() {
     const text = t('league.shareMsg', {
@@ -197,6 +198,7 @@ export default function LeagueCreatedModal({ league, onClose }) {
         inviteLink,
         appName,
         joinText,
+        codeLabel,
       })
       const a = document.createElement('a')
       a.download = `liga-${league.invite_code}.png`
@@ -261,7 +263,7 @@ export default function LeagueCreatedModal({ league, onClose }) {
               className="flex-1 btn-primary flex items-center justify-center gap-2 text-sm"
             >
               <span>📤</span>
-              {shareStatus === 'copied' ? '✓ Copiado' : t('league.shareBtn')}
+              {shareStatus === 'copied' ? t('common.copied') : t('league.shareBtn')}
             </button>
             <button
               onClick={handleDownload}

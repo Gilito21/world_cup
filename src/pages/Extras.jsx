@@ -5,6 +5,9 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
+import LeagueModal from '../components/LeagueModal'
+import PaymentModal from '../components/PaymentModal'
+import LeagueCreatedModal from '../components/LeagueCreatedModal'
 
 // Twemoji CDN URL for any emoji string (works on all browsers/OS)
 function emojiSrc(emoji) {
@@ -380,7 +383,7 @@ function QuestionCard({ question, answer, draft, onDraft, onSelect, onSave, lock
 // ─── Página principal ──────────────────────────────────────────────────────
 export default function Extras() {
   const { user }         = useAuth()
-  const { activeLeague, loading: leagueLoading } = useLeague()
+  const { activeLeague, leagues, loading: leagueLoading, onLeagueCreated } = useLeague()
   const { t, dateLocale } = useLang()
   const predictionMode   = activeLeague?.prediction_mode ?? 'global'
   const leagueIdForPred  = predictionMode === 'per_league' ? activeLeague?.id ?? null : null
@@ -396,6 +399,11 @@ export default function Extras() {
   const [submitting,   setSubmitting]   = useState(false)
   const [showConfirm,  setShowConfirm]  = useState(false)
   const [error,        setError]        = useState('')
+
+  // No-league join modal state
+  const [showLeagueModal, setShowLeagueModal] = useState(false)
+  const [paymentName,     setPaymentName]     = useState(null)
+  const [createdLeague,   setCreatedLeague]   = useState(null)
 
   // ── Fetch all data ──────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -494,6 +502,17 @@ export default function Extras() {
     setTextDrafts(prev => ({ ...prev, [key]: val }))
   }
 
+  async function handleLeaguePaymentSuccess(league) {
+    setPaymentName(null)
+    if (onLeagueCreated) await onLeagueCreated(league)
+    setCreatedLeague(league)
+  }
+  async function handleFounderCreated(league) {
+    setShowLeagueModal(false)
+    if (onLeagueCreated) await onLeagueCreated(league)
+    setCreatedLeague(league)
+  }
+
   // ── Envío definitivo: escribe todo en BD de una vez ─────────────────
   async function handleSubmit() {
     if (locked || submitting) return
@@ -558,15 +577,43 @@ export default function Extras() {
     return <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>
   }
 
-  if (!activeLeague) {
+  if (!leagueLoading && leagues.length === 0) {
     return (
-      <div className="card p-6 sm:p-8 text-center space-y-2">
-        <span className="text-3xl sm:text-4xl">🎲</span>
-        <h2 className="text-base sm:text-lg font-bold text-stone-900">{t('extras.noLeague')}</h2>
-        <p className="text-stone-500 text-xs sm:text-sm">
-          {t('extras.noLeagueDesc')}
-        </p>
-      </div>
+      <>
+        <div className="card p-5 border-amber-500/30 bg-gradient-to-br from-amber-50 to-orange-50 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="text-3xl flex-shrink-0">🎲</div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-stone-900 text-sm sm:text-base">{t('extras.noLeague')}</p>
+            <p className="text-stone-500 text-xs sm:text-sm mt-0.5">{t('extras.noLeagueDesc')}</p>
+          </div>
+          <button
+            onClick={() => setShowLeagueModal(true)}
+            className="btn-primary text-sm px-4 py-2 flex-shrink-0 w-full sm:w-auto"
+          >
+            {t('extras.noLeagueCta')}
+          </button>
+        </div>
+        {showLeagueModal && (
+          <LeagueModal
+            onClose={() => setShowLeagueModal(false)}
+            onPaymentRequested={(name) => { setShowLeagueModal(false); setPaymentName(name) }}
+            onFounderCreated={handleFounderCreated}
+          />
+        )}
+        {paymentName && (
+          <PaymentModal
+            leagueName={paymentName}
+            onClose={() => setPaymentName(null)}
+            onSuccess={handleLeaguePaymentSuccess}
+          />
+        )}
+        {createdLeague && (
+          <LeagueCreatedModal
+            league={createdLeague}
+            onClose={() => setCreatedLeague(null)}
+          />
+        )}
+      </>
     )
   }
 
