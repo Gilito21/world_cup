@@ -27,12 +27,12 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
     })
 
     if (stripeErr) {
-      setError(stripeErr.message ?? 'No se pudo procesar el pago.')
+      setError(stripeErr.message ?? t('payment.errorProcessing'))
       setSubmitting(false)
       return
     }
     if (paymentIntent?.status !== 'succeeded') {
-      setError(`Pago en estado "${paymentIntent?.status}". Intenta de nuevo.`)
+      setError(`${t('payment.errorProcessing')} (${paymentIntent?.status})`)
       setSubmitting(false)
       return
     }
@@ -42,8 +42,8 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
       const { data, error: fnErr } = await supabase.functions.invoke('confirm-league-payment', {
         body: { payment_intent_id: paymentIntentId },
       })
-      if (fnErr) throw new Error(fnErr.message ?? 'No se pudo crear la liga.')
-      if (data?.error === 'league_name_taken') throw new Error('Ya existe una liga con ese nombre.')
+      if (fnErr) throw new Error(fnErr.message ?? t('payment.errorCreating'))
+      if (data?.error === 'league_name_taken') throw new Error(t('league.nameTaken'))
       if (!data?.league) throw new Error(data?.error ?? 'Respuesta inesperada del servidor.')
       onSuccess(data.league)
     } catch (err) {
@@ -111,8 +111,8 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
         const { data, error: fnErr } = await supabase.functions.invoke('create-league-payment', {
           body: { league_name: leagueName },
         })
-        if (fnErr) throw new Error(fnErr.message ?? 'No se pudo iniciar el pago.')
-        if (!data?.client_secret) throw new Error(data?.error ?? 'Respuesta inesperada del servidor.')
+        if (fnErr) throw new Error(fnErr.message ?? t('payment.errorInitiate'))
+        if (!data?.client_secret) throw new Error(data?.error ?? t('payment.errorInitiate'))
         if (cancelled) return
         setClientSecret(data.client_secret)
         setPaymentIntentId(data.payment_intent_id)

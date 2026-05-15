@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 
 export default function ResetPassword() {
   const navigate = useNavigate()
+  const { t } = useLang()
   const [step, setStep]         = useState('new-password') // 'new-password' | 'done'
   const [password, setPassword] = useState('')
   const [confirm, setConfirm]   = useState('')
@@ -27,8 +29,8 @@ export default function ResetPassword() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (password !== confirm) { setError('Las contraseñas no coinciden.'); return }
-    if (password.length < 6)  { setError('La contraseña debe tener al menos 6 caracteres.'); return }
+    if (password !== confirm) { setError(t('auth.passwordsMismatch')); return }
+    if (password.length < 6)  { setError(t('auth.errWeakPassword')); return }
 
     setLoading(true)
     const { error: err } = await supabase.auth.updateUser({ password })
@@ -49,7 +51,7 @@ export default function ResetPassword() {
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">⚽</div>
           <h1 className="text-2xl font-bold text-stone-900">
-            Porra <span className="text-amber-500">Mundial 2026</span>
+            {t('common.appName')}
           </h1>
         </div>
 
@@ -57,21 +59,21 @@ export default function ResetPassword() {
           {step === 'done' ? (
             <div className="text-center space-y-3 py-4">
               <div className="text-4xl">✅</div>
-              <p className="text-stone-900 font-semibold">Contraseña actualizada</p>
-              <p className="text-stone-400 text-sm">Redirigiendo al inicio de sesión…</p>
+              <p className="text-stone-900 font-semibold">{t('auth.passwordUpdated')}</p>
+              <p className="text-stone-400 text-sm">{t('auth.passwordUpdatedRedirect')}</p>
             </div>
           ) : (
             <>
-              <h2 className="text-lg font-semibold text-stone-900 mb-1">Nueva contraseña</h2>
-              <p className="text-stone-400 text-sm mb-5">Elige una contraseña nueva para tu cuenta.</p>
+              <h2 className="text-lg font-semibold text-stone-900 mb-1">{t('auth.newPassword')}</h2>
+              <p className="text-stone-400 text-sm mb-5">{t('auth.chooseNewPassword')}</p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Nueva contraseña</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('auth.newPassword')}</label>
                   <input
                     type="password"
                     className="input"
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder={t('auth.passwordRegisterPlaceholder')}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     required
@@ -81,11 +83,11 @@ export default function ResetPassword() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Confirmar contraseña</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('auth.confirmPassword')}</label>
                   <input
                     type="password"
                     className="input"
-                    placeholder="Repite la contraseña"
+                    placeholder={t('auth.confirmPasswordPlaceholder')}
                     value={confirm}
                     onChange={e => setConfirm(e.target.value)}
                     required
@@ -105,7 +107,7 @@ export default function ResetPassword() {
                   className="btn-primary w-full flex items-center justify-center gap-2"
                 >
                   {loading && <Spinner size="sm" />}
-                  Guardar contraseña
+                  {t('auth.savePassword')}
                 </button>
               </form>
             </>
