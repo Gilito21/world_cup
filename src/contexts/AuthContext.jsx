@@ -101,7 +101,10 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { username, company: company || null } },
+      options: {
+        data: { username, company: company || null },
+        emailRedirectTo: window.location.origin,
+      },
     })
     if (error) throw error
     // Notificar al admin en background — no bloqueamos ni lanzamos error si falla
