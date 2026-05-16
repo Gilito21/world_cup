@@ -103,29 +103,44 @@ function FeatureCard({ icon, title, desc }) {
 export default function Landing() {
   const { t } = useLang()
 
-  // Parallax refs — balls move at different speeds as the page scrolls.
-  // Direct DOM writes inside rAF = zero React re-renders = buttery smooth.
-  const ball1Ref = useRef(null)   // large main ball (right, slow)
-  const ball2Ref = useRef(null)   // medium ball (left, medium)
-  const ball3Ref = useRef(null)   // small ball (top-left, fast)
+  // Parallax: balls are position:absolute inside the hero section.
+  // When the section scrolls up by `sy`, a positive translateY(sy×k) keeps
+  // the ball drifting down within the section so its NET viewport movement
+  // is only sy×(1−k) — slower than the page = classic parallax depth.
+  // Using scroll events (not rAF loop) so iOS native touch scroll triggers
+  // the handler reliably during momentum scroll.
+  const ball1Ref = useRef(null)
+  const ball2Ref = useRef(null)
+  const ball3Ref = useRef(null)
 
   useEffect(() => {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     if (reducedMotion) return
 
     let raf = null
-    function tick() {
+    function apply() {
+      raf = null
       const sy = window.scrollY
+      // k = 1 − desired_speed  (ball1 moves at 38% of page speed, etc.)
       if (ball1Ref.current)
-        ball1Ref.current.style.transform = `translateY(${(-sy * 0.40).toFixed(2)}px) rotate(${(sy * 0.08).toFixed(2)}deg)`
+        ball1Ref.current.style.transform = `translateY(${(sy * 0.62).toFixed(2)}px) rotate(${(sy * 0.09).toFixed(2)}deg)`
       if (ball2Ref.current)
-        ball2Ref.current.style.transform = `translateY(${(-sy * 0.60).toFixed(2)}px) rotate(${(-sy * 0.14).toFixed(2)}deg)`
+        ball2Ref.current.style.transform = `translateY(${(sy * 0.30).toFixed(2)}px) rotate(${(-sy * 0.13).toFixed(2)}deg)`
       if (ball3Ref.current)
-        ball3Ref.current.style.transform = `translateY(${(-sy * 0.28).toFixed(2)}px) rotate(${(sy * 0.18).toFixed(2)}deg)`
-      raf = requestAnimationFrame(tick)
+        ball3Ref.current.style.transform = `translateY(${(sy * 0.75).toFixed(2)}px) rotate(${(sy * 0.17).toFixed(2)}deg)`
     }
-    raf = requestAnimationFrame(tick)
-    return () => { if (raf != null) cancelAnimationFrame(raf) }
+
+    function onScroll() {
+      if (raf != null) return
+      raf = requestAnimationFrame(apply)
+    }
+
+    apply() // set initial state before first scroll
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (raf != null) cancelAnimationFrame(raf)
+    }
   }, [])
 
   const FEATURES = [
