@@ -36,13 +36,14 @@ export default function useBallScene() {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
     let raf = null
     let lastProgress    = -1
     let lastLeftActive  = null
     let lastRightActive = null
 
     function compute() {
-      raf = null
       const vw          = window.innerWidth
       const vh          = window.innerHeight
       const sceneWidth  = Math.min(vw, SCENE_MAX)
@@ -53,8 +54,7 @@ export default function useBallScene() {
       const raw      = window.scrollY / (vh * RANGE_VH)
       const progress = Math.min(1, Math.max(0, raw))
 
-      // Ball — written every frame the user is mid-scroll; the threshold
-      // here is just to skip identical frames after we've fully settled.
+      // Ball — threshold skips DOM writes on identical frames.
       if (Math.abs(progress - lastProgress) > 0.0008) {
         const x   = (progress - 0.5) * spread
         const y   = -Math.sin(progress * Math.PI) * arc
@@ -69,8 +69,7 @@ export default function useBallScene() {
       }
 
       // Player leans — only written on state crossings so the CSS
-      // transition (300ms) can interpolate without JS overwriting it
-      // every frame.
+      // transition can interpolate without JS overwriting it every frame.
       const leftActive = progress < LEFT_ACTIVE_MAX
       if (leftActive !== lastLeftActive) {
         lastLeftActive = leftActive
@@ -90,23 +89,22 @@ export default function useBallScene() {
       }
     }
 
-    function schedule() {
-      if (raf != null) return
-      raf = requestAnimationFrame(compute)
+    if (reducedMotion) {
+      // Honor user preference: set initial position once, no animation loop.
+      compute()
+      return
     }
 
-    // Set initial transform immediately so the ball doesn't pop from
-    // CSS-base to JS-computed on the first scroll.
-    compute()
+    // rAF loop reads window.scrollY directly every frame — more reliable than
+    // scroll events in iOS PWA standalone mode and some in-app browsers where
+    // window.scroll may not fire consistently.
+    function loop() {
+      compute()
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
 
-    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (reducedMotion) return // honor user preference: no scroll-coupled animation
-
-    window.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('resize', schedule)
     return () => {
-      window.removeEventListener('scroll', schedule)
-      window.removeEventListener('resize', schedule)
       if (raf != null) cancelAnimationFrame(raf)
     }
   }, [])

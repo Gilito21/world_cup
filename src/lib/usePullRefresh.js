@@ -13,7 +13,7 @@ export default function usePullRefresh(handler) {
   const { setRefreshHandler } = useContext(PullRefreshContext)
   useEffect(() => {
     if (typeof handler !== 'function') return
-    setRefreshHandler(() => handler)
-    return () => setRefreshHandler(() => null)
+    setRefreshHandler(handler)
+    return () => setRefreshHandler(null)
   }, [handler, setRefreshHandler])
 }
