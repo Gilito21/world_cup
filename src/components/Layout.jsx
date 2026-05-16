@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
+import haptics from '../lib/haptics'
 import LeagueSwitcher from './LeagueSwitcher'
 import LangToggle from './LangToggle'
 import PaymentModal from './PaymentModal'
@@ -338,7 +339,7 @@ export default function Layout() {
               )}
               <NavLink
                 to={to}
-                onClick={() => setShowMoreMenu(false)}
+                onClick={() => { haptics.tap(); setShowMoreMenu(false) }}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors ${
                     isActive ? 'text-amber-600 bg-amber-500/5' : 'text-stone-700 active:bg-stone-100'
@@ -363,6 +364,7 @@ export default function Layout() {
             <NavLink
               key={to}
               to={to}
+              onClick={() => { if (location.pathname !== to) haptics.tap() }}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors min-h-[60px] ${
                   isActive ? 'text-amber-600' : 'text-stone-500 active:text-stone-700'
@@ -382,7 +384,7 @@ export default function Layout() {
 
           {/* Botón "Más" */}
           <button
-            onClick={() => setShowMoreMenu(o => !o)}
+            onClick={() => { haptics.tap(); setShowMoreMenu(o => !o) }}
             className={`flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium min-h-[60px] transition-colors ${
               showMoreMenu || isMoreActive ? 'text-amber-600' : 'text-stone-500 active:text-stone-700'
             }`}
