@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
@@ -85,10 +85,13 @@ export default function Layout() {
   const isLeagueAdmin = leagues.some(l => l.role === 'admin')
   const { t } = useLang()
   const navigate = useNavigate()
+  const location = useLocation()
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
 
-  // Pestañas principales. En móvil mostramos las 5 que también aparecen
-  // en MOBILE_NAV; "Reglas" se accede desde el menú del avatar para no
-  // saturar la barra inferior con 6 elementos.
+  // Cierra el menú "Más" al cambiar de ruta (ej. botón atrás del SO)
+  useEffect(() => { setShowMoreMenu(false) }, [location.pathname])
+
+  // Desktop header tabs
   const NAV = [
     { to: '/pronosticos',   label: t('nav.predictions'), short: t('nav.predictionsShort'), icon: '🎯' },
     { to: '/extras',        label: t('nav.extras'),      short: t('nav.extras'),           icon: '🎲' },
@@ -99,8 +102,19 @@ export default function Layout() {
     ...(isLeagueAdmin ? [{ to: '/admin-liga', label: t('nav.adminLeague'), short: t('nav.adminLeague'), icon: '⚙️' }] : []),
   ]
 
-  // Bottom-bar (móvil): un máximo de 5 ítems para no saturar (excluir reglas y admin).
-  const MOBILE_NAV = NAV.filter(n => n.to !== '/reglas' && n.to !== '/admin-liga')
+  // Mobile bottom bar: 4 tabs primarios + botón "Más"
+  const MOBILE_PRIMARY = [
+    { to: '/pronosticos',   short: t('nav.predictionsShort'), icon: '🎯' },
+    { to: '/clasificacion', short: t('nav.standingsShort'),   icon: '🏆' },
+    { to: '/resultados',    short: t('nav.resultsShort'),     icon: '📋' },
+    { to: '/extras',        short: t('nav.extras'),           icon: '🎲' },
+  ]
+  const MOBILE_MORE = [
+    { to: '/bracket',   label: t('nav.bracket'),     icon: '⚽' },
+    ...(isLeagueAdmin ? [{ to: '/admin-liga', label: t('nav.adminLeague'), icon: '⚙️' }] : []),
+    { to: '/reglas',    label: t('nav.rules'),        icon: '📖' },
+  ]
+  const isMoreActive = MOBILE_MORE.some(n => location.pathname === n.to)
 
   // Pending payment intent: si el usuario eligió "Crear liga" durante el
   // signup, Auth.jsx dejó el nombre en localStorage y aquí abrimos el
@@ -308,21 +322,50 @@ export default function Layout() {
 
       <ReportButton username={profile?.username} userEmail={user?.email} />
 
+      {/* ── MENÚ "MÁS" (móvil) ───────────────────────────────── */}
+      {showMoreMenu && (
+        <div className="sm:hidden fixed inset-0 z-30" onClick={() => setShowMoreMenu(false)} />
+      )}
+      {showMoreMenu && (
+        <div
+          className="sm:hidden fixed right-3 z-40 card shadow-2xl shadow-stone-300/50 overflow-hidden min-w-[210px] animate-slide-up"
+          style={{ bottom: 'calc(60px + env(safe-area-inset-bottom) + 8px)' }}
+        >
+          {MOBILE_MORE.map(({ to, label, icon }, idx) => (
+            <div key={to}>
+              {idx > 0 && MOBILE_MORE[idx - 1].to === '/admin-liga' && (
+                <div className="mx-3 border-t border-stone-100" />
+              )}
+              <NavLink
+                to={to}
+                onClick={() => setShowMoreMenu(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors ${
+                    isActive ? 'text-amber-600 bg-amber-500/5' : 'text-stone-700 active:bg-stone-100'
+                  }`
+                }
+              >
+                <span className="text-lg flex-shrink-0">{icon}</span>
+                <span>{label}</span>
+              </NavLink>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── BOTTOM NAV (solo móvil) ──────────────────────────── */}
       <nav
         className="sm:hidden shrink-0 bg-white/95 backdrop-blur-md border-t border-stone-200 pb-safe"
         aria-label="Navegación principal"
       >
         <div className="grid grid-cols-5">
-          {MOBILE_NAV.map(({ to, short, icon }) => (
+          {MOBILE_PRIMARY.map(({ to, short, icon }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors min-h-[60px] ${
-                  isActive
-                    ? 'text-amber-600'
-                    : 'text-stone-500 active:text-stone-700'
+                  isActive ? 'text-amber-600' : 'text-stone-500 active:text-stone-700'
                 }`
               }
             >
@@ -336,6 +379,23 @@ export default function Layout() {
               )}
             </NavLink>
           ))}
+
+          {/* Botón "Más" */}
+          <button
+            onClick={() => setShowMoreMenu(o => !o)}
+            className={`flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium min-h-[60px] transition-colors ${
+              showMoreMenu || isMoreActive ? 'text-amber-600' : 'text-stone-500 active:text-stone-700'
+            }`}
+          >
+            <span className={`leading-none transition-transform ${showMoreMenu ? 'scale-110 text-amber-600' : ''}`}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="5"  cy="12" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="19" cy="12" r="2" />
+              </svg>
+            </span>
+            <span className="leading-none">{t('nav.more')}</span>
+          </button>
         </div>
       </nav>
     </div>

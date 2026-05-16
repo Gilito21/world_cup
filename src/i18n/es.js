@@ -39,6 +39,7 @@ export default {
     profile: 'Perfil',
     totalPts: '{{n}} pts totales',
     adminLeague: 'Mi Liga',
+    more: 'Más',
   },
 
   landing: {
