@@ -122,10 +122,10 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-stone-900/60 backdrop-blur-md animate-fade-in px-3 sm:px-4 sm:py-8 overflow-y-auto"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-stone-900/60 backdrop-blur-md animate-fade-in px-3 sm:px-4 sm:py-8"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[85dvh] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 p-5 text-white">
           <button
@@ -171,7 +171,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-4">
           {/* User's prediction summary */}
           {userPrediction ? (
             <div className={`rounded-2xl border p-3 ${
