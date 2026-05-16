@@ -6,7 +6,13 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
+      // autoUpdate: when a new build is deployed, the new SW skipWaiting +
+      // clientsClaim so the user gets the fresh code on their next refresh
+      // without needing to accept a prompt. Avoids the failure mode where
+      // an old SW kept serving a cached index.html whose hashed chunk file
+      // names no longer existed on the server, leaving the page stuck on
+      // the spinner / falling back to a stale state.
+      registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Porra Mundial 2026',

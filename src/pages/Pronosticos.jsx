@@ -1205,7 +1205,6 @@ export default function Pronosticos() {
           match={previewMatch}
           userPrediction={predictions[previewMatch.id]}
           league={activeLeague}
-          predictionMode={predictionMode}
           onClose={() => setPreviewMatch(null)}
         />
       )}

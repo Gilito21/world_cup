@@ -18,7 +18,7 @@ function scoreLine(p) {
   return p?.home_score != null && p?.away_score != null ? `${p.home_score}–${p.away_score}` : null
 }
 
-export default function MatchPreviewModal({ match, userPrediction, league, predictionMode, onClose }) {
+export default function MatchPreviewModal({ match, userPrediction, league, onClose }) {
   useScrollLock()
   const { user } = useAuth()
   const { t, dateLocale } = useLang()
@@ -46,35 +46,35 @@ export default function MatchPreviewModal({ match, userPrediction, league, predi
     ;(async () => {
       const { data: memberRows } = await sq(
         supabase.from('league_members')
-          .select('user_id, profiles(username, avatar_url)')
+          .select('user_id, prediction_mode, profiles(username, avatar_url)')
           .eq('league_id', league.id)
       )
       if (cancelled || !memberRows) { setLoading(false); return }
 
-      const userIds = memberRows.map(m => m.user_id)
-      const leagueIdForQuery = predictionMode === 'per_league' ? league.id : null
+      const userIds    = memberRows.map(m => m.user_id)
+      const modeByUser = Object.fromEntries(memberRows.map(m => [m.user_id, m.prediction_mode ?? 'global']))
 
-      const predsQuery = leagueIdForQuery
-        ? supabase.from('predictions')
-            .select('user_id, home_score, away_score, tiebreaker, points_earned')
-            .eq('match_id', match.id)
-            .eq('league_id', leagueIdForQuery)
-            .in('user_id', userIds)
-        : supabase.from('predictions')
-            .select('user_id, home_score, away_score, tiebreaker, points_earned')
-            .eq('match_id', match.id)
-            .is('league_id', null)
-            .in('user_id', userIds)
-
-      const { data: predRows } = await sq(predsQuery)
+      const { data: allPredRows } = await sq(
+        supabase.from('predictions')
+          .select('user_id, home_score, away_score, tiebreaker, points_earned, league_id')
+          .eq('match_id', match.id)
+          .or(`league_id.eq.${league.id},league_id.is.null`)
+          .in('user_id', userIds)
+      )
       if (cancelled) return
 
+      const predRows = (allPredRows ?? []).filter(p => {
+        const mode     = modeByUser[p.user_id] ?? 'global'
+        const expected = mode === 'per_league' ? league.id : null
+        return p.league_id === expected
+      })
+
       setMembers(memberRows)
-      setPredictions(predRows ?? [])
+      setPredictions(predRows)
       setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [league?.id, match.id, hasStarted, predictionMode])
+  }, [league?.id, match.id, hasStarted])
 
   // Aggregate consensus
   const consensus = useMemo(() => {

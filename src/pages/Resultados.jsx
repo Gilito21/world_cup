@@ -60,7 +60,7 @@ function PredRow({ entry, realHome, realAway }) {
 }
 
 // ── Tarjeta de partido finalizado ────────────────────────────────────────────
-function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
+function FinishedMatchCard({ match, myPrediction, league }) {
   const { user }   = useAuth()
   const { t, dateLocale } = useLang()
   const winner     = getWinner(match.home_score, match.away_score)
@@ -73,12 +73,28 @@ function FinishedMatchCard({ match, myPrediction, leagueId, predictionMode }) {
     setExpanded(true)
     setLoadingPreds(true)
 
-    // Predicciones del partido según el modo de la liga
-    const predQuery = predictionMode === 'per_league' && leagueId
-      ? supabase.from('predictions').select('user_id, home_score, away_score, points_earned').eq('match_id', match.id).eq('league_id', leagueId)
-      : supabase.from('predictions').select('user_id, home_score, away_score, points_earned').eq('match_id', match.id).is('league_id', null)
-
-    const { data: preds } = await predQuery
+    let preds = []
+    if (league) {
+      const [{ data: memberRows }, { data: rawPreds }] = await Promise.all([
+        supabase.from('league_members').select('user_id, prediction_mode').eq('league_id', league.id),
+        supabase.from('predictions')
+          .select('user_id, home_score, away_score, points_earned, league_id')
+          .eq('match_id', match.id)
+          .or(`league_id.eq.${league.id},league_id.is.null`),
+      ])
+      const modeByUser = Object.fromEntries((memberRows ?? []).map(m => [m.user_id, m.prediction_mode ?? 'global']))
+      const memberIds  = new Set(Object.keys(modeByUser))
+      preds = (rawPreds ?? []).filter(p => {
+        if (!memberIds.has(p.user_id)) return false
+        const expected = (modeByUser[p.user_id] ?? 'global') === 'per_league' ? league.id : null
+        return p.league_id === expected
+      })
+    } else {
+      const { data } = await supabase.from('predictions')
+        .select('user_id, home_score, away_score, points_earned')
+        .eq('match_id', match.id).is('league_id', null)
+      preds = data ?? []
+    }
 
     // Perfiles para obtener usernames
     const userIds = [...new Set((preds ?? []).map(p => p.user_id))]
@@ -221,8 +237,6 @@ export default function Resultados() {
   const { user }                   = useAuth()
   const { activeLeague }           = useLeague()
   const { t, dateLocale }          = useLang()
-  const predictionMode             = activeLeague?.prediction_mode ?? 'global'
-  const leagueId                   = predictionMode === 'per_league' ? activeLeague?.id : null
 
   const STAGES = useMemo(() => ({
     group:         t('stages.group'),
@@ -243,6 +257,7 @@ export default function Resultados() {
   const [filter, setFilter]           = useState('all')
 
   useEffect(() => {
+    const predictionMode = activeLeague?.prediction_mode ?? 'global'
     const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
     const predCacheKey = `preds:${user.id}:${leagueKey}`
 
@@ -281,7 +296,7 @@ export default function Resultados() {
     }
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, activeLeague?.id, predictionMode])
+  }, [user?.id, activeLeague?.id, activeLeague?.prediction_mode])
 
   const stats = matches.reduce(
     (acc, m) => {
@@ -383,8 +398,7 @@ export default function Resultados() {
                     key={m.id}
                     match={m}
                     myPrediction={predictions[m.id]}
-                    leagueId={leagueId}
-                    predictionMode={predictionMode}
+                    league={activeLeague ?? null}
                   />
                 ))}
               </div>
