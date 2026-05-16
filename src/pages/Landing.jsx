@@ -123,7 +123,7 @@ export default function Landing() {
     <div className="min-h-screen bg-white text-stone-900">
 
       {/* ── Header ───────────────────────────────────────────── */}
-      <header className="sticky top-0 z-20 border-b border-stone-100 bg-white/90 backdrop-blur-sm">
+      <header className="sticky top-0 z-20 border-b border-stone-100 bg-white/90 backdrop-blur-sm pt-safe">
         <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <SoccerBall className="w-6 h-6" />
@@ -144,7 +144,7 @@ export default function Landing() {
       </header>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="relative flex flex-col items-center justify-center px-5 pt-20 pb-24 overflow-hidden min-h-[calc(100vh-56px)] bg-white">
+      <section className="relative flex flex-col items-center justify-center px-5 pt-20 pb-24 overflow-hidden min-h-[calc(100dvh-56px-env(safe-area-inset-top))] bg-white">
         {/* Subtle dot pattern */}
         <div
           className="absolute inset-0 opacity-60 pointer-events-none"
