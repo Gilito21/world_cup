@@ -237,6 +237,14 @@ export default function Layout() {
     navigate('/auth')
   }
 
+  async function handleBallRefresh() {
+    haptics.tap()
+    if (!refreshHandlerRef.current || refreshing) return
+    setRefreshing(true)
+    try { await Promise.resolve(refreshHandlerRef.current()) } catch {}
+    setRefreshing(false)
+  }
+
   async function handlePaymentSuccess(league) {
     localStorage.removeItem('porra-pending-league-create')
     setPendingPaymentName(null)
@@ -257,13 +265,19 @@ export default function Layout() {
         <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-amber-500 via-orange-400 to-amber-500" />
         <div className="max-w-5xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
           {/* Logo */}
-          <Link to="/pronosticos" className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xl sm:text-2xl">⚽</span>
-            <div className="hidden sm:block">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={handleBallRefresh}
+              aria-label="Actualizar"
+              className={`text-xl sm:text-2xl leading-none focus:outline-none transition-transform active:scale-90 ${refreshing ? 'animate-spin' : ''}`}
+            >
+              ⚽
+            </button>
+            <Link to="/pronosticos" className="hidden sm:block">
               <span className="font-bold text-stone-900 text-lg leading-tight">Porra</span>
               <span className="font-bold text-amber-500 text-lg leading-tight"> Mundial 2026</span>
-            </div>
-          </Link>
+            </Link>
+          </div>
 
           {/* Centro: selector de liga */}
           <div className="flex-1 flex justify-center min-w-0">
