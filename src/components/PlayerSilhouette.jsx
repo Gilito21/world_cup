@@ -4,9 +4,8 @@ import { forwardRef } from 'react'
 // "facing forward" without flipping — the brain fills in that two players
 // on opposite sides are facing each other.
 //
-// The wrapper element gets transform-origin: center bottom so when the
-// scroll-trajectory hook adds rotation, the head swings up/inward while
-// the body stays anchored — looks like the player is leaning into a header.
+// transform-origin: center bottom so lean rotation pivots at the player's
+// feet. All animation is rAF-driven by useBallScene (no CSS transition).
 const PlayerSilhouette = forwardRef(function PlayerSilhouette(
   { className = '' }, ref
 ) {
@@ -14,13 +13,7 @@ const PlayerSilhouette = forwardRef(function PlayerSilhouette(
     <div
       ref={ref}
       className={`${className} pointer-events-none will-change-transform`}
-      style={{
-        transformOrigin: 'center bottom',
-        // Spring-like ease so the lean overshoots slightly and settles —
-        // gives the "head flick" a small physical bounce instead of the
-        // mechanical glide of a linear ease-out.
-        transition: 'transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-      }}
+      style={{ transformOrigin: 'center bottom' }}
       aria-hidden="true"
     >
       <svg viewBox="0 0 100 130" className="w-full h-full block">
