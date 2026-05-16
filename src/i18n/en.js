@@ -268,6 +268,8 @@ export default {
     unsavedDraft: 'Unsaved draft',
     unsavedChanges: 'Unsaved changes',
     draftSaved: '✓ Draft saved',
+    saving: 'Saving…',
+    saveErrRetry: 'Retry',
     liveLabel: 'LIVE',
     finishedLabel: 'Finished',
     errSaveDraft: 'Error saving draft.',

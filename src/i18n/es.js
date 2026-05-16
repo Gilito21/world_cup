@@ -268,6 +268,8 @@ export default {
     unsavedDraft: 'Borrador sin guardar',
     unsavedChanges: 'Cambios sin guardar',
     draftSaved: '✓ Borrador guardado',
+    saving: 'Guardando…',
+    saveErrRetry: 'Reintentar',
     liveLabel: 'EN VIVO',
     finishedLabel: 'Finalizado',
     errSaveDraft: 'Error al guardar el borrador.',

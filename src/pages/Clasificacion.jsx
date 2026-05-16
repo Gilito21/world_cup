@@ -5,6 +5,7 @@ import { getCache, setCache } from '../lib/dataCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
+import usePullRefresh from '../lib/usePullRefresh'
 import LeagueModal from '../components/LeagueModal'
 import Spinner from '../components/Spinner'
 import { StandingsSkeleton } from '../components/Skeleton'
@@ -188,6 +189,14 @@ export default function Clasificacion() {
   useEffect(() => { if (tab === 'global')    loadGlobal()    }, [tab])
   useEffect(() => { if (tab === 'league')    loadLeague()    }, [tab, activeLeague?.id])
   useEffect(() => { if (tab === 'companies') loadCompanies() }, [tab])
+
+  // Pull-to-refresh: reload whatever tab is currently visible.
+  usePullRefresh(useCallback(() => {
+    if (tab === 'global')   return loadGlobal()
+    if (tab === 'league')   return loadLeague()
+    return loadCompanies()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, activeLeague?.id]))
 
   // ── Global ───────────────────────────────────────────────────────────────
 

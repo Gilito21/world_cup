@@ -1,7 +1,9 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { getCache, setCache } from '../lib/dataCache'
+import haptics from '../lib/haptics'
+import usePullRefresh from '../lib/usePullRefresh'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
@@ -89,28 +91,59 @@ function CutoffCountdown({ cutoffTime }) {
   )
 }
 
-// ─── SCORE INPUT ─────────────────────────────────────────────────────────────
+// ─── SCORE STEPPER ───────────────────────────────────────────────────────────
+//
+// Horizontal [−][N][+] control. Replaces the old number input + on-screen
+// keyboard — predicting 30 matches no longer requires popping the keyboard
+// 60 times. Number area shows the consensus value as a faded placeholder
+// when empty; first ± tap promotes from placeholder to a real value.
 
-function ScoreInput({ value, onChange, disabled, placeholder }) {
+function ScoreStepper({ value, onChange, disabled, placeholder }) {
+  const isEmpty = value === '' || value == null
+  const display = isEmpty
+    ? (placeholder != null ? String(placeholder) : '–')
+    : String(value)
+
+  function bump(delta) {
+    if (disabled) return
+    const base = isEmpty ? 0 : Number(value)
+    const next = Math.max(0, Math.min(99, base + delta))
+    if (next === Number(value)) return
+    haptics.tap()
+    onChange(next)
+  }
+
   return (
-    <input
-      type="number"
-      inputMode="numeric"
-      pattern="[0-9]*"
-      enterKeyHint="next"
-      min="0"
-      max="99"
-      value={value}
-      placeholder={placeholder != null ? String(placeholder) : undefined}
-      onFocus={e => e.target.select()}
-      onChange={e => onChange(Math.max(0, Math.min(99, parseInt(e.target.value) || 0)))}
-      disabled={disabled}
-      className="w-11 h-11 sm:w-12 sm:h-12 text-center text-xl sm:text-xl font-bold bg-white border border-stone-300 rounded-lg sm:rounded-xl text-stone-900
-                 placeholder:text-stone-300 placeholder:font-bold
-                 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500
-                 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm
-                 touch-manipulation"
-    />
+    <div className={`inline-flex items-stretch bg-white border border-stone-300 rounded-xl shadow-sm overflow-hidden select-none ${disabled ? 'opacity-40' : ''}`}>
+      <button
+        type="button"
+        onClick={() => bump(-1)}
+        disabled={disabled || (!isEmpty && Number(value) === 0)}
+        className="w-7 sm:w-8 h-11 sm:h-12 flex items-center justify-center text-stone-500 active:bg-stone-100 active:text-stone-800 disabled:text-stone-200 transition-colors touch-manipulation"
+        aria-label="−1"
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+          <rect x="1" y="5" width="10" height="2" rx="1" />
+        </svg>
+      </button>
+      <span className={`w-7 sm:w-8 flex items-center justify-center text-lg sm:text-xl font-bold tabular-nums ${
+        isEmpty ? 'text-stone-300' : 'text-stone-900'
+      }`}>
+        {display}
+      </span>
+      <button
+        type="button"
+        onClick={() => bump(1)}
+        disabled={disabled}
+        className="w-7 sm:w-8 h-11 sm:h-12 flex items-center justify-center text-stone-500 active:bg-stone-100 active:text-stone-800 disabled:text-stone-200 transition-colors touch-manipulation"
+        aria-label="+1"
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+          <rect x="1" y="5" width="10" height="2" rx="1" />
+          <rect x="5" y="1" width="2" height="10" rx="1" />
+        </svg>
+      </button>
+    </div>
   )
 }
 
@@ -308,19 +341,48 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
     (isKnockout && isDraw && (tiebreaker ?? null) !== (prediction.tiebreaker ?? null))
   )
 
-  const [saving, setSaving] = useState(false)
-  const [saved,  setSaved]  = useState(false)
+  // Auto-save: debounced server write whenever the draft diverges from the
+  // saved prediction. The user no longer needs to tap a "save" button — they
+  // tap +/− and the change persists ~700ms after the last interaction.
+  // `saveOk` flickers a "Guardado" checkmark for 1.5s on each successful save.
+  const [saving,  setSaving]  = useState(false)
+  const [saveOk,  setSaveOk]  = useState(false)
+  const [saveErr, setSaveErr] = useState(false)
+  const saveTimerRef = useRef(null)
+  const inFlightRef  = useRef(false)
 
-  useEffect(() => { setSaved(false) }, [prediction])
+  useEffect(() => { setSaveOk(false); setSaveErr(false) }, [prediction])
 
-  async function handleSave() {
+  const triggerSave = useCallback(async () => {
+    if (inFlightRef.current) return
     if (home === '' || away === '') return
+    inFlightRef.current = true
     setSaving(true)
+    setSaveErr(false)
     const effectiveTiebreaker = isKnockout ? tiebreaker : null
     const ok = await onSave(match.id, Number(home), Number(away), effectiveTiebreaker)
+    inFlightRef.current = false
     setSaving(false)
-    if (ok) setSaved(true)
-  }
+    if (ok) {
+      haptics.medium()
+      setSaveOk(true)
+      setTimeout(() => setSaveOk(false), 1500)
+    } else {
+      haptics.error()
+      setSaveErr(true)
+    }
+  }, [home, away, tiebreaker, isKnockout, match.id, onSave])
+
+  // Schedule auto-save when there are unsaved changes. Knockout draws need a
+  // tiebreaker before they're valid — wait for it instead of nagging.
+  useEffect(() => {
+    if (isLocked || submitted || isFinished) return
+    if (!changed) return
+    if (isKnockout && isDraw && !tiebreaker) return
+    clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(triggerSave, 700)
+    return () => clearTimeout(saveTimerRef.current)
+  }, [changed, isLocked, submitted, isFinished, isKnockout, isDraw, tiebreaker, triggerSave])
 
   const badge = STATUS_BADGE[match.status]
 
@@ -405,14 +467,14 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           ) : (
             <div className="flex flex-col items-center gap-1">
               <div className="flex items-center gap-2">
-                <ScoreInput
+                <ScoreStepper
                   value={home}
                   onChange={setHome}
                   disabled={isLocked}
                   placeholder={!isLocked && home === '' && consensus ? consensus.home_score : undefined}
                 />
                 <span className="text-stone-400 font-bold text-sm">-</span>
-                <ScoreInput
+                <ScoreStepper
                   value={away}
                   onChange={setAway}
                   disabled={isLocked}
@@ -527,22 +589,31 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
         </div>
       )}
 
-      {/* Draft save button (only when not submitted, not locked, not finished) */}
+      {/* Auto-save status row (only while the card is editable) */}
       {!submitted && !isLocked && !isFinished && (
-        <div className="mt-3 pt-3 border-t border-stone-200 flex items-center justify-between">
-          <span className="text-xs text-stone-400">
-            {!prediction && (home === '' || away === '') ? t('pronosticos.noDraft') :
-             !prediction ? t('pronosticos.unsavedDraft') :
-             changed     ? t('pronosticos.unsavedChanges') :
-                           t('pronosticos.draftSaved')}
-          </span>
-          <button
-            onClick={handleSave}
-            disabled={saving || home === '' || away === '' || (!changed && !!prediction)}
-            className="text-xs text-stone-400 hover:text-amber-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            {saving ? <Spinner size="sm" /> : saved && !changed ? t('common.saved') : t('common.saveDraft')}
-          </button>
+        <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-end gap-1.5 text-xs h-5">
+          {saving ? (
+            <span className="text-stone-400 flex items-center gap-1.5">
+              <Spinner size="sm" /> <span>{t('pronosticos.saving')}</span>
+            </span>
+          ) : saveErr ? (
+            <button
+              onClick={triggerSave}
+              className="text-red-500 hover:text-red-600 transition-colors flex items-center gap-1"
+            >
+              <span>⚠️</span><span>{t('pronosticos.saveErrRetry')}</span>
+            </button>
+          ) : saveOk ? (
+            <span className="text-green-500 flex items-center gap-1 animate-fade-in">
+              <span>✓</span><span>{t('common.saved')}</span>
+            </span>
+          ) : changed ? (
+            <span className="text-amber-500/70">•</span>
+          ) : prediction ? (
+            <span className="text-stone-300">✓</span>
+          ) : (
+            <span className="text-stone-300">{t('pronosticos.noDraft')}</span>
+          )}
         </div>
       )}
     </div>
@@ -634,117 +705,111 @@ export default function Pronosticos() {
   const [showConfirm,  setShowConfirm]  = useState(false)
 
   // ── Data loading ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    // Wait until LeagueContext has resolved which league is active before loading
+  const load = useCallback(async ({ force = false } = {}) => {
     if (leagueLoading) return
-
-    let cancelled = false
     const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
     const predCacheKey = `preds:${user.id}:${leagueKey}`
     const subCacheKey  = `sub:${user.id}:${leagueKey}`
 
-    // Hydrate from caches immediately so the user sees their data without a spinner
-    const cachedPreds = getCache(predCacheKey)
-    const cachedSub   = getCache(subCacheKey)
-    if (cachedPreds) {
-      setPredictions(cachedPreds)
-      const initialDrafts = {}
-      for (const [matchId, p] of Object.entries(cachedPreds)) {
-        initialDrafts[matchId] = {
-          home: String(p.home_score ?? ''),
-          away: String(p.away_score ?? ''),
-          tiebreaker: p.tiebreaker ?? null,
+    // Initial path: hydrate from caches so the UI is instant.
+    // Force path (pull-to-refresh): keep current UI, just refetch.
+    if (!force) {
+      const cachedPreds = getCache(predCacheKey)
+      const cachedSub   = getCache(subCacheKey)
+      if (cachedPreds) {
+        setPredictions(cachedPreds)
+        const initialDrafts = {}
+        for (const [matchId, p] of Object.entries(cachedPreds)) {
+          initialDrafts[matchId] = {
+            home: String(p.home_score ?? ''),
+            away: String(p.away_score ?? ''),
+            tiebreaker: p.tiebreaker ?? null,
+          }
         }
+        setDrafts(initialDrafts)
+      } else {
+        setPredictions({})
+        setDrafts({})
       }
-      setDrafts(initialDrafts)
-    } else {
-      setPredictions({})
-      setDrafts({})
-    }
-    if (cachedSub !== null) {
-      setIsSubmitted(cachedSub?.submitted ?? false)
-      setSubmittedAt(cachedSub?.submittedAt ?? null)
-    } else {
-      setIsSubmitted(false)
-      setSubmittedAt(null)
-    }
+      if (cachedSub !== null) {
+        setIsSubmitted(cachedSub?.submitted ?? false)
+        setSubmittedAt(cachedSub?.submittedAt ?? null)
+      } else {
+        setIsSubmitted(false)
+        setSubmittedAt(null)
+      }
 
-    const hasMatches = matches.length > 0 || !!getMatchCache()
-    const hasCachedView = hasMatches && cachedPreds
-
-    async function load() {
-      // Only block UI with a spinner if we have nothing to show
+      const hasMatches    = matches.length > 0 || !!getMatchCache()
+      const hasCachedView = hasMatches && getCache(predCacheKey)
       if (!hasCachedView) setLoading(true)
-      try {
-        const predQuery = (predictionMode === 'per_league' && activeLeague)
-          ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
-          : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
-
-        const subQuery = (predictionMode === 'per_league' && activeLeague)
-          ? supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).eq('league_id', activeLeague.id).eq('source', 'matches').maybeSingle()
-          : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).eq('source', 'matches').maybeSingle()
-
-        const cachedMatches = getMatchCache()
-        const [
-          { data: matchData },
-          { data: predData },
-          { data: subData },
-        ] = await Promise.all([
-          cachedMatches
-            ? Promise.resolve({ data: cachedMatches })
-            : sq(supabase.from('matches').select('*').order('match_date')),
-          sq(predQuery),
-          sq(subQuery),
-        ])
-
-        if (cancelled) return
-
-        if (matchData) {
-          setMatchCache(matchData)
-          setMatches(matchData)
-          // Cutoff = 1 hour before the first group-stage match
-          const firstGroup = matchData.find(m => m.stage === 'group') ?? matchData[0]
-          if (firstGroup) {
-            setCutoffTime(new Date(firstGroup.match_date).getTime() - 60 * 60 * 1000)
-          }
-          const available = [...new Set(matchData.map(m => m.stage))]
-          setActiveStage(prev => available.includes(prev) ? prev : (STAGE_ORDER.find(s => available.includes(s)) ?? available[0]))
-        }
-
-        if (predData) {
-          const map = {}
-          const initialDrafts = {}
-          predData.forEach(p => {
-            map[p.match_id] = p
-            initialDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? ''), tiebreaker: p.tiebreaker ?? null }
-          })
-          setPredictions(map)
-          setDrafts(initialDrafts)
-          setCache(predCacheKey, map)
-        }
-
-        // subData is null both on "no submission" and on timeout — only treat the
-        // success case (predData arrived) as authoritative for the submission slot.
-        if (predData !== null) {
-          if (subData) {
-            setIsSubmitted(true)
-            setSubmittedAt(subData.submitted_at)
-            setCache(subCacheKey, { submitted: true, submittedAt: subData.submitted_at })
-          } else {
-            setIsSubmitted(false)
-            setSubmittedAt(null)
-            setCache(subCacheKey, { submitted: false, submittedAt: null })
-          }
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
     }
 
-    load()
-    return () => { cancelled = true }
+    try {
+      const predQuery = (predictionMode === 'per_league' && activeLeague)
+        ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
+        : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
+
+      const subQuery = (predictionMode === 'per_league' && activeLeague)
+        ? supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).eq('league_id', activeLeague.id).eq('source', 'matches').maybeSingle()
+        : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).eq('source', 'matches').maybeSingle()
+
+      const cachedMatches = !force ? getMatchCache() : null
+      const [
+        { data: matchData },
+        { data: predData },
+        { data: subData },
+      ] = await Promise.all([
+        cachedMatches
+          ? Promise.resolve({ data: cachedMatches })
+          : sq(supabase.from('matches').select('*').order('match_date')),
+        sq(predQuery),
+        sq(subQuery),
+      ])
+
+      if (matchData) {
+        setMatchCache(matchData)
+        setMatches(matchData)
+        const firstGroup = matchData.find(m => m.stage === 'group') ?? matchData[0]
+        if (firstGroup) {
+          setCutoffTime(new Date(firstGroup.match_date).getTime() - 60 * 60 * 1000)
+        }
+        const available = [...new Set(matchData.map(m => m.stage))]
+        setActiveStage(prev => available.includes(prev) ? prev : (STAGE_ORDER.find(s => available.includes(s)) ?? available[0]))
+      }
+
+      if (predData) {
+        const map = {}
+        const initialDrafts = {}
+        predData.forEach(p => {
+          map[p.match_id] = p
+          initialDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? ''), tiebreaker: p.tiebreaker ?? null }
+        })
+        setPredictions(map)
+        setDrafts(initialDrafts)
+        setCache(predCacheKey, map)
+      }
+
+      if (predData !== null) {
+        if (subData) {
+          setIsSubmitted(true)
+          setSubmittedAt(subData.submitted_at)
+          setCache(subCacheKey, { submitted: true, submittedAt: subData.submitted_at })
+        } else {
+          setIsSubmitted(false)
+          setSubmittedAt(null)
+          setCache(subCacheKey, { submitted: false, submittedAt: null })
+        }
+      }
+    } finally {
+      setLoading(false)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeLeague?.id, predictionMode, leagueLoading])
+
+  useEffect(() => { load() }, [load])
+
+  // Pull-to-refresh: force a network round-trip, bypass match/pred caches.
+  usePullRefresh(useCallback(() => load({ force: true }), [load]))
 
   // ── Global consensus (most-picked score per match across all users) ─────────
   // Single RPC call returns one row per match with ≥3 voters. Aggregates
@@ -930,8 +995,10 @@ export default function Pronosticos() {
       const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
       setCache(`sub:${user.id}:${leagueKey}`, { submitted: true, submittedAt: submittedAtNow })
       setShowConfirm(false)
+      haptics.success()
     } catch {
       setError(t('pronosticos.errSubmit'))
+      haptics.error()
     } finally {
       setSubmitting(false)
     }
