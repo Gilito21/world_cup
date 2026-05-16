@@ -3,6 +3,7 @@ import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { getCache, setCache } from '../lib/dataCache'
 import haptics from '../lib/haptics'
+import usePullRefresh from '../lib/usePullRefresh'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
@@ -704,117 +705,111 @@ export default function Pronosticos() {
   const [showConfirm,  setShowConfirm]  = useState(false)
 
   // ── Data loading ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    // Wait until LeagueContext has resolved which league is active before loading
+  const load = useCallback(async ({ force = false } = {}) => {
     if (leagueLoading) return
-
-    let cancelled = false
     const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
     const predCacheKey = `preds:${user.id}:${leagueKey}`
     const subCacheKey  = `sub:${user.id}:${leagueKey}`
 
-    // Hydrate from caches immediately so the user sees their data without a spinner
-    const cachedPreds = getCache(predCacheKey)
-    const cachedSub   = getCache(subCacheKey)
-    if (cachedPreds) {
-      setPredictions(cachedPreds)
-      const initialDrafts = {}
-      for (const [matchId, p] of Object.entries(cachedPreds)) {
-        initialDrafts[matchId] = {
-          home: String(p.home_score ?? ''),
-          away: String(p.away_score ?? ''),
-          tiebreaker: p.tiebreaker ?? null,
+    // Initial path: hydrate from caches so the UI is instant.
+    // Force path (pull-to-refresh): keep current UI, just refetch.
+    if (!force) {
+      const cachedPreds = getCache(predCacheKey)
+      const cachedSub   = getCache(subCacheKey)
+      if (cachedPreds) {
+        setPredictions(cachedPreds)
+        const initialDrafts = {}
+        for (const [matchId, p] of Object.entries(cachedPreds)) {
+          initialDrafts[matchId] = {
+            home: String(p.home_score ?? ''),
+            away: String(p.away_score ?? ''),
+            tiebreaker: p.tiebreaker ?? null,
+          }
         }
+        setDrafts(initialDrafts)
+      } else {
+        setPredictions({})
+        setDrafts({})
       }
-      setDrafts(initialDrafts)
-    } else {
-      setPredictions({})
-      setDrafts({})
-    }
-    if (cachedSub !== null) {
-      setIsSubmitted(cachedSub?.submitted ?? false)
-      setSubmittedAt(cachedSub?.submittedAt ?? null)
-    } else {
-      setIsSubmitted(false)
-      setSubmittedAt(null)
-    }
+      if (cachedSub !== null) {
+        setIsSubmitted(cachedSub?.submitted ?? false)
+        setSubmittedAt(cachedSub?.submittedAt ?? null)
+      } else {
+        setIsSubmitted(false)
+        setSubmittedAt(null)
+      }
 
-    const hasMatches = matches.length > 0 || !!getMatchCache()
-    const hasCachedView = hasMatches && cachedPreds
-
-    async function load() {
-      // Only block UI with a spinner if we have nothing to show
+      const hasMatches    = matches.length > 0 || !!getMatchCache()
+      const hasCachedView = hasMatches && getCache(predCacheKey)
       if (!hasCachedView) setLoading(true)
-      try {
-        const predQuery = (predictionMode === 'per_league' && activeLeague)
-          ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
-          : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
-
-        const subQuery = (predictionMode === 'per_league' && activeLeague)
-          ? supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).eq('league_id', activeLeague.id).eq('source', 'matches').maybeSingle()
-          : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).eq('source', 'matches').maybeSingle()
-
-        const cachedMatches = getMatchCache()
-        const [
-          { data: matchData },
-          { data: predData },
-          { data: subData },
-        ] = await Promise.all([
-          cachedMatches
-            ? Promise.resolve({ data: cachedMatches })
-            : sq(supabase.from('matches').select('*').order('match_date')),
-          sq(predQuery),
-          sq(subQuery),
-        ])
-
-        if (cancelled) return
-
-        if (matchData) {
-          setMatchCache(matchData)
-          setMatches(matchData)
-          // Cutoff = 1 hour before the first group-stage match
-          const firstGroup = matchData.find(m => m.stage === 'group') ?? matchData[0]
-          if (firstGroup) {
-            setCutoffTime(new Date(firstGroup.match_date).getTime() - 60 * 60 * 1000)
-          }
-          const available = [...new Set(matchData.map(m => m.stage))]
-          setActiveStage(prev => available.includes(prev) ? prev : (STAGE_ORDER.find(s => available.includes(s)) ?? available[0]))
-        }
-
-        if (predData) {
-          const map = {}
-          const initialDrafts = {}
-          predData.forEach(p => {
-            map[p.match_id] = p
-            initialDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? ''), tiebreaker: p.tiebreaker ?? null }
-          })
-          setPredictions(map)
-          setDrafts(initialDrafts)
-          setCache(predCacheKey, map)
-        }
-
-        // subData is null both on "no submission" and on timeout — only treat the
-        // success case (predData arrived) as authoritative for the submission slot.
-        if (predData !== null) {
-          if (subData) {
-            setIsSubmitted(true)
-            setSubmittedAt(subData.submitted_at)
-            setCache(subCacheKey, { submitted: true, submittedAt: subData.submitted_at })
-          } else {
-            setIsSubmitted(false)
-            setSubmittedAt(null)
-            setCache(subCacheKey, { submitted: false, submittedAt: null })
-          }
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
     }
 
-    load()
-    return () => { cancelled = true }
+    try {
+      const predQuery = (predictionMode === 'per_league' && activeLeague)
+        ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
+        : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
+
+      const subQuery = (predictionMode === 'per_league' && activeLeague)
+        ? supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).eq('league_id', activeLeague.id).eq('source', 'matches').maybeSingle()
+        : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).eq('source', 'matches').maybeSingle()
+
+      const cachedMatches = !force ? getMatchCache() : null
+      const [
+        { data: matchData },
+        { data: predData },
+        { data: subData },
+      ] = await Promise.all([
+        cachedMatches
+          ? Promise.resolve({ data: cachedMatches })
+          : sq(supabase.from('matches').select('*').order('match_date')),
+        sq(predQuery),
+        sq(subQuery),
+      ])
+
+      if (matchData) {
+        setMatchCache(matchData)
+        setMatches(matchData)
+        const firstGroup = matchData.find(m => m.stage === 'group') ?? matchData[0]
+        if (firstGroup) {
+          setCutoffTime(new Date(firstGroup.match_date).getTime() - 60 * 60 * 1000)
+        }
+        const available = [...new Set(matchData.map(m => m.stage))]
+        setActiveStage(prev => available.includes(prev) ? prev : (STAGE_ORDER.find(s => available.includes(s)) ?? available[0]))
+      }
+
+      if (predData) {
+        const map = {}
+        const initialDrafts = {}
+        predData.forEach(p => {
+          map[p.match_id] = p
+          initialDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? ''), tiebreaker: p.tiebreaker ?? null }
+        })
+        setPredictions(map)
+        setDrafts(initialDrafts)
+        setCache(predCacheKey, map)
+      }
+
+      if (predData !== null) {
+        if (subData) {
+          setIsSubmitted(true)
+          setSubmittedAt(subData.submitted_at)
+          setCache(subCacheKey, { submitted: true, submittedAt: subData.submitted_at })
+        } else {
+          setIsSubmitted(false)
+          setSubmittedAt(null)
+          setCache(subCacheKey, { submitted: false, submittedAt: null })
+        }
+      }
+    } finally {
+      setLoading(false)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeLeague?.id, predictionMode, leagueLoading])
+
+  useEffect(() => { load() }, [load])
+
+  // Pull-to-refresh: force a network round-trip, bypass match/pred caches.
+  usePullRefresh(useCallback(() => load({ force: true }), [load]))
 
   // ── Global consensus (most-picked score per match across all users) ─────────
   // Single RPC call returns one row per match with ≥3 voters. Aggregates
