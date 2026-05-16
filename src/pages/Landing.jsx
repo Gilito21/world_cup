@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLang } from '../contexts/LangContext'
 import ReportButton from '../components/ReportButton'
 import LangToggle from '../components/LangToggle'
@@ -90,7 +90,8 @@ function Countdown({ target }) {
 
 export default function Landing() {
   const { t } = useLang()
-  const { ballRef, leftPlayerRef, rightPlayerRef } = useBallScene()
+  const sectionRef = useRef(null)
+  const { ballRef, leftPlayerRef, rightPlayerRef } = useBallScene(sectionRef)
 
   const FEATURES = [
     { icon: '🎯', title: t('landing.f1title'), desc: t('landing.f1desc') },
@@ -158,29 +159,6 @@ export default function Landing() {
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-amber-100/60 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 left-1/4 w-[300px] h-[300px] bg-orange-50 rounded-full blur-3xl pointer-events-none" />
 
-        {/* "Header pass" scene — two silhouettes at the edges, a soccer
-            ball that arcs between them as the user scrolls. Capped at
-            640px wide so the ball doesn't fly across ultra-wide screens.
-            Rendered as a flow child so the hero text stays cleanly below
-            it on short viewports. */}
-        <div className="relative w-full max-w-[640px] mx-auto h-28 sm:h-36 mb-6 sm:mb-10 pointer-events-none">
-          <PlayerSilhouette
-            ref={leftPlayerRef}
-            className="absolute top-3 left-3 sm:left-6 w-14 sm:w-[88px] h-auto"
-          />
-          <PlayerSilhouette
-            ref={rightPlayerRef}
-            className="absolute top-3 right-3 sm:right-6 w-14 sm:w-[88px] h-auto"
-          />
-          <div
-            ref={ballRef}
-            className="absolute top-4 sm:top-6 left-1/2 w-12 h-12 sm:w-16 sm:h-16 will-change-transform drop-shadow-md"
-            style={{ transform: 'translate(-50%, 0)' }}
-          >
-            <SoccerBall />
-          </div>
-        </div>
-
         <div className="relative text-center max-w-3xl mx-auto animate-slide-up">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-1.5 text-amber-700 text-xs font-semibold uppercase tracking-wider mb-8">
@@ -220,6 +198,67 @@ export default function Landing() {
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-25 pointer-events-none">
           <div className="w-px h-10 bg-gradient-to-b from-transparent to-stone-500" />
           <span className="text-[10px] uppercase tracking-widest text-stone-500">{t('landing.scrollHint')}</span>
+        </div>
+      </section>
+
+      {/* ── Scroll animation ─────────────────────────────────── */}
+      {/* Outer section creates 250vh of scroll "real estate". The sticky
+          inner pins itself to the viewport for that full range so the
+          ball-and-players animation plays while the user scrolls through. */}
+      <section
+        ref={sectionRef}
+        className="relative"
+        style={{ height: '250vh' }}
+        aria-hidden="true"
+      >
+        <div
+          className="sticky overflow-hidden bg-stone-50"
+          style={{
+            top:    'calc(56px + env(safe-area-inset-top))',
+            height: 'calc(100dvh - 56px - env(safe-area-inset-top))',
+          }}
+        >
+          {/* Dot grid */}
+          <div
+            className="absolute inset-0 opacity-40 pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle, #d6d3d1 1px, transparent 1px)',
+              backgroundSize: '28px 28px',
+            }}
+          />
+          {/* Warm glow at bottom center — stadium atmosphere */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[260px] bg-amber-100/70 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Label */}
+          <div className="absolute top-6 inset-x-0 flex justify-center pointer-events-none select-none">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.28em] text-stone-300">
+              FIFA World Cup 2026
+            </span>
+          </div>
+
+          {/* Left player — slides in from the left edge */}
+          <PlayerSilhouette
+            ref={leftPlayerRef}
+            className="absolute bottom-0 left-0 w-32 sm:w-44 lg:w-56"
+          />
+
+          {/* Right player — slides in from the right edge */}
+          <PlayerSilhouette
+            ref={rightPlayerRef}
+            className="absolute bottom-0 right-0 w-32 sm:w-44 lg:w-56"
+          />
+
+          {/* Ball — arcs from left player to right player */}
+          <div
+            ref={ballRef}
+            className="absolute left-1/2 w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 will-change-transform drop-shadow-2xl"
+            style={{ bottom: '20%', transform: 'translate(-50%, 0)', opacity: 0 }}
+          >
+            <SoccerBall className="w-full h-full" />
+          </div>
+
+          {/* Bottom fade into next section */}
+          <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-stone-50 to-transparent pointer-events-none" />
         </div>
       </section>
 
