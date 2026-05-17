@@ -249,6 +249,7 @@ export default {
     fillConsensusEmpty: 'Aún no hay consenso disponible para los partidos vacíos.',
     fillConsensusFilling: 'Rellenando…',
     fillConsensusDone: '✓ {{n}} pronóstico{{s}} rellenado{{s}} con consenso',
+    fillConsensusPartial: '⚠ {{ok}} rellenados · {{fail}} fallaron · reintenta',
     submitted: 'Pronóstico enviado',
     submittedDesc: '{{n}} partidos · No modificable',
     confirmTitle: '¿Enviar pronóstico?',
@@ -614,6 +615,7 @@ export default {
     errorShare: 'No se pudo compartir.',
     shared: '✓ Compartido',
     open: 'Compartir',
+    fallbackUser: 'jugador',
   },
 
   digest: {

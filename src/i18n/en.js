@@ -249,6 +249,7 @@ export default {
     fillConsensusEmpty: 'No consensus data available for empty matches yet.',
     fillConsensusFilling: 'Filling…',
     fillConsensusDone: '✓ {{n}} prediction{{s}} filled from consensus',
+    fillConsensusPartial: '⚠ {{ok}} filled · {{fail}} failed · retry',
     submitted: 'Prediction submitted',
     submittedDesc: '{{n}} matches · Cannot be changed',
     confirmTitle: 'Submit prediction?',
@@ -614,6 +615,7 @@ export default {
     errorShare: 'Could not share.',
     shared: '✓ Shared',
     open: 'Share',
+    fallbackUser: 'player',
   },
 
   digest: {

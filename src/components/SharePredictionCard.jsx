@@ -23,7 +23,7 @@ function loadImage(url) {
   })
 }
 
-async function drawCard(ctx, { match, prediction, username, t }) {
+async function drawCard(ctx, { match, prediction, username, t, dateLocale }) {
   // ── Background gradient ───────────────────────────────────────────────
   const grad = ctx.createLinearGradient(0, 0, CARD_W, CARD_H)
   grad.addColorStop(0, '#0c0a09')
@@ -134,7 +134,7 @@ async function drawCard(ctx, { match, prediction, username, t }) {
   } else {
     ctx.fillStyle = '#a8a29e'
     ctx.font = '500 30px Inter, system-ui, sans-serif'
-    const dateStr = new Date(match.match_date).toLocaleDateString('es-ES', {
+    const dateStr = new Date(match.match_date).toLocaleDateString(dateLocale, {
       day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
     })
     ctx.fillText(dateStr, CARD_W / 2, 870)
@@ -158,7 +158,7 @@ function roundedRect(ctx, x, y, w, h, r) {
 
 export default function SharePredictionCard({ match, prediction, username, onClose }) {
   useScrollLock()
-  const { t } = useLang()
+  const { t, dateLocale } = useLang()
   const canvasRef = useRef(null)
   const [building, setBuilding] = useState(true)
   const [imgUrl,   setImgUrl]   = useState(null)
@@ -172,7 +172,7 @@ export default function SharePredictionCard({ match, prediction, username, onClo
       if (!canvas) return
       const ctx = canvas.getContext('2d')
       try {
-        await drawCard(ctx, { match, prediction, username, t })
+        await drawCard(ctx, { match, prediction, username, t, dateLocale })
         if (cancelled) return
         const url = canvas.toDataURL('image/png')
         setImgUrl(url)
@@ -183,7 +183,12 @@ export default function SharePredictionCard({ match, prediction, username, onClo
       }
     })()
     return () => { cancelled = true }
-  }, [match, prediction, username, t])
+  // Intentionally exclude `t` from deps: it changes identity only on
+  // language switch, and a re-draw mid-share would replace the canvas
+  // image with one in the new locale anyway. Pinning to the data inputs
+  // avoids accidental re-renders.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [match, prediction, username, dateLocale])
 
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape') onClose() }
@@ -232,9 +237,13 @@ export default function SharePredictionCard({ match, prediction, username, onClo
 
   function handleDownload() {
     if (!imgUrl) return
+    // Strip accents/punctuation/anything non-alphanumeric so the filename
+    // is portable across OSes. "Türkiye" → "T-rkiye", "Côte d'Ivoire" →
+    // "C-te-d-Ivoire" — ugly but always safe.
+    const safe = (s) => String(s ?? '').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')
     const a = document.createElement('a')
     a.href = imgUrl
-    a.download = `porra-${match.home_team}-${match.away_team}.png`.replace(/\s+/g, '-')
+    a.download = `porra-${safe(match.home_team)}-${safe(match.away_team)}.png`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

@@ -158,6 +158,38 @@ function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints,
   return { subject, html }
 }
 
+// ─── Paginación helpers ───────────────────────────────────────────────────────
+// listUsers admin API y los selects de PostgREST tienen un tope implícito
+// (1000 filas). Más allá de eso perderíamos silenciosamente usuarios y
+// posiciones de clasificación. Estos wrappers iteran páginas hasta agotar
+// la fuente, con un techo defensivo para evitar bucles infinitos.
+
+async function listAllAuthUsers(supabase) {
+  const PAGE_SIZE = 1000
+  const all = []
+  for (let page = 1; page <= 50; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: PAGE_SIZE })
+    if (error) throw error
+    all.push(...data.users)
+    if (data.users.length < PAGE_SIZE) return all
+  }
+  throw new Error('listAllAuthUsers paged past 50 pages — aborting')
+}
+
+async function fetchAllPages(supabase, build) {
+  const PAGE_SIZE = 1000
+  const all = []
+  for (let page = 0; page < 50; page++) {
+    const from = page * PAGE_SIZE
+    const to   = from + PAGE_SIZE - 1
+    const { data, error } = await build(supabase).range(from, to)
+    if (error) throw error
+    all.push(...(data ?? []))
+    if (!data || data.length < PAGE_SIZE) return all
+  }
+  throw new Error('fetchAllPages paged past 50 pages — aborting')
+}
+
 // ─── Envío via Brevo ──────────────────────────────────────────────────────────
 
 async function sendEmail(to, subject, html) {
@@ -206,16 +238,19 @@ async function main() {
   const tEnd   = new Date(tStart.getTime() + 86400_000)
 
   // ── Datos compartidos por todos los emails ─────────────────────────────
+  // Las consultas que pueden devolver >1000 filas usan los wrappers
+  // paginados (listAllAuthUsers, fetchAllPages). Los matches del día
+  // nunca pasan de unas decenas, así que esos sí van directos.
   const [
-    { data: { users: authUsers }, error: usersErr },
-    { data: optInProfiles },
+    authUsers,
+    optInProfiles,
     { data: yesterdayMatches },
     { data: todayMatches },
     { data: alreadySent },
-    { data: standings },
+    standings,
   ] = await Promise.all([
-    supabase.auth.admin.listUsers({ perPage: 1000 }),
-    supabase.from('profiles').select('id, username').eq('email_reminders', true),
+    listAllAuthUsers(supabase),
+    fetchAllPages(supabase, s => s.from('profiles').select('id, username').eq('email_reminders', true)),
     supabase.from('matches')
       .select('id, home_team, away_team, home_score, away_score, status, match_date, stage')
       .eq('status', 'finished')
@@ -228,17 +263,13 @@ async function main() {
       .lt('match_date',  tEnd.toISOString())
       .order('match_date'),
     supabase.from('daily_digests').select('user_id').eq('digest_date', todayKey),
-    supabase.from('profiles')
-      .select('id, total_points')
-      .order('total_points', { ascending: false }),
+    fetchAllPages(supabase, s => s.from('profiles').select('id, total_points').order('total_points', { ascending: false })),
   ])
-
-  if (usersErr) throw usersErr
 
   const emailByUserId  = new Map(authUsers.map(u => [u.id, u.email]))
   const alreadySentIds = new Set((alreadySent ?? []).map(r => r.user_id))
-  const totalUsers     = (standings ?? []).length
-  const positionById   = new Map((standings ?? []).map((p, i) => [p.id, i + 1]))
+  const totalUsers     = standings.length
+  const positionById   = new Map(standings.map((p, i) => [p.id, i + 1]))
 
   // Si ayer no hubo partidos y hoy tampoco, no es interesante enviar nada.
   if ((yesterdayMatches ?? []).length === 0 && (todayMatches ?? []).length === 0) {
@@ -246,17 +277,17 @@ async function main() {
     return
   }
 
-  // ── Predicciones globales de ayer (un solo query) ──────────────────────
+  // ── Predicciones globales de ayer (paginadas) ──────────────────────────
   const yMatchIds = (yesterdayMatches ?? []).map(m => m.id)
-  let predsByUser = new Map()
+  const predsByUser = new Map()
   if (yMatchIds.length > 0) {
-    const { data: yPreds } = await supabase
-      .from('predictions')
-      .select('user_id, match_id, home_score, away_score, points_earned, league_id')
-      .in('match_id', yMatchIds)
-      .is('league_id', null)  // resumen global, no per-liga, para mantener un email por usuario
-
-    for (const p of (yPreds ?? [])) {
+    const yPreds = await fetchAllPages(supabase, s =>
+      s.from('predictions')
+        .select('user_id, match_id, home_score, away_score, points_earned, league_id')
+        .in('match_id', yMatchIds)
+        .is('league_id', null)  // resumen global, no per-liga
+    )
+    for (const p of yPreds) {
       if (!predsByUser.has(p.user_id)) predsByUser.set(p.user_id, new Map())
       predsByUser.get(p.user_id).set(p.match_id, p)
     }
@@ -267,7 +298,7 @@ async function main() {
   let skipped = 0
   let errored = 0
 
-  for (const profile of (optInProfiles ?? [])) {
+  for (const profile of optInProfiles) {
     if (alreadySentIds.has(profile.id)) { skipped++; continue }
     const email = emailByUserId.get(profile.id)
     if (!email) { skipped++; continue }
