@@ -6,6 +6,7 @@ import { useLang } from '../contexts/LangContext'
 import { Flag, teamName } from '../utils/teams'
 import useScrollLock from '../lib/useScrollLock'
 import Spinner from './Spinner'
+import SharePredictionCard from './SharePredictionCard'
 
 function formatDateTime(date, locale) {
   return new Date(date).toLocaleString(locale, {
@@ -20,11 +21,12 @@ function scoreLine(p) {
 
 export default function MatchPreviewModal({ match, userPrediction, league, onClose }) {
   useScrollLock()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { t, dateLocale } = useLang()
   const [members, setMembers] = useState(null)
   const [predictions, setPredictions] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showShare, setShowShare] = useState(false)
 
   const matchStart = new Date(match.match_date).getTime()
   const hasStarted = Date.now() >= matchStart
@@ -195,6 +197,17 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
                   </div>
                 )}
               </div>
+              {/* Share-card button: visible once the match has started so the
+                  user has something interesting to brag about (or commiserate
+                  with) before / after the result lands. */}
+              {hasStarted && (
+                <button
+                  onClick={() => setShowShare(true)}
+                  className="mt-3 w-full text-sm font-semibold flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 active:bg-stone-100 text-stone-700 transition-colors"
+                >
+                  <span>📤</span>{t('share.open')}
+                </button>
+              )}
             </div>
           ) : (
             <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3 text-center">
@@ -246,6 +259,14 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
           )}
         </div>
       </div>
+      {showShare && userPrediction && (
+        <SharePredictionCard
+          match={match}
+          prediction={userPrediction}
+          username={profile?.username ?? 'jugador'}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </div>,
     document.body
   )

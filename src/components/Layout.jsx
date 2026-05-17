@@ -7,6 +7,7 @@ import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
 import haptics from '../lib/haptics'
 import { PullRefreshContext } from '../lib/usePullRefresh'
+import { ViewNavLink } from '../lib/viewTransition'
 import LeagueSwitcher from './LeagueSwitcher'
 import LangToggle from './LangToggle'
 import PaymentModal from './PaymentModal'
@@ -324,7 +325,7 @@ export default function Layout() {
         <div className="hidden sm:block max-w-5xl mx-auto px-3 sm:px-4">
           <nav className="flex gap-1">
             {NAV.map(({ to, label, icon }) => (
-              <NavLink
+              <ViewNavLink
                 key={to}
                 to={to}
                 className={({ isActive }) =>
@@ -335,7 +336,7 @@ export default function Layout() {
               >
                 <span>{icon}</span>
                 <span>{label}</span>
-              </NavLink>
+              </ViewNavLink>
             ))}
           </nav>
         </div>
@@ -453,7 +454,7 @@ export default function Layout() {
               {idx > 0 && MOBILE_MORE[idx - 1].to === '/admin-liga' && (
                 <div className="mx-3 border-t border-stone-100" />
               )}
-              <NavLink
+              <ViewNavLink
                 to={to}
                 onClick={() => { haptics.tap(); setShowMoreMenu(false) }}
                 className={({ isActive }) =>
@@ -464,7 +465,7 @@ export default function Layout() {
               >
                 <span className="text-lg flex-shrink-0">{icon}</span>
                 <span>{label}</span>
-              </NavLink>
+              </ViewNavLink>
             </div>
           ))}
         </div>
@@ -477,7 +478,7 @@ export default function Layout() {
       >
         <div className="grid grid-cols-5">
           {MOBILE_PRIMARY.map(({ to, short, icon }) => (
-            <NavLink
+            <ViewNavLink
               key={to}
               to={to}
               onClick={() => { if (location.pathname !== to) haptics.tap() }}
@@ -495,7 +496,7 @@ export default function Layout() {
                   <span className="leading-none truncate max-w-full px-1">{short}</span>
                 </>
               )}
-            </NavLink>
+            </ViewNavLink>
           ))}
 
           {/* Botón "Más" */}

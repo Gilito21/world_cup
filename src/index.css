@@ -107,3 +107,29 @@
     .pb-mobile-nav { padding-bottom: 0; }
   }
 }
+
+/* ── View Transitions API ──────────────────────────────────────────────
+   Cuando el navegador soporta document.startViewTransition (Chrome 111+,
+   Safari 18+), las transiciones entre rutas se animan con un crossfade
+   suave en lugar del corte brusco por defecto. Los navegadores antiguos
+   ignoran estas reglas. La duración es corta a propósito (180 ms) para no
+   añadir latencia percibida en navegación. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 180ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  ::view-transition-old(root) {
+    animation-name: vt-fade-out;
+  }
+  ::view-transition-new(root) {
+    animation-name: vt-fade-in;
+  }
+}
+@keyframes vt-fade-out {
+  to { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes vt-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
