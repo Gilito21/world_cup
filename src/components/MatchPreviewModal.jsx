@@ -124,10 +124,10 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-stone-900/60 backdrop-blur-md animate-fade-in px-3 sm:px-4 sm:py-8"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-900/60 backdrop-blur-md animate-fade-in px-3 py-4 sm:px-4 sm:py-8 pt-safe pb-safe"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[85dvh] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
+      <div className="bg-white rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 p-5 text-white">
           <button

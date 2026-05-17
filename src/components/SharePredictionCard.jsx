@@ -242,10 +242,10 @@ export default function SharePredictionCard({ match, prediction, username, onClo
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-stone-900/70 backdrop-blur-md animate-fade-in px-3 sm:px-4 sm:py-8"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-stone-900/70 backdrop-blur-md animate-fade-in px-3 py-4 sm:px-4 sm:py-8 pt-safe pb-safe"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up max-h-[90dvh] flex flex-col">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
         <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
           <p className="text-base font-bold text-stone-900">{t('share.title')}</p>
           <button

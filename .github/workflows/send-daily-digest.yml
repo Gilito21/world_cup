@@ -1,0 +1,33 @@
+name: Resumen diario Mundial
+
+# Lanzado cada día a las 06:00 UTC (~08:00 hora peninsular española
+# durante el Mundial 2026, que cae en CEST). El script comprueba la
+# ventana del torneo internamente y hace early-return si no estamos
+# dentro, así que el cron puede quedarse activo todo el año sin gastar
+# llamadas a Brevo. Idempotente vía tabla daily_digests.
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: node scripts/send-daily-digest.js
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BREVO_API_KEY:             ${{ secrets.BREVO_API_KEY }}
+          APP_URL:                   ${{ secrets.APP_URL }}
+          FROM_EMAIL:                ${{ secrets.FROM_EMAIL }}
+          FROM_NAME:                 ${{ secrets.FROM_NAME }}
