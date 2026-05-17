@@ -961,13 +961,13 @@ export default function Pronosticos() {
   // AND no draft, drops the most-popular score in, and persists in parallel.
   // Knockout draws are skipped (no consensus tiebreaker → would require an
   // extra user decision; better to leave those for manual fill).
-  const [fillStatus, setFillStatus] = useState({ state: 'idle', count: 0 })
+  const [fillStatus, setFillStatus] = useState({ state: 'idle', count: 0, failed: 0 })
+  const fillTimerRef = useRef(null)
   const fillFromConsensus = useCallback(async () => {
     if (fillStatus.state === 'running') return
     if (isSubmitted) return
     if (cutoffTime && Date.now() >= cutoffTime) return
     setError('')
-    setFillStatus({ state: 'running', count: 0 })
 
     const targets = matches.filter(m => {
       if (m.status !== 'scheduled') return false
@@ -982,39 +982,40 @@ export default function Pronosticos() {
       return true
     })
 
+    clearTimeout(fillTimerRef.current)
+
     if (targets.length === 0) {
-      setFillStatus({ state: 'empty', count: 0 })
-      setTimeout(() => setFillStatus({ state: 'idle', count: 0 }), 2500)
+      setFillStatus({ state: 'empty', count: 0, failed: 0 })
+      fillTimerRef.current = setTimeout(() => setFillStatus({ state: 'idle', count: 0, failed: 0 }), 2500)
       return
     }
 
-    // Optimistic local update first — UI shows the values immediately,
-    // then we flush every save in parallel. handleSave already updates
-    // drafts/predictions on success, so we don't need to redo it here.
-    setDrafts(prev => {
-      const next = { ...prev }
-      for (const m of targets) {
-        const c = consensus[m.id]
-        next[m.id] = {
-          ...(next[m.id] ?? {}),
-          home: String(c.home_score),
-          away: String(c.away_score),
-        }
-      }
-      return next
-    })
+    setFillStatus({ state: 'running', count: 0, failed: 0 })
 
+    // Important: do NOT set drafts optimistically here. Each MatchCard has
+    // its own debounced auto-save effect (700 ms after a draft mutation).
+    // Pre-filling drafts and then firing handleSave in parallel would race
+    // both code paths against the same prediction row. handleSave already
+    // updates drafts AND predictions atomically on success, so the cards
+    // re-render with the new values once the server confirms — at the cost
+    // of a brief 200-500 ms perceived delay, which is acceptable for a
+    // bulk action.
     const results = await Promise.all(
       targets.map(m => {
         const c = consensus[m.id]
         return handleSave(m.id, c.home_score, c.away_score, null)
       })
     )
-    const ok = results.filter(r => r).length
+    const ok     = results.filter(r => r).length
+    const failed = results.length - ok
     haptics.medium()
-    setFillStatus({ state: 'done', count: ok })
-    setTimeout(() => setFillStatus({ state: 'idle', count: 0 }), 3500)
+    setFillStatus({ state: 'done', count: ok, failed })
+    fillTimerRef.current = setTimeout(() => setFillStatus({ state: 'idle', count: 0, failed: 0 }), 3500)
   }, [matches, drafts, consensus, fillStatus.state, isSubmitted, cutoffTime, handleSave])
+
+  // Cancel any pending status-reset timer on unmount so it doesn't fire
+  // after the component is gone (and to avoid stale state warnings).
+  useEffect(() => () => clearTimeout(fillTimerRef.current), [])
 
   // ── Final submission ─────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
@@ -1285,14 +1286,19 @@ export default function Pronosticos() {
               <div className="card p-3 bg-amber-50/40 border-amber-200/60 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-semibold text-stone-800">
-                    {fillStatus.state === 'done'
-                      ? t('pronosticos.fillConsensusDone', {
-                          n: fillStatus.count,
-                          s: fillStatus.count !== 1 ? 's' : '',
+                    {fillStatus.state === 'done' && fillStatus.failed > 0
+                      ? t('pronosticos.fillConsensusPartial', {
+                          ok:   fillStatus.count,
+                          fail: fillStatus.failed,
                         })
-                      : fillStatus.state === 'empty'
-                        ? t('pronosticos.fillConsensusEmpty')
-                        : t('pronosticos.fillConsensusBtn')}
+                      : fillStatus.state === 'done'
+                        ? t('pronosticos.fillConsensusDone', {
+                            n: fillStatus.count,
+                            s: fillStatus.count !== 1 ? 's' : '',
+                          })
+                        : fillStatus.state === 'empty'
+                          ? t('pronosticos.fillConsensusEmpty')
+                          : t('pronosticos.fillConsensusBtn')}
                   </p>
                   {fillStatus.state === 'idle' && (
                     <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">

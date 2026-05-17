@@ -40,9 +40,14 @@ SET search_path = public, pg_catalog
 AS $$
 BEGIN
   -- Comprueba que el usuario que llama pertenece a la liga.
+  -- IMPORTANTE: la función declara `user_id UUID` en RETURNS TABLE, lo
+  -- que crea una variable PL/pgSQL implícita con ese nombre. Si
+  -- referenciamos `user_id` sin calificar dentro del cuerpo, PostgreSQL
+  -- no sabe si nos referimos a la variable de salida o a la columna y
+  -- aborta con 42702 al ejecutar. Por eso calificamos con `lm.user_id`.
   IF NOT EXISTS (
-    SELECT 1 FROM public.league_members
-    WHERE league_id = p_league_id AND user_id = auth.uid()
+    SELECT 1 FROM public.league_members lm
+    WHERE lm.league_id = p_league_id AND lm.user_id = auth.uid()
   ) THEN
     RAISE EXCEPTION 'not_a_member';
   END IF;
@@ -87,7 +92,11 @@ BEGIN
       pr.user_id,
       m.username,
       m.avatar_url,
-      mt.updated_at           AS event_time,
+      -- Anclamos el evento al kickoff (mt.match_date) en lugar de a
+      -- mt.updated_at: una corrección posterior del marcador no debe
+      -- empujar todos los aciertos del partido al top del feed como si
+      -- acabaran de ocurrir. match_date es fijo desde la siembra.
+      mt.match_date           AS event_time,
       jsonb_build_object(
         'match_id',    mt.id,
         'home_team',   mt.home_team,
@@ -105,7 +114,7 @@ BEGIN
     WHERE
       pr.points_earned > 0
       AND mt.status = 'finished'
-      AND mt.updated_at > NOW() - INTERVAL '14 days'
+      AND mt.match_date > NOW() - INTERVAL '14 days'
       AND (
         (m.prediction_mode = 'per_league' AND pr.league_id = p_league_id)
         OR (m.prediction_mode <> 'per_league' AND pr.league_id IS NULL)
@@ -174,6 +183,8 @@ BEGIN
   INTO v_global_top
   FROM public.predictions pr
   WHERE pr.match_id = p_match_id
+    AND pr.home_score IS NOT NULL
+    AND pr.away_score IS NOT NULL
   GROUP BY pr.home_score, pr.away_score
   ORDER BY COUNT(*) DESC, pr.home_score, pr.away_score
   LIMIT 1;
@@ -181,9 +192,11 @@ BEGIN
   -- ─ Métricas de liga (si se pidió) ────────────────────────────────────
   IF p_league_id IS NOT NULL THEN
     -- Comprueba pertenencia para no filtrar info de otras ligas.
+    -- Calificamos con alias por consistencia con league_feed_v1 (donde
+    -- el alias es obligatorio por colisión con RETURNS TABLE).
     IF NOT EXISTS (
-      SELECT 1 FROM public.league_members
-      WHERE league_id = p_league_id AND user_id = auth.uid()
+      SELECT 1 FROM public.league_members lm
+      WHERE lm.league_id = p_league_id AND lm.user_id = auth.uid()
     ) THEN
       RAISE EXCEPTION 'not_a_member';
     END IF;
@@ -214,6 +227,8 @@ BEGIN
       JOIN public.league_members lm ON lm.user_id = pr.user_id
       WHERE pr.match_id = p_match_id
         AND lm.league_id = p_league_id
+        AND pr.home_score IS NOT NULL
+        AND pr.away_score IS NOT NULL
         AND (
           (lm.prediction_mode = 'per_league' AND pr.league_id = p_league_id)
           OR (COALESCE(lm.prediction_mode,'global') <> 'per_league' AND pr.league_id IS NULL)

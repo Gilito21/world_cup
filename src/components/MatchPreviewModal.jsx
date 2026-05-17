@@ -263,7 +263,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
         <SharePredictionCard
           match={match}
           prediction={userPrediction}
-          username={profile?.username ?? 'jugador'}
+          username={profile?.username ?? t('share.fallbackUser')}
           onClose={() => setShowShare(false)}
         />
       )}
