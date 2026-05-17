@@ -956,6 +956,66 @@ export default function Pronosticos() {
     }
   }, [user.id, activeLeague, leagues, predictionMode, t])
 
+  // ── Bulk fill empty drafts from the global consensus ───────────────────────
+  // Quality-of-life: scrolls through every match without a saved prediction
+  // AND no draft, drops the most-popular score in, and persists in parallel.
+  // Knockout draws are skipped (no consensus tiebreaker → would require an
+  // extra user decision; better to leave those for manual fill).
+  const [fillStatus, setFillStatus] = useState({ state: 'idle', count: 0 })
+  const fillFromConsensus = useCallback(async () => {
+    if (fillStatus.state === 'running') return
+    if (isSubmitted) return
+    if (cutoffTime && Date.now() >= cutoffTime) return
+    setError('')
+    setFillStatus({ state: 'running', count: 0 })
+
+    const targets = matches.filter(m => {
+      if (m.status !== 'scheduled') return false
+      if (Date.now() >= new Date(m.match_date).getTime() - 30 * 60 * 1000) return false
+      const d = drafts[m.id]
+      if (d && d.home !== '' && d.away !== '') return false  // already filled
+      const c = consensus[m.id]
+      if (!c) return false
+      // Skip knockout matches where consensus is a draw — those need a
+      // tiebreaker the user has to pick manually.
+      if (m.stage !== 'group' && Number(c.home_score) === Number(c.away_score)) return false
+      return true
+    })
+
+    if (targets.length === 0) {
+      setFillStatus({ state: 'empty', count: 0 })
+      setTimeout(() => setFillStatus({ state: 'idle', count: 0 }), 2500)
+      return
+    }
+
+    // Optimistic local update first — UI shows the values immediately,
+    // then we flush every save in parallel. handleSave already updates
+    // drafts/predictions on success, so we don't need to redo it here.
+    setDrafts(prev => {
+      const next = { ...prev }
+      for (const m of targets) {
+        const c = consensus[m.id]
+        next[m.id] = {
+          ...(next[m.id] ?? {}),
+          home: String(c.home_score),
+          away: String(c.away_score),
+        }
+      }
+      return next
+    })
+
+    const results = await Promise.all(
+      targets.map(m => {
+        const c = consensus[m.id]
+        return handleSave(m.id, c.home_score, c.away_score, null)
+      })
+    )
+    const ok = results.filter(r => r).length
+    haptics.medium()
+    setFillStatus({ state: 'done', count: ok })
+    setTimeout(() => setFillStatus({ state: 'idle', count: 0 }), 3500)
+  }, [matches, drafts, consensus, fillStatus.state, isSubmitted, cutoffTime, handleSave])
+
   // ── Final submission ─────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
     setSubmitting(true)
@@ -1217,6 +1277,42 @@ export default function Pronosticos() {
                 </span>
               )}
             </div>
+
+            {/* Bulk-fill from consensus — only shown while the user can still
+                edit, has at least one empty match, and we have consensus data
+                cached. Saves people from tapping +/− 60+ times. */}
+            {!isSubmitted && !isPastCutoff && Object.keys(consensus).length > 0 && filledCount < totalCount && (
+              <div className="card p-3 bg-amber-50/40 border-amber-200/60 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-stone-800">
+                    {fillStatus.state === 'done'
+                      ? t('pronosticos.fillConsensusDone', {
+                          n: fillStatus.count,
+                          s: fillStatus.count !== 1 ? 's' : '',
+                        })
+                      : fillStatus.state === 'empty'
+                        ? t('pronosticos.fillConsensusEmpty')
+                        : t('pronosticos.fillConsensusBtn')}
+                  </p>
+                  {fillStatus.state === 'idle' && (
+                    <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
+                      {t('pronosticos.fillConsensusHint')}
+                    </p>
+                  )}
+                </div>
+                {fillStatus.state !== 'done' && fillStatus.state !== 'empty' && (
+                  <button
+                    onClick={fillFromConsensus}
+                    disabled={fillStatus.state === 'running'}
+                    className="btn-secondary text-sm py-2 px-4 flex-shrink-0 flex items-center justify-center gap-1.5"
+                  >
+                    {fillStatus.state === 'running'
+                      ? <><Spinner size="sm" />{t('pronosticos.fillConsensusFilling')}</>
+                      : t('pronosticos.fillConsensusBtn')}
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Match cards by day */}
             {Object.entries(grouped).map(([day, dayMatches]) => (

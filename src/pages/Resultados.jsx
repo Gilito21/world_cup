@@ -8,6 +8,7 @@ import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 import { MatchListSkeleton } from '../components/Skeleton'
+import MatchPostmortem from '../components/MatchPostmortem'
 
 function formatDate(dateStr, locale) {
   return new Date(dateStr).toLocaleDateString(locale, {
@@ -194,13 +195,16 @@ function FinishedMatchCard({ match, myPrediction, league }) {
 
       {/* Panel expandido: pronósticos de todos */}
       {expanded && (
-        <div className="border-t border-stone-200 bg-stone-50 px-4 pb-4 pt-3">
+        <div className="border-t border-stone-200 bg-stone-50 px-4 pb-4 pt-3 space-y-3">
+          {/* Post-mortem: comparativa liga vs mundo, una llamada RPC */}
+          <MatchPostmortem matchId={match.id} leagueId={league?.id ?? null} />
+
           {loadingPreds ? (
             <div className="flex justify-center py-4"><Spinner /></div>
           ) : allPreds && allPreds.length > 0 ? (
             <>
               {/* Resumen rápido */}
-              <div className="flex gap-3 mb-3 text-xs text-stone-500">
+              <div className="flex gap-3 text-xs text-stone-500">
                 <span>{t('resultados.quickTotal', { n: stats.total })}</span>
                 <span className="text-amber-400">{t('resultados.quickExact', { n: stats.exact })}</span>
                 <span className="text-blue-400">{t('resultados.quickCorrect', { n: stats.correct })}</span>
@@ -216,7 +220,7 @@ function FinishedMatchCard({ match, myPrediction, league }) {
                     realAway={match.away_score}
                   />
                 ))}
-              </div>
+            </div>
             </>
           ) : (
             <p className="text-stone-500 text-sm text-center py-3 italic">
@@ -298,6 +302,19 @@ export default function Resultados() {
 
   // Pull-to-refresh: bypass the in-memory match/pred caches.
   usePullRefresh(useCallback(() => load({ force: true }), [load]))
+
+  // Realtime: when any match resolves or its score changes, refresh quietly
+  // in the background so the page reflects new finished matches without
+  // requiring the user to pull-to-refresh.
+  useEffect(() => {
+    const channel = supabase
+      .channel('resultados-matches')
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'matches' },
+        () => load({ force: true }))
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [load])
 
   const stats = matches.reduce(
     (acc, m) => {

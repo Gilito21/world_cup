@@ -9,6 +9,7 @@
     "seed-matches": "node scripts/seed-matches.js",
     "update-results": "node scripts/update-results.js",
     "send-reminders": "node scripts/send-reminders.js",
+    "send-daily-digest": "node scripts/send-daily-digest.js",
     "generate-icons": "node scripts/generate-pwa-icons.js"
   },
   "dependencies": {

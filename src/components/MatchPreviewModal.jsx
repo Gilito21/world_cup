@@ -6,6 +6,7 @@ import { useLang } from '../contexts/LangContext'
 import { Flag, teamName } from '../utils/teams'
 import useScrollLock from '../lib/useScrollLock'
 import Spinner from './Spinner'
+import SharePredictionCard from './SharePredictionCard'
 
 function formatDateTime(date, locale) {
   return new Date(date).toLocaleString(locale, {
@@ -20,11 +21,12 @@ function scoreLine(p) {
 
 export default function MatchPreviewModal({ match, userPrediction, league, onClose }) {
   useScrollLock()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { t, dateLocale } = useLang()
   const [members, setMembers] = useState(null)
   const [predictions, setPredictions] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showShare, setShowShare] = useState(false)
 
   const matchStart = new Date(match.match_date).getTime()
   const hasStarted = Date.now() >= matchStart
@@ -122,10 +124,10 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-stone-900/60 backdrop-blur-md animate-fade-in px-3 sm:px-4 sm:py-8"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-900/60 backdrop-blur-md animate-fade-in px-3 py-4 sm:px-4 sm:py-8 pt-safe pb-safe"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[85dvh] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
+      <div className="bg-white rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 p-5 text-white">
           <button
@@ -195,6 +197,17 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
                   </div>
                 )}
               </div>
+              {/* Share-card button: visible once the match has started so the
+                  user has something interesting to brag about (or commiserate
+                  with) before / after the result lands. */}
+              {hasStarted && (
+                <button
+                  onClick={() => setShowShare(true)}
+                  className="mt-3 w-full text-sm font-semibold flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 active:bg-stone-100 text-stone-700 transition-colors"
+                >
+                  <span>📤</span>{t('share.open')}
+                </button>
+              )}
             </div>
           ) : (
             <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3 text-center">
@@ -246,6 +259,14 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
           )}
         </div>
       </div>
+      {showShare && userPrediction && (
+        <SharePredictionCard
+          match={match}
+          prediction={userPrediction}
+          username={profile?.username ?? 'jugador'}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </div>,
     document.body
   )

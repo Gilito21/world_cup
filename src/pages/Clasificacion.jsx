@@ -7,6 +7,7 @@ import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
 import usePullRefresh from '../lib/usePullRefresh'
 import LeagueModal from '../components/LeagueModal'
+import LeagueFeed from '../components/LeagueFeed'
 import Spinner from '../components/Spinner'
 import { StandingsSkeleton } from '../components/Skeleton'
 
@@ -197,6 +198,29 @@ export default function Clasificacion() {
     return loadCompanies()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, activeLeague?.id]))
+
+  // Realtime: refresh the current tab when match scores change (drives the
+  // points trigger) or when a prediction is upserted (immediately visible
+  // to other members of the same league). One subscription per tab keeps
+  // things simple — when the tab changes the channel is recreated.
+  useEffect(() => {
+    function reloadCurrent() {
+      if (tab === 'global')   return loadGlobal()
+      if (tab === 'league')   return loadLeague()
+      return loadCompanies()
+    }
+    const channel = supabase
+      .channel(`clasificacion-${tab}-${activeLeague?.id ?? 'none'}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'matches' },
+        reloadCurrent)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'predictions' },
+        reloadCurrent)
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, activeLeague?.id])
 
   // ── Global ───────────────────────────────────────────────────────────────
 
@@ -568,6 +592,7 @@ export default function Clasificacion() {
                     {t('clasificacion.nParticipantsLeague', { name: activeLeague?.name, n: leagueStandings.length, s: leagueStandings.length !== 1 ? 's' : '' })}
                   </p>
                   <IndividualTable standings={leagueStandings} showStats />
+                  {activeLeague && <LeagueFeed leagueId={activeLeague.id} />}
                   <p className="text-center text-stone-400 text-xs">
                     {t('clasificacion.leaguePointsNote')}
                   </p>
