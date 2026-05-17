@@ -250,7 +250,12 @@ async function main() {
     standings,
   ] = await Promise.all([
     listAllAuthUsers(supabase),
-    fetchAllPages(supabase, s => s.from('profiles').select('id, username').eq('email_reminders', true)),
+    // Solo opt-in que además han confirmado su email: evita mandar digests
+    // a emails fake/typo que nunca verificaron.
+    fetchAllPages(supabase, s => s.from('profiles')
+      .select('id, username')
+      .eq('email_reminders', true)
+      .eq('email_confirmed', true)),
     supabase.from('matches')
       .select('id, home_team, away_team, home_score, away_score, status, match_date, stage')
       .eq('status', 'finished')
@@ -263,7 +268,12 @@ async function main() {
       .lt('match_date',  tEnd.toISOString())
       .order('match_date'),
     supabase.from('daily_digests').select('user_id').eq('digest_date', todayKey),
-    fetchAllPages(supabase, s => s.from('profiles').select('id, total_points').order('total_points', { ascending: false })),
+    // Misma regla: el ranking que mostramos en el email es el de usuarios
+    // confirmados, coherente con lo que ven en la app.
+    fetchAllPages(supabase, s => s.from('profiles')
+      .select('id, total_points')
+      .eq('email_confirmed', true)
+      .order('total_points', { ascending: false })),
   ])
 
   const emailByUserId  = new Map(authUsers.map(u => [u.id, u.email]))
