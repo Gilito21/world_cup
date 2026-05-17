@@ -312,15 +312,21 @@ export default function Resultados() {
   // Realtime: when any match resolves or its score changes, refresh quietly
   // in the background so the page reflects new finished matches without
   // requiring the user to pull-to-refresh.
+  //
+  // El nombre de canal incluye user.id para evitar colisiones entre
+  // pestañas distintas del mismo navegador (un nombre global compartido
+  // generaría carreras subscribe/removeChannel cuando hay 2 pestañas
+  // abiertas y `load` cambia de identidad por un cambio de liga).
   useEffect(() => {
+    if (!user?.id) return
     const channel = supabase
-      .channel('resultados-matches')
+      .channel(`resultados-matches-${user.id}`)
       .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'matches' },
         () => load({ force: true }))
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [load])
+  }, [user?.id, load])
 
   const stats = matches.reduce(
     (acc, m) => {

@@ -917,31 +917,33 @@ export default function Pronosticos() {
       }
 
       const destLeagueId = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : null
-      const rows = sourcePreds.map(p => ({
-        user_id:    user.id,
+
+      // RPC `copy_predictions_v1` envuelve delete+insert en una sola
+      // transacción server-side. Si el insert falla por cualquier motivo
+      // el delete previo se revierte → el usuario NO se queda sin
+      // pronósticos en la liga de destino (era el riesgo de la
+      // implementación anterior, que hacía las dos queries por separado).
+      const rpcRows = sourcePreds.map(p => ({
         match_id:   p.match_id,
         home_score: p.home_score,
         away_score: p.away_score,
         tiebreaker: p.tiebreaker ?? null,
-        league_id:  destLeagueId,
       }))
+      const { error: rpcErr } = await supabase.rpc('copy_predictions_v1', {
+        p_dst_league_id: destLeagueId,
+        p_rows:          rpcRows,
+      })
+      if (rpcErr) throw rpcErr
 
-      // Delete existing predictions for this context before inserting.
-      // Upsert with onConflict doesn't reliably handle partial unique indexes
-      // (especially when league_id IS NULL), so delete+insert is safer.
-      const deleteQ = destLeagueId
-        ? supabase.from('predictions').delete().eq('user_id', user.id).eq('league_id', destLeagueId)
-        : supabase.from('predictions').delete().eq('user_id', user.id).is('league_id', null)
-      const { error: delErr } = await deleteQ
-      if (delErr) throw delErr
-
-      const { data, error: err } = await supabase.from('predictions').insert(rows).select()
-
-      if (err) throw err
-
+      // Releemos para reflejar lo que quedó realmente en BD (los IDs son
+      // nuevos tras el delete+insert).
+      const readQuery = destLeagueId
+        ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', destLeagueId)
+        : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)
+      const { data: fresh } = await readQuery
       const map = {}
       const newDrafts = {}
-      data.forEach(p => {
+      ;(fresh ?? []).forEach(p => {
         map[p.match_id] = p
         newDrafts[p.match_id] = { home: String(p.home_score ?? ''), away: String(p.away_score ?? ''), tiebreaker: p.tiebreaker ?? null }
       })

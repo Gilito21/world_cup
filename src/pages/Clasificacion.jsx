@@ -235,6 +235,9 @@ export default function Clasificacion() {
           .select('id, username, total_points, avatar_url, company')
           .eq('email_confirmed', true)
           .order('total_points', { ascending: false })
+          // Desempate estable: dos usuarios con los mismos puntos no
+          // deben intercambiar posiciones entre realtime refreshes.
+          .order('username', { ascending: true })
       )
 
       if (profiles) {
@@ -258,11 +261,18 @@ export default function Clasificacion() {
 
   async function loadLeague() {
     if (!activeLeague) { setLeagueStandings([]); setLoading(false); return }
-    const cacheKey = `lb:league:${activeLeague.id}`
-    const cached = getCache(cacheKey)
+    // El listado de standings es público dentro de la liga y se cachea
+    // bajo `lb:league:<id>`. `myStats` es PERSONAL: se cachea bajo una
+    // clave que incluye user.id para que dos usuarios en la misma liga
+    // y mismo navegador no vean las estadísticas del otro (bug detectado
+    // por la auditoría de bugs cross-user).
+    const cacheKey   = `lb:league:${activeLeague.id}`
+    const myStatsKey = `lb:league:${activeLeague.id}:my:${user.id}`
+    const cached       = getCache(cacheKey)
+    const cachedMyStats = getCache(myStatsKey)
     if (cached) {
-      setLeagueStandings(cached.standings)
-      setMyLeagueStats(cached.myStats ?? { exact: 0, correct: 0, total: 0 })
+      setLeagueStandings(cached)
+      setMyLeagueStats(cachedMyStats ?? { exact: 0, correct: 0, total: 0 })
     } else {
       setLoading(true)
     }
@@ -322,14 +332,20 @@ export default function Clasificacion() {
             stats:         statsMap[member.user_id] ?? { exact: 0, correct: 0, total: 0 },
           }
         })
-        .sort((a, b) => b.league_points - a.league_points)
+        // Sort por puntos desc; en empates desempate estable por username
+        // para que la posición no parpadee entre renders al recalcular.
+        .sort((a, b) =>
+          b.league_points - a.league_points ||
+          (a.username ?? '').localeCompare(b.username ?? '')
+        )
         .map((entry, i) => ({ ...entry, position: i + 1 }))
 
       setLeagueStandings(result)
       const me = result.find(r => r.id === user.id)
       const myStats = me?.stats ?? { exact: 0, correct: 0, total: 0 }
       if (me) setMyLeagueStats(myStats)
-      setCache(cacheKey, { standings: result, myStats })
+      setCache(cacheKey, result)         // standings públicas
+      setCache(myStatsKey, myStats)      // stats personales (clave user-scoped)
     } finally {
       setLoading(false)
     }
@@ -367,7 +383,9 @@ export default function Clasificacion() {
           const hasMe   = members.some(m => m.id === user.id)
           return { name, count: members.length, avg, top: sorted[0], hasMe }
         })
-        .sort((a, b) => b.avg - a.avg)
+        // Desempate estable por nombre cuando dos empresas tienen la
+        // misma media: evita parpadeo de posiciones tras realtime refresh.
+        .sort((a, b) => b.avg - a.avg || a.name.localeCompare(b.name))
         .map((c, i) => ({ ...c, position: i + 1 }))
 
       setCompanyStandings(result)

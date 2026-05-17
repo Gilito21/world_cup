@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { appUrl } from '../lib/appUrl'
+import { invalidateCache } from '../lib/dataCache'
+import { setMatchCache } from '../lib/matchCache'
 
 const PROFILE_CACHE_KEY = 'porra-profile-cache'
 
@@ -140,7 +142,23 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
-    try { localStorage.removeItem(PROFILE_CACHE_KEY) } catch {}
+    // Limpia TODO el estado que sobrevive a un signOut y podría filtrar
+    // datos / intenciones del User A al User B en el mismo navegador:
+    //  - PROFILE_CACHE_KEY    : avatar/username/total_points
+    //  - porra-pending-league-create / porra-invite-code : intenciones
+    //    pendientes que dispararían PaymentModal o auto-join para el
+    //    siguiente usuario que entre en este dispositivo
+    //  - dataCache (módulo)   : preds:<uid>, sub:<uid>, lb:*, feed:*,
+    //                           postmortem:*
+    //  - matchCache (módulo)  : lista de partidos (pública, pero por
+    //                           higiene)
+    try {
+      localStorage.removeItem(PROFILE_CACHE_KEY)
+      localStorage.removeItem('porra-pending-league-create')
+      localStorage.removeItem('porra-invite-code')
+    } catch {}
+    invalidateCache()
+    setMatchCache(null)
     await supabase.auth.signOut()
   }
 
