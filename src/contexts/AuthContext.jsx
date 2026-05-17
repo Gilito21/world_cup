@@ -126,10 +126,10 @@ export function AuthProvider({ children }) {
       },
     })
     if (error) throw error
-    // Notificar al admin en background — no bloqueamos ni lanzamos error si falla
-    supabase.functions.invoke('notify-new-user', {
-      body: { email, username, company: company || '' },
-    }).catch(err => console.error('notify-new-user failed:', err))
+    // El email al admin (notify-new-user) ya no se dispara aquí — un trigger
+    // postgres (sync_email_confirmed) lo invoca vía pg_net cuando el usuario
+    // confirma su email. Esto evita notificaciones por signups fake con
+    // emails inventados que nunca se llegan a verificar.
     return data
   }
 

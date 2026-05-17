@@ -233,6 +233,7 @@ export default function Clasificacion() {
       const { data: profiles, error } = await sq(
         supabase.from('profiles')
           .select('id, username, total_points, avatar_url, company')
+          .eq('email_confirmed', true)
           .order('total_points', { ascending: false })
       )
 
@@ -344,6 +345,7 @@ export default function Clasificacion() {
     try {
       const { data: profiles } = await sq(
         supabase.from('profiles').select('id, username, company, total_points, avatar_url')
+          .eq('email_confirmed', true)
           .not('company', 'is', null).neq('company', '')
       )
 
