@@ -255,7 +255,9 @@ export default function Resultados() {
 
   const [matches, setMatches]         = useState(() => {
     const cached = getMatchCache()
-    return cached ? cached.filter(m => m.status === 'finished') : []
+    // Cache canónico = ascendente. En esta página presentamos los partidos
+    // finalizados de más reciente a más antiguo, así que revertimos aquí.
+    return cached ? cached.filter(m => m.status === 'finished').slice().reverse() : []
   })
   const [predictions, setPredictions] = useState({})
   const [loading, setLoading]         = useState(() => !getMatchCache())
@@ -277,14 +279,18 @@ export default function Resultados() {
       const [{ data: allMatchData }, { data: predData }] = await Promise.all([
         cachedMatches
           ? Promise.resolve({ data: cachedMatches })
-          : sq(supabase.from('matches').select('*').order('match_date', { ascending: false })),
+          // El cache compartido espera orden ascendente (ver matchCache.js).
+          // Pedimos ascendente y revertimos solo para la presentación local
+          // de "últimos partidos primero".
+          : sq(supabase.from('matches').select('*').order('match_date')),
         sq(predictionMode === 'per_league' && activeLeague
           ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
           : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)),
       ])
       if (allMatchData) {
         setMatchCache(allMatchData)
-        setMatches(allMatchData.filter(m => m.status === 'finished'))
+        // Mostrar los finalizados de más reciente a más antiguo.
+        setMatches(allMatchData.filter(m => m.status === 'finished').slice().reverse())
       }
       if (predData) {
         const map = {}
