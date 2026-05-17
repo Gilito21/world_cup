@@ -35,7 +35,9 @@ RETURNS TABLE (
   event_time TIMESTAMPTZ,
   data       JSONB
 )
-LANGUAGE plpgsql SECURITY DEFINER AS $$
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
 BEGIN
   -- Comprueba que el usuario que llama pertenece a la liga.
   IF NOT EXISTS (
@@ -120,7 +122,12 @@ BEGIN
   LIMIT GREATEST(1, LEAST(p_limit, 100));
 END $$;
 
-GRANT EXECUTE ON FUNCTION public.league_feed_v1(UUID, INTEGER) TO authenticated;
+-- Postgres concede EXECUTE a PUBLIC por defecto al crear funciones, lo
+-- que dejaría a `anon` invocar la RPC vía REST. Revocamos para que solo
+-- usuarios autenticados (cuyo auth.uid() es la base del check de
+-- pertenencia) puedan llamarla.
+REVOKE EXECUTE ON FUNCTION public.league_feed_v1(UUID, INTEGER) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.league_feed_v1(UUID, INTEGER) TO authenticated;
 
 
 -- ─── 2. Post-mortem de un partido finalizado ─────────────────────────────
@@ -135,7 +142,9 @@ CREATE OR REPLACE FUNCTION public.match_postmortem_v1(
   p_league_id UUID DEFAULT NULL
 )
 RETURNS JSONB
-LANGUAGE plpgsql SECURITY DEFINER AS $$
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
 DECLARE
   v_match        public.matches%ROWTYPE;
   v_global_total INT  := 0;
@@ -235,4 +244,5 @@ BEGIN
   );
 END $$;
 
-GRANT EXECUTE ON FUNCTION public.match_postmortem_v1(UUID, UUID) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.match_postmortem_v1(UUID, UUID) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.match_postmortem_v1(UUID, UUID) TO authenticated;
