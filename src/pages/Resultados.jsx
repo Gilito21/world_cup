@@ -365,8 +365,8 @@ export default function Resultados() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="font-display text-2xl sm:text-3xl text-ink leading-none">{t('resultados.title')}</h2>
-        <p className="font-serif italic text-ink/70 text-sm sm:text-base mt-1.5">
+        <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('resultados.title')}</h2>
+        <p className="font-serif italic text-ink/70 text-sm mt-1">
           {t('resultados.subtitle')}
         </p>
       </div>

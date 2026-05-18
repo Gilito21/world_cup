@@ -130,8 +130,8 @@ export default function Perfil() {
   return (
     <div className="space-y-4 sm:space-y-6 max-w-lg">
       <div>
-        <h2 className="font-display text-2xl sm:text-3xl text-ink leading-none">{t('perfil.title')}</h2>
-        <p className="font-serif italic text-ink/70 text-sm sm:text-base mt-1.5">{t('perfil.subtitle')}</p>
+        <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('perfil.title')}</h2>
+        <p className="font-serif italic text-ink/70 text-sm mt-1">{t('perfil.subtitle')}</p>
       </div>
 
       {/* Tarjeta de identidad */}
