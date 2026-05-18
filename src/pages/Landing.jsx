@@ -491,8 +491,7 @@ export default function Landing() {
       {/* ── NAV ───────────────────────────────────────────────────────── */}
       <nav className="ln-top" id="landing-nav">
         <Link className="ln-brand" to="/">
-          <BrandTile size={34} />
-          <BrandMark compact size={0.65} className="ln-brand-mark-text" />
+          <BrandMark compact size={0.85} className="ln-brand-mark-text" />
         </Link>
         <div className="ln-nav-right">
           <div className="ln-nav-links">
@@ -882,8 +881,7 @@ const LANDING_CSS = `
 /* NAV */
 .landing-root .ln-top{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 16px max(16px,env(safe-area-inset-left));background:rgba(244,236,214,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);transition:background .3s;gap:12px}
 @media (min-width:640px){.landing-root .ln-top{padding-left:max(32px,env(safe-area-inset-left));padding-right:max(32px,env(safe-area-inset-right))}}
-@media (max-width:520px){.landing-root .ln-top{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));gap:8px}.landing-root .ln-brand-mark-text{--logo-size:.55}.landing-root .ln-btn{padding:9px 11px;font-size:11px}}
-@media (max-width:380px){.landing-root .ln-brand-mark-text{display:none}}
+@media (max-width:520px){.landing-root .ln-top{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));gap:8px}.landing-root .ln-brand-mark-text{--logo-size:.6}.landing-root .ln-btn{padding:9px 11px;font-size:11px}}
 .landing-root .ln-top.scrolled{background:rgba(244,236,214,.96)}
 .landing-root .ln-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink)}
 .landing-root .ln-nav-right{display:flex;align-items:center;gap:20px}
