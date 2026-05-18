@@ -263,6 +263,47 @@ const recovery = authSample({
   footerNote: 'El enlace caduca pasada 1 hora por seguridad.',
 })
 
+// ── Recordatorio admin → miembro de liga (edge function send-reminder) ────────
+const adminReminder = {
+  subject: '[Muestra] Recordatorio · envía tu pronóstico para Bluebull League',
+  html: brandShell({
+    title: 'Recordatorio · Bluebull League',
+    preheader: 'Pedro te recuerda enviar tu pronóstico para Bluebull League.',
+    content: `
+${brandKicker('Recordatorio · liga Bluebull League')}
+${brandHeadline(`${escHtml(username)}, falta tu pronóstico.`)}
+<p style="margin:0 0 18px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${BRAND.ink};">
+  <strong>Pedro</strong>, admin de tu liga <em style="font-family:'Instrument Serif',Georgia,serif;color:${BRAND.terra};font-style:italic;">Bluebull League</em>, te recuerda que aún no has enviado tus pronósticos para el Mundial 2026.
+</p>
+<p style="margin:0 0 24px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:${BRAND.ink};opacity:.78;">
+  El plazo cierra <strong>una hora antes del primer partido</strong>. Una vez pite el árbitro, no hay segunda oportunidad.
+</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 26px;border-collapse:collapse;">
+  <tr><td valign="top" style="padding:14px 0;border-top:1px solid ${BRAND.rule};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td valign="top" width="32" style="font-family:'Instrument Serif',Georgia,serif;font-size:24px;color:${BRAND.terra};line-height:1;padding-right:14px;">01</td>
+      <td valign="top">
+        <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-weight:700;font-size:14px;color:${BRAND.ink};">Pronósticos</div>
+        <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:${BRAND.ink};opacity:.78;margin-top:2px;">Predice el marcador exacto de todos los partidos.</div>
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td valign="top" style="padding:14px 0;border-top:1px solid ${BRAND.rule};border-bottom:1px solid ${BRAND.rule};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td valign="top" width="32" style="font-family:'Instrument Serif',Georgia,serif;font-size:24px;color:${BRAND.terra};line-height:1;padding-right:14px;">02</td>
+      <td valign="top">
+        <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-weight:700;font-size:14px;color:${BRAND.ink};">Extras</div>
+        <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:${BRAND.ink};opacity:.78;margin-top:2px;">Preguntas especiales (campeón, bota de oro…) para puntos bonus.</div>
+      </td>
+    </tr></table>
+  </td></tr>
+</table>
+${brandButton({ href: `${APP_URL}/pronosticos`, label: 'Enviar pronóstico' })}`,
+    footerNote: 'Recibes este email porque un admin de tu liga te lo ha pedido. Puedes desactivarlos desde tu perfil.',
+    appUrl: APP_URL,
+  }),
+}
+
 // ── Envío ─────────────────────────────────────────────────────────────────────
 
 async function sendEmail(subject, html) {
@@ -283,14 +324,15 @@ async function sendEmail(subject, html) {
 }
 
 const samples = [
-  { label: '1/8 Welcome',          ...welcome },
-  { label: '2/8 Admin notif',      ...adminNotif },
-  { label: '3/8 Reminder 48h',     ...reminder48 },
-  { label: '4/8 Reminder 24h',     ...reminder24 },
-  { label: '5/8 Daily digest',     ...digest },
-  { label: '6/8 Auth confirm',     ...confirmSignup },
-  { label: '7/8 Auth magic link',  ...magicLink },
-  { label: '8/8 Auth recovery',    ...recovery },
+  { label: '1/9 Welcome',           ...welcome },
+  { label: '2/9 Admin notif',       ...adminNotif },
+  { label: '3/9 Reminder 48h',      ...reminder48 },
+  { label: '4/9 Reminder 24h',      ...reminder24 },
+  { label: '5/9 Daily digest',      ...digest },
+  { label: '6/9 Admin → miembro',   ...adminReminder },
+  { label: '7/9 Auth confirm',      ...confirmSignup },
+  { label: '8/9 Auth magic link',   ...magicLink },
+  { label: '9/9 Auth recovery',     ...recovery },
 ]
 
 console.log(`Enviando ${samples.length} muestras a ${to}...\n`)
