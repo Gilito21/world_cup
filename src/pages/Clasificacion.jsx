@@ -10,16 +10,17 @@ import LeagueModal from '../components/LeagueModal'
 import LeagueFeed from '../components/LeagueFeed'
 import Spinner from '../components/Spinner'
 import { StandingsSkeleton } from '../components/Skeleton'
+import { EditorialBand } from '../components/Editorial'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
 // ─── STAT BADGE ──────────────────────────────────────────────────────────────
 
-function StatBadge({ label, value, color }) {
+function StatBadge({ label, value }) {
   return (
-    <div className="text-center px-3 py-1.5 rounded-none bg-paper border border-ink/30">
-      <div className={`text-sm font-bold ${color}`}>{value}</div>
-      <div className="text-xs text-ink/60">{label}</div>
+    <div className="text-center px-2.5 py-1.5 border border-ink/20">
+      <div className="font-display text-base text-ink leading-none tabular-nums">{value}</div>
+      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink/60 mt-1">{label}</div>
     </div>
   )
 }
@@ -527,6 +528,7 @@ export default function Clasificacion() {
           <p className="font-serif italic text-ink/70 text-sm mt-1">
             {t('clasificacion.subtitle')}
           </p>
+            <EditorialBand items={['RANKING', '104 PARTIDOS', 'EDICIÓN 2026']} />
         </div>
         {tab === 'league' && activeLeague?.role === 'admin' && (
           <div className="flex-shrink-0 card p-2.5 sm:p-3 text-center min-w-[110px] sm:min-w-[140px]">

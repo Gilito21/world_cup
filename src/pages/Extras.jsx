@@ -9,6 +9,7 @@ import { ExtrasSkeleton } from '../components/Skeleton'
 import LeagueModal from '../components/LeagueModal'
 import PaymentModal from '../components/PaymentModal'
 import LeagueCreatedModal from '../components/LeagueCreatedModal'
+import { EditorialBand } from '../components/Editorial'
 
 // Twemoji CDN URL for any emoji string (works on all browsers/OS)
 function emojiSrc(emoji) {
@@ -641,6 +642,7 @@ export default function Extras() {
             <p className="text-[11px] sm:text-sm text-ink/60 mt-0.5">
               {t('extras.subtitle')}
             </p>
+            <EditorialBand items={['BONUS', 'PREGUNTAS EXTRA', 'EDICIÓN 2026']} />
           </div>
         </div>
 

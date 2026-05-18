@@ -4,6 +4,7 @@ import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 import { Flag, teamName } from '../utils/teams'
+import { EditorialBand } from '../components/Editorial'
 import {
   GROUPS,
   THIRD_PLACE_QUALIFIERS,
@@ -415,6 +416,7 @@ export default function Bracket() {
         <p className="font-serif italic text-ink/70 text-sm mt-1">
           {t('bracket.subtitle', { n: groupsComplete })}
         </p>
+            <EditorialBand items={['ELIMINATORIAS', '32 EQUIPOS', '8 RONDAS', 'NY/NJ · FINAL']} />
       </div>
 
       {/* Tabs */}

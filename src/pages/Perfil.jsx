@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
+import { EditorialBand, EditorialStats } from '../components/Editorial'
 
 export default function Perfil() {
   const { user, profile, refreshProfile } = useAuth()
@@ -133,6 +134,7 @@ export default function Perfil() {
         <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('perfil.chapter')}</span>
             <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('perfil.title')}</h2>
         <p className="font-serif italic text-ink/70 text-sm mt-1">{t('perfil.subtitle')}</p>
+            <EditorialBand items={['PERFIL', 'EDICIÓN 2026']} />
       </div>
 
       {/* Tarjeta de identidad */}
@@ -271,24 +273,16 @@ export default function Perfil() {
 
       {/* Estadísticas */}
       <div>
-        <h3 className="text-sm font-semibold text-ink/50 uppercase tracking-wider mb-3">{t('perfil.statsSection')}</h3>
+        <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-terracotta mb-3">// {t('perfil.statsSection')}</h3>
         {loadingStats ? (
           <div className="flex justify-center py-6"><Spinner /></div>
         ) : stats ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: t('perfil.statPredictions'), value: stats.totalPredictions, icon: '📝', color: 'text-ink/80' },
-              { label: t('perfil.statExact'),       value: stats.exact,            icon: '🎯', color: 'text-grass-500' },
-              { label: t('perfil.statCorrect'),     value: stats.correct,          icon: '✓',  color: 'text-blue-500'  },
-              { label: t('perfil.statAccuracy'),    value: stats.accuracy !== null ? `${stats.accuracy}%` : '—', icon: '📊', color: 'text-green-500' },
-            ].map(({ label, value, icon, color }) => (
-              <div key={label} className="card p-4 text-center">
-                <div className="text-xl mb-1">{icon}</div>
-                <div className={`text-xl font-bold ${color}`}>{value}</div>
-                <div className="text-xs text-ink/50 mt-0.5">{label}</div>
-              </div>
-            ))}
-          </div>
+          <EditorialStats items={[
+            { label: t('perfil.statPredictions'), value: stats.totalPredictions },
+            { label: t('perfil.statExact'),       value: stats.exact },
+            { label: t('perfil.statCorrect'),     value: stats.correct },
+            { label: t('perfil.statAccuracy'),    value: stats.accuracy !== null ? `${stats.accuracy}%` : '—' },
+          ]} />
         ) : null}
       </div>
     </div>

@@ -16,6 +16,7 @@ import PaymentModal from '../components/PaymentModal'
 import LeagueCreatedModal from '../components/LeagueCreatedModal'
 import { Flag, teamName } from '../utils/teams'
 import { computePredictedKnockout } from '../utils/tournament'
+import { EditorialBand } from '../components/Editorial'
 
 const STAGE_ORDER = ['group', 'round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
 
@@ -1137,6 +1138,7 @@ export default function Pronosticos() {
         <p className="font-serif italic text-ink/70 text-sm mt-1">
           {t('pronosticos.subtitle')}
         </p>
+            <EditorialBand items={['PORRA', '104 PARTIDOS', '16 SEDES', 'EDICIÓN 2026']} />
       </div>
 
       {/* No-league gate: banner replacing the submit panel */}

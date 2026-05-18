@@ -9,6 +9,7 @@ import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 import { MatchListSkeleton } from '../components/Skeleton'
 import MatchPostmortem from '../components/MatchPostmortem'
+import { EditorialBand, EditorialStats } from '../components/Editorial'
 
 function formatDate(dateStr, locale) {
   return new Date(dateStr).toLocaleDateString(locale, {
@@ -370,26 +371,16 @@ export default function Resultados() {
         <p className="font-serif italic text-ink/70 text-sm mt-1">
           {t('resultados.subtitle')}
         </p>
+            <EditorialBand items={['CRÓNICA', '104 PARTIDOS', 'EDICIÓN 2026']} />
       </div>
 
       {matches.length > 0 && (
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
-          {[
-            { label: t('resultados.statPoints'),  short: t('resultados.statPointsShort'),  value: stats.points,  color: 'text-ink', icon: '⭐' },
-            { label: t('resultados.statExact'),    short: t('resultados.statExactShort'),   value: stats.exact,   color: 'text-grass-500', icon: '🎯' },
-            { label: t('resultados.statCorrect'),  short: t('resultados.statCorrectShort'), value: stats.correct, color: 'text-blue-400',  icon: '✓' },
-            { label: t('resultados.statWrong'),    short: t('resultados.statWrongShort'),   value: stats.wrong,   color: 'text-ink/50', icon: '✗' },
-          ].map(({ label, short, value, color, icon }) => (
-            <div key={label} className="card p-2.5 sm:p-4 text-center">
-              <div className="text-sm sm:text-lg mb-0.5">{icon}</div>
-              <div className={`text-lg sm:text-2xl font-bold ${color}`}>{value}</div>
-              <div className="text-[10px] sm:text-xs text-ink/60 mt-0.5">
-                <span className="hidden sm:inline">{label}</span>
-                <span className="sm:hidden">{short}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        <EditorialStats items={[
+          { label: t('resultados.statPointsShort'),  value: stats.points },
+          { label: t('resultados.statExactShort'),   value: stats.exact },
+          { label: t('resultados.statCorrectShort'), value: stats.correct },
+          { label: t('resultados.statWrongShort'),   value: stats.wrong },
+        ]} />
       )}
 
       {matches.length === 0 ? (
