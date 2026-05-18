@@ -110,7 +110,7 @@ function GroupTable({ group, standings, qualifyingThirds }) {
                 key={s.team}
                 className={`border-b border-ink/10 last:border-0 transition-colors ${
                   qualifies ? 'bg-green-50/60'
-                  : thirdQ  ? 'bg-terracotta/60'
+                  : thirdQ  ? 'bg-paper-200'
                   :           ''
                 }`}
               >
@@ -424,7 +424,7 @@ export default function Bracket() {
             onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               activeTab === tab.key
-                ? 'bg-terracotta text-ink'
+                ? 'bg-ink text-cream'
                 : 'bg-paper text-ink/60 hover:text-ink'
             }`}
           >

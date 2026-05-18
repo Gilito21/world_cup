@@ -225,7 +225,7 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
           </div>
           <div className="h-2 bg-paper rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-terracotta'}`}
+              className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-grass-500' : 'bg-ink/70'}`}
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -514,7 +514,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               disabled={isLocked}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 tiebreaker === 'home'
-                  ? 'bg-terracotta border-terracotta text-ink'
+                  ? 'bg-ink border-ink text-cream'
                   : 'bg-paper border-ink/20 text-ink/70 hover:border-terracotta-400 hover:text-ink'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
@@ -526,7 +526,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               disabled={isLocked}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 tiebreaker === 'away'
-                  ? 'bg-terracotta border-terracotta text-ink'
+                  ? 'bg-ink border-ink text-cream'
                   : 'bg-paper border-ink/20 text-ink/70 hover:border-terracotta-400 hover:text-ink'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
@@ -643,7 +643,7 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
                 title={info.full}
                 disabled={!hasData}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                  isActive  ? 'bg-terracotta text-ink shadow-sm'
+                  isActive  ? 'bg-ink text-cream shadow-sm'
                   : hasData ? 'text-ink/60 hover:bg-paper hover:text-ink'
                   :           'text-ink/40 cursor-default'
                 }`}
@@ -654,7 +654,7 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
                 </span>
                 {unfilled > 0 && (
                   <span className={`opacity-0 group-hover/nav:opacity-100 transition-opacity duration-150 text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-                    isActive ? 'bg-ink/20 text-ink' : 'bg-terracotta/20 text-terracotta-600'
+                    isActive ? 'bg-cream/20 text-cream' : 'bg-paper-200 text-ink/70'
                   }`}>
                     {unfilled}
                   </span>
@@ -1241,9 +1241,9 @@ export default function Pronosticos() {
                   <button
                     key={stage}
                     onClick={() => setActiveStage(stage)}
-                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
                       activeStage === stage
-                        ? 'bg-terracotta text-ink'
+                        ? 'bg-ink text-cream'
                         : 'bg-paper text-ink/60 hover:text-ink'
                     }`}
                   >
@@ -1251,7 +1251,7 @@ export default function Pronosticos() {
                     <span>{info.short}</span>
                     {unfilled > 0 && !isSubmitted && (
                       <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                        activeStage === stage ? 'bg-ink/20' : 'bg-terracotta/20 text-terracotta-600'
+                        activeStage === stage ? 'bg-cream/20 text-cream' : 'bg-paper-200 text-ink/70'
                       }`}>
                         {unfilled}
                       </span>
@@ -1271,8 +1271,8 @@ export default function Pronosticos() {
               {!isSubmitted && (
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ml-1 ${
                   unfilledCount(activeStage) === 0
-                    ? 'bg-green-100 text-green-600'
-                    : 'bg-terracotta/20 text-terracotta-600'
+                    ? 'bg-grass-500/15 text-grass-600 border border-grass-500/30'
+                    : 'bg-paper-200 text-ink/70 border border-ink/20'
                 }`}>
                   {unfilledCount(activeStage) === 0
                     ? t('pronosticos.completeLabel')

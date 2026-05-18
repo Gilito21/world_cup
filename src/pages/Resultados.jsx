@@ -409,7 +409,7 @@ export default function Resultados() {
                 key={key}
                 onClick={() => setFilter(key)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  filter === key ? 'bg-terracotta text-ink' : 'bg-paper text-ink/50 hover:text-ink'
+                  filter === key ? 'bg-ink text-cream' : 'bg-paper text-ink/50 hover:text-ink'
                 }`}
               >
                 {label}
