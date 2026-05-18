@@ -127,7 +127,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
       className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/60 backdrop-blur-md animate-fade-in px-3 py-4 sm:px-4 sm:py-8 pt-safe pb-safe"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-paper rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
+      <div className="bg-paper rounded-none shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-ink via-ink/90 to-ink p-5 text-white">
           <button
@@ -176,7 +176,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-4">
           {/* User's prediction summary */}
           {userPrediction ? (
-            <div className={`rounded-2xl border p-3 ${
+            <div className={`rounded-none border p-3 ${
               isFinished
                 ? pointsEarned > 0
                   ? 'bg-green-50 border-green-200'
@@ -203,21 +203,21 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               {hasStarted && (
                 <button
                   onClick={() => setShowShare(true)}
-                  className="mt-3 w-full text-sm font-semibold flex items-center justify-center gap-1.5 py-2 rounded-xl bg-paper border border-ink/20 hover:bg-cream active:bg-paper text-ink/80 transition-colors"
+                  className="mt-3 w-full text-sm font-semibold flex items-center justify-center gap-1.5 py-2 rounded-none bg-paper border border-ink/20 hover:bg-cream active:bg-paper text-ink/80 transition-colors"
                 >
                   <span>📤</span>{t('share.open')}
                 </button>
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-ink/20 bg-cream p-3 text-center">
+            <div className="rounded-none border border-ink/20 bg-cream p-3 text-center">
               <p className="text-sm text-ink/60">{t('preview.noPrediction')}</p>
             </div>
           )}
 
           {/* Consensus + member list (only after kickoff) */}
           {!hasStarted ? (
-            <div className="rounded-2xl border border-ink/20 bg-cream p-4 text-center space-y-1">
+            <div className="rounded-none border border-ink/20 bg-cream p-4 text-center space-y-1">
               <p className="text-2xl">🔒</p>
               <p className="text-sm font-semibold text-ink/80">{t('preview.lockedTitle')}</p>
               <p className="text-xs text-ink/60">{t('preview.lockedDesc')}</p>
@@ -242,7 +242,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               {/* Member-by-member */}
               <div>
                 <p className="text-[10px] uppercase tracking-wider font-semibold text-ink/60 mb-2">{t('preview.members')}</p>
-                <div className="rounded-2xl border border-ink/20 overflow-hidden">
+                <div className="rounded-none border border-ink/20 overflow-hidden">
                   {memberRows.map(m => (
                     <MemberRow
                       key={m.userId}

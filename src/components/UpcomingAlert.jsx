@@ -70,7 +70,7 @@ export default function UpcomingAlert() {
   }).length
 
   return (
-    <div className={`rounded-2xl border p-4 flex gap-3 ${
+    <div className={`rounded-none border p-4 flex gap-3 ${
       urgentCount > 0
         ? 'bg-red-500/10 border-red-500/30'
         : 'bg-paper-200 border-ink/20'

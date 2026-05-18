@@ -78,7 +78,7 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
       />
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-3 py-2 text-sm">
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-none px-3 py-2 text-sm">
           {error}
         </div>
       )}
@@ -86,7 +86,7 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
       <button
         type="submit"
         disabled={!stripe || submitting}
-        className="w-full bg-ink hover:bg-ink/90 active:bg-ink/95 text-cream font-semibold py-3.5 rounded-2xl shadow-lg shadow-ink/15 hover:shadow-ink/15 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full bg-ink hover:bg-ink/90 active:bg-ink/95 text-cream font-semibold py-3.5 rounded-none shadow-lg shadow-ink/15 hover:shadow-ink/15 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {submitting
           ? <><Spinner size="sm" /> {t('payment.processing')}</>
@@ -201,7 +201,7 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
             <p className="text-ink/50 text-xs">{t('payment.loading')}</p>
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm space-y-2">
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-none px-4 py-3 text-sm space-y-2">
             <p className="font-semibold">{t('payment.errorTitle')}</p>
             <p className="text-xs">{error}</p>
             <button onClick={onClose} className="btn-secondary w-full mt-2">{t('common.close')}</button>
@@ -261,7 +261,7 @@ function Backdrop({ children, onClose }) {
       className="fixed inset-0 z-[60] flex items-center sm:items-center justify-center bg-ink/60 backdrop-blur-md animate-fade-in px-3 sm:px-4 py-4 sm:py-8 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-paper rounded-2xl sm:rounded-3xl w-full max-w-md shadow-2xl shadow-black/40 overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] flex flex-col">
+      <div className="bg-paper rounded-none sm:rounded-none w-full max-w-md shadow-2xl shadow-black/40 overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] flex flex-col">
         <div className="overflow-y-auto">
           {children}
         </div>

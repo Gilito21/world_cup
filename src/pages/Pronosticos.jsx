@@ -114,7 +114,7 @@ function ScoreStepper({ value, onChange, disabled, placeholder }) {
   }
 
   return (
-    <div className={`inline-flex items-stretch bg-paper border border-ink/30 rounded-xl shadow-sm overflow-hidden select-none ${disabled ? 'opacity-40' : ''}`}>
+    <div className={`inline-flex items-stretch bg-paper border border-ink/30 rounded-none shadow-sm overflow-hidden select-none ${disabled ? 'opacity-40' : ''}`}>
       <button
         type="button"
         onClick={() => bump(-1)}
@@ -191,7 +191,7 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
             <div className="h-full rounded-full bg-ink/20" style={{ width: `${pct}%` }} />
           </div>
         </div>
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 space-y-1">
+        <div className="rounded-none bg-red-50 border border-red-200 px-4 py-3 space-y-1">
           <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
             <span>🔒</span>{t('pronosticos.closedMsg')}
           </p>
@@ -453,13 +453,13 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {isFinished ? (
-            <div className="flex items-center gap-2 bg-paper rounded-xl px-3 py-1.5">
+            <div className="flex items-center gap-2 bg-paper rounded-none px-3 py-1.5">
               <span className="text-xl font-bold text-ink">{match.home_score}</span>
               <span className="text-ink/60">-</span>
               <span className="text-xl font-bold text-ink">{match.away_score}</span>
             </div>
           ) : match.status === 'live' ? (
-            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-1.5">
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-none px-3 py-1.5">
               <span className="text-xl font-bold text-red-400">{match.home_score ?? 0}</span>
               <span className="text-red-500/60">-</span>
               <span className="text-xl font-bold text-red-400">{match.away_score ?? 0}</span>
@@ -512,7 +512,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             <button
               onClick={() => !isLocked && onTiebreakerChange(match.id, 'home')}
               disabled={isLocked}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium border transition-all ${
                 tiebreaker === 'home'
                   ? 'bg-ink border-ink text-cream'
                   : 'bg-paper border-ink/20 text-ink/70 hover:border-ink/50 hover:text-ink'
@@ -524,7 +524,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             <button
               onClick={() => !isLocked && onTiebreakerChange(match.id, 'away')}
               disabled={isLocked}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium border transition-all ${
                 tiebreaker === 'away'
                   ? 'bg-ink border-ink text-cream'
                   : 'bg-paper border-ink/20 text-ink/70 hover:border-ink/50 hover:text-ink'
@@ -642,7 +642,7 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
                 onClick={() => hasData && onSelect(stage)}
                 title={info.full}
                 disabled={!hasData}
-                className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-none text-sm font-medium transition-all whitespace-nowrap ${
                   isActive  ? 'bg-ink text-cream shadow-sm'
                   : hasData ? 'text-ink/60 hover:bg-paper hover:text-ink'
                   :           'text-ink/40 cursor-default'
@@ -1132,7 +1132,8 @@ export default function Pronosticos() {
 
       {/* Page header */}
       <div>
-        <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('pronosticos.title')}</h2>
+        <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('pronosticos.chapter')}</span>
+            <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('pronosticos.title')}</h2>
         <p className="font-serif italic text-ink/70 text-sm mt-1">
           {t('pronosticos.subtitle')}
         </p>
@@ -1216,7 +1217,7 @@ export default function Pronosticos() {
       <UpcomingAlert />
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-none px-4 py-3 text-red-400 text-sm">
           {error}
         </div>
       )}
@@ -1246,7 +1247,7 @@ export default function Pronosticos() {
                   <button
                     key={stage}
                     onClick={() => setActiveStage(stage)}
-                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-none text-sm font-medium transition-colors ${
                       activeStage === stage
                         ? 'bg-ink text-cream'
                         : 'bg-paper text-ink/60 hover:text-ink'

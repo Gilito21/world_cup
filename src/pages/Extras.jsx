@@ -130,7 +130,7 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
       )}
 
       {isPastCutoff && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 space-y-1">
+        <div className="rounded-none bg-red-50 border border-red-200 px-4 py-3 space-y-1">
           <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
             <span>🔒</span>{t('extras.closedMsg')}
           </p>
@@ -169,7 +169,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting }) {
   const { t } = useLang()
   return (
     <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-paper rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 animate-slide-up">
+      <div className="bg-paper rounded-none shadow-xl max-w-sm w-full p-6 space-y-4 animate-slide-up">
         <h3 className="text-xl font-bold text-ink">{t('extras.confirmTitle')}</h3>
         <p className="text-ink/60 text-sm leading-relaxed">
           {t('extras.confirmBody')}
@@ -208,7 +208,7 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
             key={opt.value}
             onClick={() => !locked && onSelect(opt.value)}
             disabled={locked}
-            className={`relative rounded-xl sm:rounded-2xl border-2 p-3 sm:p-5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${
+            className={`relative rounded-none sm:rounded-none border-2 p-3 sm:p-5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${
               isActive
                 ? 'border-ink bg-paper shadow-md shadow-ink/15'
                 : 'border-ink/20 bg-paper hover:border-ink/30'
@@ -636,6 +636,7 @@ export default function Extras() {
         <div className="flex items-start gap-2.5 sm:gap-3">
           <span className="text-xl sm:text-3xl">🎲</span>
           <div className="flex-1 min-w-0">
+            <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('extras.chapter')}</span>
             <h1 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('extras.title')}</h1>
             <p className="text-[11px] sm:text-sm text-ink/60 mt-0.5">
               {t('extras.subtitle')}

@@ -17,7 +17,7 @@ const MEDALS = ['🥇', '🥈', '🥉']
 
 function StatBadge({ label, value, color }) {
   return (
-    <div className="text-center px-3 py-1.5 rounded-lg bg-paper border border-ink/30">
+    <div className="text-center px-3 py-1.5 rounded-none bg-paper border border-ink/30">
       <div className={`text-sm font-bold ${color}`}>{value}</div>
       <div className="text-xs text-ink/60">{label}</div>
     </div>
@@ -522,7 +522,8 @@ export default function Clasificacion() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('clasificacion.title')}</h2>
+          <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('clasificacion.chapter')}</span>
+            <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('clasificacion.title')}</h2>
           <p className="font-serif italic text-ink/70 text-sm mt-1">
             {t('clasificacion.subtitle')}
           </p>
@@ -536,12 +537,12 @@ export default function Clasificacion() {
       </div>
 
       {/* Tabs */}
-      <div className="flex rounded-xl overflow-hidden bg-paper p-1">
+      <div className="flex rounded-none overflow-hidden bg-paper p-1">
         {tabs.map(({ id, label, icon }) => (
           <button
             key={id}
             onClick={() => handleTabChange(id)}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-150 flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 text-sm font-medium rounded-none transition-all duration-150 flex items-center justify-center gap-1.5 ${
               tab === id
                 ? 'bg-ink text-cream shadow-sm'
                 : 'text-ink/60 hover:text-ink'

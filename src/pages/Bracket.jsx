@@ -65,7 +65,7 @@ function ScoreBadge({ home, away, bold }) {
   const winH = home > away
   const winA = away > home
   return (
-    <div className="flex items-center gap-1 bg-paper rounded-lg px-2.5 py-1 flex-shrink-0">
+    <div className="flex items-center gap-1 bg-paper rounded-none px-2.5 py-1 flex-shrink-0">
       <span className={`text-sm font-mono ${winH && bold ? 'text-grass-500 font-bold' : 'text-ink/70'}`}>{home}</span>
       <span className="text-ink/50 text-xs">-</span>
       <span className={`text-sm font-mono ${winA && bold ? 'text-grass-500 font-bold' : 'text-ink/70'}`}>{away}</span>
@@ -410,7 +410,8 @@ export default function Bracket() {
     <div className="space-y-4 sm:space-y-5">
       {/* Header */}
       <div>
-        <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('bracket.title')}</h2>
+        <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('bracket.chapter')}</span>
+            <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('bracket.title')}</h2>
         <p className="font-serif italic text-ink/70 text-sm mt-1">
           {t('bracket.subtitle', { n: groupsComplete })}
         </p>
@@ -422,7 +423,7 @@ export default function Bracket() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-none text-sm font-medium transition-all ${
               activeTab === tab.key
                 ? 'bg-ink text-cream'
                 : 'bg-paper text-ink/60 hover:text-ink'

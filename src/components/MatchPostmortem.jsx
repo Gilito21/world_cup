@@ -125,7 +125,7 @@ export default function MatchPostmortem({ matchId, leagueId }) {
   }
 
   return (
-    <div className="rounded-xl border border-ink/20 bg-paper p-3 space-y-3">
+    <div className="rounded-none border border-ink/20 bg-paper p-3 space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-ink/80">{t('postmortem.title')}</p>
         {summary && (

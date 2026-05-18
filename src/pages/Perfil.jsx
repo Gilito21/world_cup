@@ -130,7 +130,8 @@ export default function Perfil() {
   return (
     <div className="space-y-4 sm:space-y-6 max-w-lg">
       <div>
-        <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('perfil.title')}</h2>
+        <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('perfil.chapter')}</span>
+            <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('perfil.title')}</h2>
         <p className="font-serif italic text-ink/70 text-sm mt-1">{t('perfil.subtitle')}</p>
       </div>
 
@@ -188,7 +189,7 @@ export default function Perfil() {
         </div>
 
         {uploadError && (
-          <p className="mt-3 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+          <p className="mt-3 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-none px-3 py-2">
             {uploadError}
           </p>
         )}

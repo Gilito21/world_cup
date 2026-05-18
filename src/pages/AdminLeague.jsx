@@ -75,7 +75,7 @@ function MemberRow({ member, leagueId }) {
           <button
             onClick={sendReminder}
             disabled={btnDisabled}
-            className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
+            className={`text-xs font-medium px-3 py-1.5 rounded-none transition-all ${
               status === 'sent' || status === 'cooldown'
                 ? 'bg-green-100 text-green-700'
                 : status === 'error'

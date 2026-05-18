@@ -57,7 +57,7 @@ export default function ReportButton({ username, userEmail }) {
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 bg-ink/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
         >
-          <div className="w-full max-w-md bg-paper rounded-2xl shadow-2xl shadow-ink/15 border border-ink/20 overflow-hidden animate-slide-up">
+          <div className="w-full max-w-md bg-paper rounded-none shadow-2xl shadow-ink/15 border border-ink/20 overflow-hidden animate-slide-up">
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-ink/15">
               <div>
                 <h2 className="font-semibold text-ink text-base">{t('report.title')}</h2>
@@ -65,7 +65,7 @@ export default function ReportButton({ username, userEmail }) {
               </div>
               <button
                 onClick={handleClose}
-                className="text-ink/50 hover:text-ink/80 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-paper active:bg-paper-200 transition-colors text-sm -mr-2"
+                className="text-ink/50 hover:text-ink/80 w-10 h-10 flex items-center justify-center rounded-none hover:bg-paper active:bg-paper-200 transition-colors text-sm -mr-2"
                 aria-label={t('common.close')}
               >
                 ✕
@@ -82,7 +82,7 @@ export default function ReportButton({ username, userEmail }) {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-3">
                   <textarea
-                    className="w-full rounded-xl border border-ink/20 bg-cream px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/50 focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-ink resize-none transition-colors"
+                    className="w-full rounded-none border border-ink/20 bg-cream px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/50 focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-ink resize-none transition-colors"
                     rows={4}
                     placeholder={t('report.placeholder')}
                     value={message}

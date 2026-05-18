@@ -331,6 +331,7 @@ export default {
   },
 
   pronosticos: {
+    chapter: 'Porra · 2026',
     title: 'Mis pronósticos',
     noLeagueTitle: 'Únete a una liga para poder enviar',
     noLeagueDesc: 'Invita a tus amigos y compite contra ellos',
@@ -389,6 +390,7 @@ export default {
   },
 
   clasificacion: {
+    chapter: 'Ranking',
     title: 'Clasificación',
     subtitle: 'Exacto = 3 pts · Correcto = 1 pt',
     loadError: 'No se pudo cargar la clasificación. Revisa tu conexión.',
@@ -426,6 +428,7 @@ export default {
   },
 
   extras: {
+    chapter: 'Bonus',
     title: 'Preguntas extra',
     subtitle: 'Responde el borrador y envíalo cuando estés listo. Una vez enviado no se puede cambiar.',
     deadlineLabel: 'Cierre:',
@@ -457,6 +460,7 @@ export default {
   },
 
   resultados: {
+    chapter: 'Crónica',
     title: 'Resultados',
     subtitle: 'Partidos finalizados · Toca un partido para ver los pronósticos de todos',
     noPrediction: 'Sin pronóstico',
@@ -486,6 +490,7 @@ export default {
   },
 
   bracket: {
+    chapter: 'Eliminatorias',
     title: 'Bracket Mundial 2026',
     subtitle: 'Tiempo real · {{n}}/12 grupos completados',
     tabGroups: 'Grupos',
@@ -516,6 +521,7 @@ export default {
   },
 
   perfil: {
+    chapter: 'Perfil',
     title: 'Mi perfil',
     subtitle: 'Tu cuenta y estadísticas',
     changePhoto: 'Cambiar foto',
@@ -543,6 +549,7 @@ export default {
   },
 
   reglas: {
+    chapter: 'Manual',
     title: 'Cómo funciona',
     subtitle: 'Reglas e instrucciones',
     s1title: 'Tus pronósticos',

@@ -31,7 +31,7 @@ function PredRow({ entry, realHome, realAway }) {
   const correct    = !exact && predWinner === realWinner
 
   return (
-    <div className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+    <div className={`flex items-center gap-3 px-3 py-2 rounded-none text-sm ${
       exact   ? 'bg-grass-500/10'
       : correct ? 'bg-blue-500/10'
       : 'bg-paper'
@@ -146,7 +146,7 @@ function FinishedMatchCard({ match, myPrediction, league }) {
             <span className="text-xl flex-shrink-0">{match.home_flag}</span>
           </div>
 
-          <div className="flex-shrink-0 flex items-center gap-2 bg-paper rounded-xl px-4 py-2 border border-ink/30">
+          <div className="flex-shrink-0 flex items-center gap-2 bg-paper rounded-none px-4 py-2 border border-ink/30">
             <span className={`text-xl font-bold ${winner === 'home' ? 'text-grass-500' : 'text-ink/80'}`}>{match.home_score}</span>
             <span className="text-ink/50 text-sm">-</span>
             <span className={`text-xl font-bold ${winner === 'away' ? 'text-grass-500' : 'text-ink/80'}`}>{match.away_score}</span>
@@ -365,7 +365,8 @@ export default function Resultados() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('resultados.title')}</h2>
+        <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('resultados.chapter')}</span>
+            <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('resultados.title')}</h2>
         <p className="font-serif italic text-ink/70 text-sm mt-1">
           {t('resultados.subtitle')}
         </p>
@@ -408,7 +409,7 @@ export default function Resultados() {
               <button
                 key={key}
                 onClick={() => setFilter(key)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-none text-sm font-medium transition-colors ${
                   filter === key ? 'bg-ink text-cream' : 'bg-paper text-ink/50 hover:text-ink'
                 }`}
               >
