@@ -40,7 +40,7 @@ function Avatar({ url, username, size = 'md', isMe = false }) {
         src={url}
         alt={username}
         className={`${sz} rounded-full object-cover flex-shrink-0 ${
-          isMe ? 'border-2 border-terracotta/50' : 'border border-ink/20'
+          isMe ? 'border-2 border-ink/60' : 'border border-ink/20'
         }`}
       />
     )
@@ -48,7 +48,7 @@ function Avatar({ url, username, size = 'md', isMe = false }) {
   return (
     <div className={`${sz} rounded-full flex items-center justify-center font-bold flex-shrink-0 ${
       isMe
-        ? 'bg-terracotta/20 border-2 border-terracotta/50 text-terracotta-400'
+        ? 'bg-ink text-cream border-2 border-ink'
         : 'bg-paper border border-ink/30 text-ink/80'
     }`}>
       {username?.[0]?.toUpperCase()}
@@ -130,7 +130,7 @@ function ProfileModal({ profile, currentUserId, onClose }) {
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-lg font-bold text-ink truncate">{profile.username}</h3>
                 {isMe && (
-                  <span className="text-xs text-terracotta/70 bg-terracotta/10 px-1.5 rounded flex-shrink-0">{t('common.you')}</span>
+                  <span className="text-xs text-ink/80 bg-cream border border-ink/20 px-1.5 rounded flex-shrink-0">{t('common.you')}</span>
                 )}
               </div>
               {profile.company && (
@@ -159,8 +159,8 @@ function ProfileModal({ profile, currentUserId, onClose }) {
             <div className="flex justify-center py-4"><Spinner size="sm" /></div>
           ) : (
             <div className="grid grid-cols-4 gap-2">
-              <StatBadge label={t('clasificacion.statPoints')}  value={stats.points}  color="text-terracotta-400" />
-              <StatBadge label={t('clasificacion.statExact')}   value={stats.exact}   color="text-terracotta-400" />
+              <StatBadge label={t('clasificacion.statPoints')}  value={stats.points}  color="text-ink" />
+              <StatBadge label={t('clasificacion.statExact')}   value={stats.exact}   color="text-ink" />
               <StatBadge label={t('clasificacion.statCorrect')} value={stats.correct} color="text-blue-400" />
               <StatBadge label={t('clasificacion.statTotal')}   value={stats.total}   color="text-ink/70" />
             </div>
@@ -414,7 +414,7 @@ export default function Clasificacion() {
       <>
         {myEntry && (
           <div
-            className="card p-3 sm:p-4 border-terracotta/30 bg-terracotta/5 cursor-pointer hover:border-terracotta/50 transition-colors"
+            className="card p-3 sm:p-4 border-ink/30 bg-paper cursor-pointer hover:border-ink/50 transition-colors"
             onClick={() => setSelectedProfile(myEntry)}
           >
             <div className="flex items-center justify-between gap-3">
@@ -423,22 +423,22 @@ export default function Clasificacion() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-semibold text-ink truncate">{myEntry.username}</span>
-                    <span className="text-[10px] sm:text-xs text-terracotta/70 bg-terracotta/10 px-1.5 rounded">{t('common.you')}</span>
+                    <span className="text-[10px] sm:text-xs text-ink/80 bg-cream border border-ink/20 px-1.5 rounded">{t('common.you')}</span>
                     {myEntry.role === 'admin' && (
-                      <span className="text-[10px] sm:text-xs text-terracotta-600/80 bg-terracotta-600/10 px-1.5 rounded">👑</span>
+                      <span className="text-[10px] sm:text-xs text-ink/80 bg-cream border border-ink/20 px-1.5 rounded">👑</span>
                     )}
                   </div>
                   <div className="text-xs sm:text-sm text-ink/50">{t('clasificacion.positionLabel', { n: myEntry.position })}</div>
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <div className="text-xl sm:text-2xl font-bold text-terracotta-400">{myEntry.league_points}</div>
+                <div className="text-xl sm:text-2xl font-bold text-ink">{myEntry.league_points}</div>
                 <div className="text-[10px] sm:text-xs text-ink/60">{t('common.pts')}</div>
               </div>
             </div>
             {showStats && (
               <div className="flex gap-2 mt-3">
-                <StatBadge label={t('clasificacion.statExact')}   value={myLeagueStats.exact}   color="text-terracotta-400" />
+                <StatBadge label={t('clasificacion.statExact')}   value={myLeagueStats.exact}   color="text-ink" />
                 <StatBadge label={t('clasificacion.statCorrect')} value={myLeagueStats.correct} color="text-blue-400" />
                 <StatBadge label={t('clasificacion.statTotal')}   value={myLeagueStats.total}   color="text-ink/80" />
               </div>
@@ -470,7 +470,7 @@ export default function Clasificacion() {
                     key={entry.id}
                     onClick={() => setSelectedProfile(entry)}
                     className={`grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3.5 items-center transition-colors cursor-pointer ${
-                      isMe ? 'bg-terracotta/5 hover:bg-terracotta/10 active:bg-terracotta/15' : 'hover:bg-paper/60 active:bg-paper'
+                      isMe ? 'bg-paper-200 hover:bg-paper active:bg-cream' : 'hover:bg-paper/60 active:bg-paper'
                     }`}
                   >
                     <div className="font-bold text-base">
@@ -484,14 +484,14 @@ export default function Clasificacion() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {entry.role === 'admin' && <span className="text-xs flex-shrink-0">👑</span>}
-                          <span className={`font-medium truncate ${isMe ? 'text-terracotta' : 'text-ink'}`}>
+                          <span className={`font-medium truncate ${isMe ? 'text-ink font-bold' : 'text-ink/80'}`}>
                             {entry.username}
                           </span>
-                          {isMe && <span className="text-xs text-terracotta/60 flex-shrink-0">{t('common.you')}</span>}
+                          {isMe && <span className="text-xs text-ink/50 flex-shrink-0">{t('common.you')}</span>}
                         </div>
                       </div>
                     </div>
-                    <div className="hidden sm:block text-center text-terracotta-400 font-semibold text-sm">
+                    <div className="hidden sm:block text-center text-ink font-semibold text-sm">
                       {entry.stats.exact}
                     </div>
                     <div className="hidden sm:block text-center text-blue-400 font-medium text-sm">
@@ -501,7 +501,7 @@ export default function Clasificacion() {
                       {entry.stats.total}
                     </div>
                     <div className="text-right">
-                      <span className={`text-lg font-bold ${isTop ? 'text-terracotta-400' : 'text-ink'}`}>
+                      <span className={`text-lg font-bold ${isTop ? 'text-ink' : 'text-ink'}`}>
                         {entry.league_points}
                       </span>
                       <span className="text-ink/50 text-xs ml-0.5">{t('common.pts')}</span>
@@ -530,7 +530,7 @@ export default function Clasificacion() {
         {tab === 'league' && activeLeague?.role === 'admin' && (
           <div className="flex-shrink-0 card p-2.5 sm:p-3 text-center min-w-[110px] sm:min-w-[140px]">
             <p className="text-[10px] sm:text-xs text-ink/60 mb-0.5 sm:mb-1">{t('league.leagueCodeLabel')}</p>
-            <p className="font-mono font-bold text-terracotta-400 tracking-widest text-sm sm:text-lg">{activeLeague.invite_code}</p>
+            <p className="font-mono font-bold text-ink tracking-widest text-sm sm:text-lg">{activeLeague.invite_code}</p>
           </div>
         )}
       </div>
@@ -648,7 +648,7 @@ export default function Clasificacion() {
                         <div
                           key={entry.name}
                           className={`grid grid-cols-[2rem_1fr_3.5rem_3.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3.5 items-center transition-colors ${
-                            isMyCompany ? 'bg-terracotta/5 hover:bg-terracotta/10' : 'hover:bg-paper/60'
+                            isMyCompany ? 'bg-paper-200 hover:bg-paper' : 'hover:bg-paper/60'
                           }`}
                         >
                           <div className="font-bold text-base">
@@ -659,11 +659,11 @@ export default function Clasificacion() {
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`font-medium truncate text-sm ${isMyCompany ? 'text-terracotta' : 'text-ink'}`}>
+                              <span className={`font-medium truncate text-sm ${isMyCompany ? 'text-ink font-bold' : 'text-ink/80'}`}>
                                 {entry.name}
                               </span>
                               {isMyCompany && (
-                                <span className="text-[10px] sm:text-xs text-terracotta/70 bg-terracotta/10 px-1.5 rounded flex-shrink-0">{t('clasificacion.yourCompany')}</span>
+                                <span className="text-[10px] sm:text-xs text-ink/80 bg-cream border border-ink/20 px-1.5 rounded flex-shrink-0">{t('clasificacion.yourCompany')}</span>
                               )}
                             </div>
                             <div className="text-[11px] sm:text-xs text-ink/50 mt-0.5 truncate">
@@ -675,7 +675,7 @@ export default function Clasificacion() {
                             {entry.count}
                           </div>
                           <div className="text-right">
-                            <span className={`text-base sm:text-lg font-bold ${isTop ? 'text-terracotta-400' : 'text-ink'}`}>
+                            <span className={`text-base sm:text-lg font-bold ${isTop ? 'text-ink' : 'text-ink'}`}>
                               {entry.avg % 1 === 0 ? entry.avg : entry.avg.toFixed(1)}
                             </span>
                           </div>
