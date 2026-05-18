@@ -8,6 +8,7 @@ import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from '../components/Spinner'
 import ReportButton from '../components/ReportButton'
 import LangToggle from '../components/LangToggle'
+import { BrandMark } from '../components/Brand'
 
 // Aliases de empresa: abreviatura → nombre(s) canónico(s)
 const COMPANY_ALIASES = {
@@ -388,11 +389,8 @@ export default function Auth() {
             <div className="absolute top-0 inset-x-0 h-px bg-terracotta" />
             {/* Logo */}
             <div className="flex flex-col items-center text-center mb-5">
-              <div className="text-4xl mb-2.5">⚽</div>
-              <h1 className="text-xl font-bold text-ink">
-                Porra <span className="text-terracotta">Mundial 2026</span>
-              </h1>
-              <p className="text-ink/50 text-xs mt-1">{t('auth.firstMatchSub')}</p>
+              <BrandMark size={0.9} className="items-center" />
+              <p className="text-ink/50 text-xs mt-3">{t('auth.firstMatchSub')}</p>
             </div>
 
             {/* Stats pills */}

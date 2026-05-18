@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLang } from '../contexts/LangContext'
 import { supabase, sq } from '../lib/supabase'
 import ReportButton from '../components/ReportButton'
+import { BrandMark, BrandTile } from '../components/Brand'
 
 // CDN scripts needed by the Atlas/Map section (d3 + topojson-client). Loaded
 // once on first mount; reused on subsequent navigations.
@@ -490,11 +491,8 @@ export default function Landing() {
       {/* ── NAV ───────────────────────────────────────────────────────── */}
       <nav className="ln-top" id="landing-nav">
         <Link className="ln-brand" to="/">
-          <span className="ln-brand-mark" />
-          <span>
-            <span className="ln-brand-name">{t('common.appName')}</span>
-            <span className="ln-brand-sub">{t('landing.nav.sub')}</span>
-          </span>
+          <BrandTile size={34} />
+          <BrandMark compact size={0.65} className="ln-brand-mark-text" />
         </Link>
         <div className="ln-nav-right">
           <div className="ln-nav-links">
@@ -884,15 +882,10 @@ const LANDING_CSS = `
 /* NAV */
 .landing-root .ln-top{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 16px max(16px,env(safe-area-inset-left));background:rgba(244,236,214,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);transition:background .3s;gap:12px}
 @media (min-width:640px){.landing-root .ln-top{padding-left:max(32px,env(safe-area-inset-left));padding-right:max(32px,env(safe-area-inset-right))}}
-@media (max-width:520px){.landing-root .ln-top{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));gap:8px}.landing-root .ln-top .ln-brand-sub{display:none}.landing-root .ln-brand-name{font-size:12px;white-space:nowrap}.landing-root .ln-brand-mark{width:28px;height:28px}.landing-root .ln-btn{padding:9px 11px;font-size:11px}}
-@media (max-width:380px){.landing-root .ln-brand-name{display:none}}
+@media (max-width:520px){.landing-root .ln-top{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));gap:8px}.landing-root .ln-brand-mark-text{--logo-size:.55}.landing-root .ln-btn{padding:9px 11px;font-size:11px}}
+@media (max-width:380px){.landing-root .ln-brand-mark-text{display:none}}
 .landing-root .ln-top.scrolled{background:rgba(244,236,214,.96)}
-.landing-root .ln-brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--ink)}
-.landing-root .ln-brand-mark{width:34px;height:34px;border-radius:50%;background:var(--ink);position:relative;overflow:hidden;flex-shrink:0}
-.landing-root .ln-brand-mark::before{content:"";position:absolute;inset:4px;border-radius:50%;background:repeating-conic-gradient(from 0deg, var(--cream) 0deg 18deg, var(--ink) 18deg 36deg)}
-.landing-root .ln-brand-mark::after{content:"";position:absolute;inset:11px;background:var(--cream);border-radius:50%}
-.landing-root .ln-brand-name{font-family:"Boldonse",sans-serif;font-size:17px;line-height:1}
-.landing-root .ln-brand-sub{display:block;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.22em;color:var(--terracotta);margin-top:4px;text-transform:uppercase}
+.landing-root .ln-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink)}
 .landing-root .ln-nav-right{display:flex;align-items:center;gap:20px}
 .landing-root .ln-nav-links{display:flex;gap:24px}
 .landing-root .ln-nav-links a{text-decoration:none;font-size:13px;color:var(--ink);font-weight:500;transition:color .2s}

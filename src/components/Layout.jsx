@@ -12,6 +12,7 @@ import LeagueSwitcher from './LeagueSwitcher'
 import LangToggle from './LangToggle'
 import PaymentModal from './PaymentModal'
 import ReportButton from './ReportButton'
+import { BrandMark, BrandTile } from './Brand'
 
 // ── Avatar/menú del usuario para móvil (perfil + salir) ────────────────────
 function MobileUserMenu({ profile, onSignOut }) {
@@ -265,18 +266,16 @@ export default function Layout() {
       <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur-md border-b border-ink/15 pt-safe">
         <div className="absolute top-0 inset-x-0 h-px bg-terracotta" />
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
-          {/* Logo */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button
+          {/* Logo: tile-as-refresh button + canonical wordmark on desktop */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <BrandTile
+              size={32}
               onClick={handleBallRefresh}
-              aria-label="Actualizar"
-              className={`text-xl sm:text-2xl leading-none focus:outline-none transition-transform active:scale-90 ${refreshing ? 'animate-spin' : ''}`}
-            >
-              ⚽
-            </button>
-            <Link to="/pronosticos" className="hidden sm:flex items-baseline gap-1.5">
-              <span className="font-display text-ink text-base leading-none">Porra Mundial 2026</span>
-              <span className="ed-mono text-terracotta text-[9px]">ED. 2026</span>
+              ariaLabel="Actualizar"
+              spinning={refreshing}
+            />
+            <Link to="/pronosticos" className="hidden sm:flex items-baseline">
+              <BrandMark compact size={0.45} />
             </Link>
           </div>
 
