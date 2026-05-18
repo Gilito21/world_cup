@@ -255,7 +255,9 @@ export default function Resultados() {
 
   const [matches, setMatches]         = useState(() => {
     const cached = getMatchCache()
-    return cached ? cached.filter(m => m.status === 'finished') : []
+    // Cache canónico = ascendente. En esta página presentamos los partidos
+    // finalizados de más reciente a más antiguo, así que revertimos aquí.
+    return cached ? cached.filter(m => m.status === 'finished').slice().reverse() : []
   })
   const [predictions, setPredictions] = useState({})
   const [loading, setLoading]         = useState(() => !getMatchCache())
@@ -277,14 +279,18 @@ export default function Resultados() {
       const [{ data: allMatchData }, { data: predData }] = await Promise.all([
         cachedMatches
           ? Promise.resolve({ data: cachedMatches })
-          : sq(supabase.from('matches').select('*').order('match_date', { ascending: false })),
+          // El cache compartido espera orden ascendente (ver matchCache.js).
+          // Pedimos ascendente y revertimos solo para la presentación local
+          // de "últimos partidos primero".
+          : sq(supabase.from('matches').select('*').order('match_date')),
         sq(predictionMode === 'per_league' && activeLeague
           ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
           : supabase.from('predictions').select('*').eq('user_id', user.id).is('league_id', null)),
       ])
       if (allMatchData) {
         setMatchCache(allMatchData)
-        setMatches(allMatchData.filter(m => m.status === 'finished'))
+        // Mostrar los finalizados de más reciente a más antiguo.
+        setMatches(allMatchData.filter(m => m.status === 'finished').slice().reverse())
       }
       if (predData) {
         const map = {}
@@ -306,15 +312,21 @@ export default function Resultados() {
   // Realtime: when any match resolves or its score changes, refresh quietly
   // in the background so the page reflects new finished matches without
   // requiring the user to pull-to-refresh.
+  //
+  // El nombre de canal incluye user.id para evitar colisiones entre
+  // pestañas distintas del mismo navegador (un nombre global compartido
+  // generaría carreras subscribe/removeChannel cuando hay 2 pestañas
+  // abiertas y `load` cambia de identidad por un cambio de liga).
   useEffect(() => {
+    if (!user?.id) return
     const channel = supabase
-      .channel('resultados-matches')
+      .channel(`resultados-matches-${user.id}`)
       .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'matches' },
         () => load({ force: true }))
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [load])
+  }, [user?.id, load])
 
   const stats = matches.reduce(
     (acc, m) => {

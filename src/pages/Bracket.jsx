@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useId, useState, useMemo } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { useLang } from '../contexts/LangContext'
@@ -305,6 +305,10 @@ function KnockoutRound({ roundKey, r32Matches, knockoutSlots, dbMatchesByBracket
 
 export default function Bracket() {
   const { t } = useLang()
+  // useId() es estable entre renders pero único por instancia: evita
+  // que dos pestañas Bracket abiertas en el mismo navegador colisionen
+  // sobre el canal 'bracket-matches' (que era un nombre global fijo).
+  const channelId    = useId()
   const [allMatches, setAllMatches] = useState(() => getMatchCache() ?? [])
   const [loading,    setLoading]    = useState(() => !getMatchCache())
   const [activeTab,  setActiveTab]  = useState('grupos')
@@ -333,10 +337,10 @@ export default function Bracket() {
     load()
 
     // Real-time subscription: re-derive bracket whenever any match changes.
-    // Use a stable channel name so React StrictMode / fast remounts don't
-    // accumulate orphan channels.
+    // Nombre estable por instancia (useId) — no global — para que dos
+    // pestañas no compitan por el mismo canal.
     const channel = supabase
-      .channel('bracket-matches')
+      .channel(`bracket-matches-${channelId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches' }, () => {
         if (!cancelled) load()
       })

@@ -87,6 +87,15 @@ export default function LeagueFeed({ leagueId }) {
 
   useEffect(() => { load() }, [load])
 
+  // Reset al cambiar de liga: sin esto, al pasar de Liga A → Liga B, el
+  // componente sigue mostrando los eventos de A durante el rato que
+  // tarda `load()` en devolver los de B (flash de feed equivocado).
+  // Si hay caché de B la levantamos al instante; si no, dejamos null
+  // para que se muestre el skeleton mientras se descarga.
+  useEffect(() => {
+    setEvents(cacheKey ? (getCache(cacheKey) ?? null) : null)
+  }, [cacheKey])
+
   // Realtime: when someone in the league submits a prediction or a match
   // gets resolved, refresh the feed in the background. Channel name is
   // bound to the league id so multiple league switches don't accumulate.
