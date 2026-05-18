@@ -884,7 +884,8 @@ const LANDING_CSS = `
 /* NAV */
 .landing-root .ln-top{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 16px max(16px,env(safe-area-inset-left));background:rgba(244,236,214,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);transition:background .3s;gap:12px}
 @media (min-width:640px){.landing-root .ln-top{padding-left:max(32px,env(safe-area-inset-left));padding-right:max(32px,env(safe-area-inset-right))}}
-@media (max-width:520px){.landing-root .ln-top .ln-brand-sub{display:none}.landing-root .ln-brand-name{font-size:15px}.landing-root .ln-brand-mark{width:30px;height:30px}.landing-root .ln-btn{padding:9px 12px;font-size:12px}}
+@media (max-width:520px){.landing-root .ln-top{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));gap:8px}.landing-root .ln-top .ln-brand-sub{display:none}.landing-root .ln-brand-name{font-size:12px;white-space:nowrap}.landing-root .ln-brand-mark{width:28px;height:28px}.landing-root .ln-btn{padding:9px 11px;font-size:11px}}
+@media (max-width:380px){.landing-root .ln-brand-name{display:none}}
 .landing-root .ln-top.scrolled{background:rgba(244,236,214,.96)}
 .landing-root .ln-brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--ink)}
 .landing-root .ln-brand-mark{width:34px;height:34px;border-radius:50%;background:var(--ink);position:relative;overflow:hidden;flex-shrink:0}

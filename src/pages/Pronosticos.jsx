@@ -1285,7 +1285,7 @@ export default function Pronosticos() {
                 edit, has at least one empty match, and we have consensus data
                 cached. Saves people from tapping +/− 60+ times. */}
             {!isSubmitted && !isPastCutoff && Object.keys(consensus).length > 0 && filledCount < totalCount && (
-              <div className="card p-3 bg-terracotta/40 border-terracotta/60 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+              <div className="bg-paper border border-ink/20 border-l-4 border-l-terracotta p-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-semibold text-ink">
                     {fillStatus.state === 'done' && fillStatus.failed > 0
