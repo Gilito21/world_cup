@@ -102,6 +102,15 @@ export default {
       f3: 'en México',
       f4: 'en Canadá',
     },
+    countdown: {
+      title: 'Cuenta atrás',
+      target: '1er partido · 11 jun',
+      days: 'días',
+      hours: 'horas',
+      minutes: 'min',
+      seconds: 'seg',
+      started: '¡El Mundial ha empezado!',
+    },
     stadium: {
       cap: 'Aforo',
     },
