@@ -102,6 +102,9 @@ export default {
       f3: 'en México',
       f4: 'en Canadá',
     },
+    stadium: {
+      cap: 'Aforo',
+    },
     cl: {
       us: 'Estados Unidos · 11',
       mx: 'México · 3',
