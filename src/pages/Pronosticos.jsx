@@ -964,6 +964,11 @@ export default function Pronosticos() {
   // Knockout draws are skipped (no consensus tiebreaker → would require an
   // extra user decision; better to leave those for manual fill).
   const [fillStatus, setFillStatus] = useState({ state: 'idle', count: 0, failed: 0 })
+
+  // Lets the user hide the consensus-fill suggestion for the current session
+  // (e.g. they prefer to fill picks manually). Resets on page reload — no
+  // need to persist; reappearing is a useful nudge if they come back.
+  const [consensusDismissed, setConsensusDismissed] = useState(false)
   const fillTimerRef = useRef(null)
   const fillFromConsensus = useCallback(async () => {
     if (fillStatus.state === 'running') return
@@ -1284,8 +1289,18 @@ export default function Pronosticos() {
             {/* Bulk-fill from consensus — only shown while the user can still
                 edit, has at least one empty match, and we have consensus data
                 cached. Saves people from tapping +/− 60+ times. */}
-            {!isSubmitted && !isPastCutoff && Object.keys(consensus).length > 0 && filledCount < totalCount && (
-              <div className="bg-paper border border-ink/20 border-l-4 border-l-terracotta p-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            {!isSubmitted && !isPastCutoff && !consensusDismissed && Object.keys(consensus).length > 0 && filledCount < totalCount && (
+              <div className="relative bg-paper border border-ink/20 border-l-4 border-l-ink p-3 pr-9 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setConsensusDismissed(true)}
+                  aria-label={t('common.close')}
+                  className="absolute top-1.5 right-1.5 w-7 h-7 flex items-center justify-center text-ink/50 hover:text-ink hover:bg-cream transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                </button>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-semibold text-ink">
                     {fillStatus.state === 'done' && fillStatus.failed > 0
