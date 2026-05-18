@@ -7,8 +7,8 @@ export default function Reglas() {
     <div className="max-w-2xl mx-auto space-y-5 sm:space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-ink">{t('reglas.title')}</h2>
-        <p className="text-ink/50 text-xs sm:text-sm mt-0.5 sm:mt-1">{t('reglas.subtitle')}</p>
+        <h2 className="font-display text-2xl sm:text-3xl text-ink leading-none">{t('reglas.title')}</h2>
+        <p className="font-serif italic text-ink/70 text-sm sm:text-base mt-1.5">{t('reglas.subtitle')}</p>
       </div>
 
       {/* 1. Los pronósticos */}

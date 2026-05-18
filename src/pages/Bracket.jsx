@@ -410,8 +410,8 @@ export default function Bracket() {
     <div className="space-y-4 sm:space-y-5">
       {/* Header */}
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-ink">{t('bracket.title')}</h2>
-        <p className="text-ink/50 text-xs sm:text-sm mt-0.5 sm:mt-1">
+        <h2 className="font-display text-2xl sm:text-3xl text-ink leading-none">{t('bracket.title')}</h2>
+        <p className="font-serif italic text-ink/70 text-sm sm:text-base mt-1.5">
           {t('bracket.subtitle', { n: groupsComplete })}
         </p>
       </div>
