@@ -1,11 +1,26 @@
 // notify-new-user
 //
-// 1) Notifica al admin de un nuevo registro.
+// 1) Notifica al admin de un nuevo registro CONFIRMADO.
 // 2) Envía email de bienvenida al nuevo usuario.
 //
 // POST body: { email: string, username: string, company?: string }
+//
+// IMPORTANTE: la función comprueba en auth.users que el email del body
+// tiene email_confirmed_at IS NOT NULL antes de enviar. Esto blinda
+// frente a:
+//   - código cliente viejo que invocaba directamente esta función al
+//     hacer signUp (antes de que el usuario verificase su email)
+//   - cualquier futuro caller que dispare a destiempo
+// Si el usuario no está confirmado devolvemos 200 con
+// { skipped: 'not_confirmed' } para que el caller no rompa, pero sin
+// mandar correos.
+//
+// El caller esperado es el trigger sync_email_confirmed (migración
+// 024) vía pg_net, que dispara cuando email_confirmed_at flip de NULL
+// a NOT NULL.
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -61,6 +76,32 @@ Deno.serve(async (req: Request) => {
   const username = (body.username ?? '').trim()
   const company  = (body.company  ?? '').trim()
   const ts       = new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })
+
+  // ── Gate: solo notificar cuando el usuario YA está confirmado ────────────
+  // Esto convierte la función en idempotente respecto al momento en que
+  // se dispara: tanto si la llaman al hacer signUp (viejo cliente) como
+  // al confirmar (trigger), solo se envía una vez — la primera vez que
+  // ambos requisitos coinciden (= al confirmar).
+  if (email) {
+    const supaUrl = Deno.env.get('SUPABASE_URL')
+    const supaKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (supaUrl && supaKey) {
+      const admin = createClient(supaUrl, supaKey)
+      const { data, error } = await admin.auth.admin.listUsers({ perPage: 200 })
+      if (error) {
+        console.error('listUsers failed (gate disabled):', error)
+        // Sin gate: continuamos para no romper en caso de outage de auth.
+      } else {
+        const match = data.users.find(u => (u.email ?? '').toLowerCase() === email.toLowerCase())
+        if (!match) {
+          return json({ skipped: 'user_not_found', email })
+        }
+        if (!match.email_confirmed_at) {
+          return json({ skipped: 'not_confirmed', email })
+        }
+      }
+    }
+  }
 
   // ── 1. Email al admin ─────────────────────────────────────────────────────
   const adminHtml = `
