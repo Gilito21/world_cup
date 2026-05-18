@@ -26,6 +26,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
+import { brandShell, brandButton, brandHeadline, brandKicker, brandStatTile, escHtml, BRAND } from './_brand-email.js'
 config()
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -42,10 +43,6 @@ const MUNDIAL_START = new Date('2026-06-11T00:00:00Z')
 const MUNDIAL_END   = new Date('2026-07-20T23:59:59Z')
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function escHtml(str) {
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
 
 function fmtDateHumanES(d) {
   return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -69,22 +66,28 @@ function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints,
   const todayStr     = fmtDateHumanES(new Date())
 
   const subject = yesterdayMatches.length > 0
-    ? `⚽ Tu resumen de ayer · ${yesterdayPoints} pts`
-    : `⚽ Hoy juegan: ${todayMatches.slice(0, 2).map(m => `${m.home_team} – ${m.away_team}`).join(' · ')}`
+    ? `Tu resumen · ${yesterdayPoints} pts · ${yesterdayStr}`
+    : `Hoy juegan: ${todayMatches.slice(0, 2).map(m => `${m.home_team} – ${m.away_team}`).join(' · ')}`
 
   const yesterdayRows = yesterdayMatches.map(m => {
     const pts = m.points ?? 0
-    const badgeBg = pts === 3 ? '#f59e0b' : pts === 1 ? '#3b82f6' : '#78716c'
-    const badge   = pts === 3 ? '🎯 +3' : pts === 1 ? '✓ +1' : '✗ 0'
-    const predStr = m.my_pred ? `${m.my_pred.home_score} – ${m.my_pred.away_score}` : '<em style="color:#a8a29e">sin pronóstico</em>'
+    const badgeBg = pts === 3 ? BRAND.terra : pts === 1 ? BRAND.inkSoft : 'transparent'
+    const badgeFg = pts === 0 ? BRAND.ink : BRAND.cream
+    const badgeTx = pts === 3 ? '+3' : pts === 1 ? '+1' : '0'
+    const badgeBd = pts === 0 ? `1px solid ${BRAND.ink}` : 'none'
+    const predStr = m.my_pred
+      ? `${m.my_pred.home_score} – ${m.my_pred.away_score}`
+      : `<em style="color:${BRAND.ink};opacity:.5;">sin pronóstico</em>`
     return `
       <tr>
-        <td style="padding:8px 0;border-bottom:1px solid #f5f5f4;">
-          <div style="font-size:13px;color:#44403c;font-weight:600;">${escHtml(m.home_team)} ${m.home_score} – ${m.away_score} ${escHtml(m.away_team)}</div>
-          <div style="font-size:11px;color:#a8a29e;margin-top:2px;">Tu pronóstico: ${predStr}</div>
+        <td style="padding:12px 0;border-bottom:1px solid ${BRAND.rule};">
+          <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};font-weight:600;">
+            ${escHtml(m.home_team)} <span style="font-family:'Instrument Serif',Georgia,serif;font-size:18px;color:${BRAND.terra};">${m.home_score} – ${m.away_score}</span> ${escHtml(m.away_team)}
+          </div>
+          <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;margin-top:4px;">Tu pronóstico · ${predStr}</div>
         </td>
-        <td style="padding:8px 0;border-bottom:1px solid #f5f5f4;text-align:right;white-space:nowrap;">
-          <span style="display:inline-block;background:${badgeBg};color:#ffffff;font-weight:700;font-size:11px;padding:3px 8px;border-radius:999px;">${badge}</span>
+        <td style="padding:12px 0 12px 16px;border-bottom:1px solid ${BRAND.rule};text-align:right;white-space:nowrap;vertical-align:middle;">
+          <span style="display:inline-block;background:${badgeBg};color:${badgeFg};border:${badgeBd};font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:11px;letter-spacing:.08em;padding:4px 10px;">${badgeTx}</span>
         </td>
       </tr>`
   }).join('')
@@ -93,67 +96,59 @@ function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints,
     const time = new Date(m.match_date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' })
     return `
       <tr>
-        <td style="padding:6px 0;font-size:13px;color:#57534e;">${escHtml(m.home_team)} <span style="color:#a8a29e">vs</span> ${escHtml(m.away_team)}</td>
-        <td style="padding:6px 0;font-size:12px;color:#a8a29e;text-align:right;white-space:nowrap;">${time} CET</td>
+        <td style="padding:10px 0;border-bottom:1px solid ${BRAND.rule};font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};">
+          ${escHtml(m.home_team)} <span style="color:${BRAND.terra};font-family:'Instrument Serif',Georgia,serif;font-style:italic;">vs</span> ${escHtml(m.away_team)}
+        </td>
+        <td style="padding:10px 0 10px 16px;border-bottom:1px solid ${BRAND.rule};font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.1em;color:${BRAND.ink};opacity:.7;text-align:right;white-space:nowrap;">${time} CET</td>
       </tr>`
   }).join('')
 
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#fafaf9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
+  const positionBlock = (position && totalUsers) ? `
+    <div style="margin:0 0 24px;">
+      ${brandStatTile({ kicker: 'Posición global', value: `#${position} <span style="font-family:Inter,-apple-system,sans-serif;font-size:14px;opacity:.55;">/ ${totalUsers}</span>`, sub: yesterdayPoints > 0 ? `Sumaste ${yesterdayPoints} ${yesterdayPoints === 1 ? 'punto' : 'puntos'} ayer.` : null })}
+    </div>` : ''
 
-    <div style="text-align:center;margin-bottom:20px;">
-      <div style="font-size:32px;line-height:1;margin-bottom:6px;">⚽</div>
-      <h1 style="margin:0;font-size:18px;font-weight:800;color:#1c1917;">Porra <span style="color:#f59e0b;">Empresas</span></h1>
-    </div>
+  const ayerBlock = yesterdayMatches.length > 0 ? `
+    <div style="margin:0 0 24px;">
+      ${brandKicker(`Ayer · ${yesterdayStr}`)}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-top:6px;">
+        ${yesterdayRows}
+      </table>
+    </div>` : `
+    <p style="margin:0 0 24px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};opacity:.65;">Ayer no hubo partidos del torneo.</p>`
 
-    <div style="background:#ffffff;border:1px solid #e7e5e4;border-radius:16px;padding:20px;margin-bottom:16px;">
-      <p style="margin:0 0 14px;font-size:15px;color:#1c1917;">
-        Hola <strong style="color:#d97706;">${escHtml(username)}</strong> 👋
-      </p>
+  const hoyBlock = todayMatches.length > 0 ? `
+    <div style="margin:0 0 28px;">
+      ${brandKicker(`Hoy · ${todayStr}`)}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-top:6px;">
+        ${todayRows}
+      </table>
+    </div>` : ''
 
-      ${yesterdayMatches.length > 0 ? `
-        <h2 style="margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:0.08em;color:#a8a29e;">Ayer · ${escHtml(yesterdayStr)}</h2>
-        <p style="margin:0 0 10px;color:#44403c;font-size:14px;">
-          Sumaste <strong style="color:#d97706;">${yesterdayPoints} ${yesterdayPoints === 1 ? 'punto' : 'puntos'}</strong>.
-        </p>
-        <table style="width:100%;border-collapse:collapse;">${yesterdayRows}</table>
-      ` : `
-        <p style="margin:0 0 4px;color:#78716c;font-size:14px;">Ayer no hubo partidos del torneo.</p>
-      `}
-    </div>
+  const headline = yesterdayMatches.length > 0
+    ? (yesterdayPoints > 0 ? `Bien jugado, ${username}.` : `Hoy se reescribe, ${username}.`)
+    : `A ver qué pasa hoy, ${username}.`
 
-    ${(position && totalUsers) ? `
-      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:16px;padding:16px 20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <p style="margin:0;color:#92400e;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">Tu posición global</p>
-          <p style="margin:4px 0 0;color:#1c1917;font-size:22px;font-weight:800;">#${position} <span style="color:#a8a29e;font-size:14px;font-weight:500;">de ${totalUsers}</span></p>
-        </div>
-      </div>
-    ` : ''}
+  const content = `
+${brandKicker('Resumen diario')}
+${brandHeadline(headline)}
 
-    ${todayMatches.length > 0 ? `
-      <div style="background:#ffffff;border:1px solid #e7e5e4;border-radius:16px;padding:20px;margin-bottom:16px;">
-        <h2 style="margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:0.08em;color:#a8a29e;">Hoy · ${escHtml(todayStr)}</h2>
-        <table style="width:100%;border-collapse:collapse;">${todayRows}</table>
-      </div>
-    ` : ''}
+${ayerBlock}
+${positionBlock}
+${hoyBlock}
 
-    <a href="${APP_URL}"
-       style="display:block;background:#f59e0b;color:#1c1917;text-decoration:none;text-align:center;padding:13px 24px;border-radius:12px;font-weight:700;font-size:15px;letter-spacing:0.01em;">
-      Ver clasificación →
-    </a>
+${brandButton({ href: APP_URL, label: 'Ver clasificación' })}
+`
 
-    <p style="text-align:center;color:#a8a29e;font-size:11px;margin-top:20px;line-height:1.6;">
-      Recibes este resumen porque tienes los recordatorios activados.<br>
-      Puedes desactivarlos en tu
-      <a href="${APP_URL}/perfil" style="color:#78716c;text-decoration:underline;">perfil</a>.
-    </p>
-  </div>
-</body>
-</html>`
+  const html = brandShell({
+    title: subject,
+    preheader: yesterdayMatches.length > 0
+      ? `Sumaste ${yesterdayPoints} ${yesterdayPoints === 1 ? 'punto' : 'puntos'} en los partidos de ayer.`
+      : `Partidos previstos para hoy en el Mundial 2026.`,
+    content,
+    footerNote: `Recibes este resumen porque tienes los recordatorios activados. Puedes desactivarlos en tu perfil: ${APP_URL}/perfil`,
+    appUrl: APP_URL,
+  })
 
   return { subject, html }
 }

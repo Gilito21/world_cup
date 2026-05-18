@@ -15,6 +15,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
+import { brandShell, brandButton, brandHeadline, brandKicker, brandStatTile, escHtml, BRAND } from './_brand-email.js'
 config()
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -26,58 +27,37 @@ const FROM_NAME    = process.env.FROM_NAME  ?? 'Porra Empresas'
 
 const MUNDIAL_START = new Date('2026-06-11T21:00:00Z')
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function escHtml(str) {
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
 // ─── Email pre-Mundial ────────────────────────────────────────────────────────
 
 function buildEmail({ username, hoursLeft, type }) {
-  const dias    = type === '2_days' ? '2 días' : '1 día'
-  const subject = `⚽ Queda ${dias} para el Mundial — ¡envía tu pronóstico!`
+  const diasTxt = type === '2_days' ? '2 días' : '1 día'
+  const subject = `Queda ${diasTxt} para el Mundial · envía tu pronóstico`
   const horas   = Math.round(hoursLeft)
 
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#0c0a09;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
+  const content = `
+${brandKicker(type === '2_days' ? 'Aviso · 48 horas' : 'Aviso · 24 horas')}
+${brandHeadline(type === '2_days' ? 'Te quedan dos días para entrar a la porra.' : 'Mañana pita el árbitro.')}
+<p style="margin:0 0 22px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${BRAND.ink};">
+  Hola <strong>${escHtml(username)}</strong>, todavía no has enviado tu pronóstico para el Mundial 2026. Una vez arranque el primer partido se cierran los marcadores del torneo entero — no hay segunda oportunidad.
+</p>
 
-    <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-size:44px;line-height:1;margin-bottom:10px;">⚽</div>
-      <h1 style="margin:0;font-size:22px;font-weight:800;color:#f5f5f4;">
-        Porra <span style="color:#f59e0b;">Empresas</span>
-      </h1>
-    </div>
+<div style="margin:0 0 24px;">
+  ${brandStatTile({ kicker: 'Tiempo restante', value: `${horas} <span style="font-size:18px;opacity:.7;">h</span>`, sub: 'Hasta el pitido inicial · 11 jun 2026, 21:00 CET' })}
+</div>
 
-    <div style="background:#1c1917;border:1px solid #292524;border-radius:16px;padding:24px 20px;">
-      <p style="margin:0 0 6px;font-size:16px;color:#e7e5e4;">
-        Hola <strong style="color:#fbbf24;">${escHtml(username)}</strong> 👋
-      </p>
-      <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#f5f5f4;line-height:1.4;">
-        Envía tu pronóstico antes de que empiece el Mundial.
-      </p>
-      <p style="margin:0 0 24px;color:#a8a29e;font-size:14px;line-height:1.5;">
-        Quedan <strong style="color:#f59e0b;">${horas} horas</strong> para que empiece.
-        Una vez que pite el árbitro ya no podrás cambiar nada.
-      </p>
-      <a href="${APP_URL}/auth"
-         style="display:block;background:#f59e0b;color:#0c0a09;text-decoration:none;text-align:center;padding:13px 24px;border-radius:12px;font-weight:700;font-size:15px;letter-spacing:0.01em;">
-        Entrar y pronosticar →
-      </a>
-    </div>
+${brandButton({ href: `${APP_URL}/auth`, label: 'Entrar y pronosticar' })}
 
-    <p style="text-align:center;color:#44403c;font-size:12px;margin-top:20px;line-height:1.6;">
-      Recibes este email porque tienes los recordatorios activados.<br>
-      Puedes desactivarlos desde tu
-      <a href="${APP_URL}/perfil" style="color:#78716c;text-decoration:underline;">perfil en la app</a>.
-    </p>
+<p style="margin:26px 0 0;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:${BRAND.ink};opacity:.65;text-align:center;">
+  Predice marcadores, compite en ligas privadas y suma puntos con los extras.
+</p>`
 
-  </div>
-</body>
-</html>`
+  const html = brandShell({
+    title: subject,
+    preheader: `Quedan ${horas} horas para el pitido inicial — entra antes de que cierren los marcadores.`,
+    content,
+    footerNote: `Recibes este email porque tienes los recordatorios activados. Puedes desactivarlos en tu perfil: ${APP_URL}/perfil`,
+    appUrl: APP_URL,
+  })
 
   return { subject, html }
 }
