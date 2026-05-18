@@ -86,14 +86,14 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
       <button
         type="submit"
         disabled={!stripe || submitting}
-        className="w-full bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:from-amber-600 active:to-amber-500 text-stone-950 font-semibold py-3.5 rounded-2xl shadow-lg shadow-amber-500/30 hover:shadow-amber-500/40 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full bg-gradient-to-r from-terracotta/40 to-terracotta/60 hover:from-terracotta/40 hover:to-terracotta/60 active:from-terracotta/40 active:to-terracotta/60 text-ink font-semibold py-3.5 rounded-2xl shadow-lg shadow-ink/15 hover:shadow-ink/15 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {submitting
           ? <><Spinner size="sm" /> {t('payment.processing')}</>
           : t('payment.payBtn', { price: LEAGUE_PRICE_LABEL })}
       </button>
 
-      <p className="text-center text-stone-400 text-xs flex items-center justify-center gap-1">
+      <p className="text-center text-ink/50 text-xs flex items-center justify-center gap-1">
         {t('payment.secure')}
       </p>
     </form>
@@ -148,8 +148,8 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
       <Backdrop onClose={onClose}>
         <div className="p-6 space-y-3 text-center">
           <span className="text-3xl">⚠️</span>
-          <p className="text-stone-900 font-semibold">{t('payment.notConfigured')}</p>
-          <p className="text-stone-500 text-sm">
+          <p className="text-ink font-semibold">{t('payment.notConfigured')}</p>
+          <p className="text-ink/60 text-sm">
             {t('payment.notConfiguredDesc')}
           </p>
           <button onClick={onClose} className="btn-secondary w-full">{t('common.close')}</button>
@@ -162,10 +162,10 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
   return createPortal(
     <Backdrop onClose={onClose}>
       {/* Hero */}
-      <div className="relative bg-gradient-to-br from-amber-500 via-amber-400 to-orange-400 p-5 sm:p-6 text-stone-950">
+      <div className="relative bg-gradient-to-br from-terracotta/40 via-terracotta/40 to-terracotta/40 p-5 sm:p-6 text-ink">
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/30 hover:bg-white/50 active:bg-white/60 backdrop-blur-sm flex items-center justify-center text-stone-900 transition-colors"
+          className="absolute top-3 right-3 w-10 h-10 rounded-full bg-paper/30 hover:bg-paper/50 active:bg-paper/60 backdrop-blur-sm flex items-center justify-center text-ink transition-colors"
           aria-label={t('common.close')}
         >
           ✕
@@ -177,7 +177,7 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
         <h2 className="text-xl sm:text-2xl font-bold leading-tight">
           {t('payment.createTitle', { name: leagueName })}
         </h2>
-        <p className="text-stone-900/70 text-xs sm:text-sm mt-1">
+        <p className="text-ink/70 text-xs sm:text-sm mt-1">
           {t('payment.createSubtitle')}
         </p>
       </div>
@@ -186,19 +186,19 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
         {/* Features */}
         <ul className="space-y-2">
           {FEATURES.map(f => (
-            <li key={f} className="flex items-start gap-2.5 text-sm text-stone-700">
-              <span className="text-amber-500 font-bold flex-shrink-0 mt-0.5">✓</span>
+            <li key={f} className="flex items-start gap-2.5 text-sm text-ink/80">
+              <span className="text-terracotta font-bold flex-shrink-0 mt-0.5">✓</span>
               <span>{f}</span>
             </li>
           ))}
         </ul>
 
-        <div className="border-t border-stone-200 my-2" />
+        <div className="border-t border-ink/20 my-2" />
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10 gap-2">
             <Spinner size="lg" />
-            <p className="text-stone-400 text-xs">{t('payment.loading')}</p>
+            <p className="text-ink/50 text-xs">{t('payment.loading')}</p>
           </div>
         ) : error ? (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm space-y-2">
@@ -258,10 +258,10 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
 function Backdrop({ children, onClose }) {
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center sm:items-center justify-center bg-stone-900/60 backdrop-blur-md animate-fade-in px-3 sm:px-4 py-4 sm:py-8 overflow-y-auto"
+      className="fixed inset-0 z-[60] flex items-center sm:items-center justify-center bg-ink/60 backdrop-blur-md animate-fade-in px-3 sm:px-4 py-4 sm:py-8 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-md shadow-2xl shadow-black/40 overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] flex flex-col">
+      <div className="bg-paper rounded-2xl sm:rounded-3xl w-full max-w-md shadow-2xl shadow-black/40 overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] flex flex-col">
         <div className="overflow-y-auto">
           {children}
         </div>

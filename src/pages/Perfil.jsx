@@ -130,8 +130,8 @@ export default function Perfil() {
   return (
     <div className="space-y-4 sm:space-y-6 max-w-lg">
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">{t('perfil.title')}</h2>
-        <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">{t('perfil.subtitle')}</p>
+        <h2 className="font-display text-2xl sm:text-3xl text-ink leading-none">{t('perfil.title')}</h2>
+        <p className="font-serif italic text-ink/70 text-sm sm:text-base mt-1.5">{t('perfil.subtitle')}</p>
       </div>
 
       {/* Tarjeta de identidad */}
@@ -143,7 +143,7 @@ export default function Perfil() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="relative w-16 h-16 rounded-full overflow-hidden group focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+              className="relative w-16 h-16 rounded-full overflow-hidden group focus:outline-none focus:ring-2 focus:ring-terracotta focus:ring-offset-2"
               title={t('perfil.changePhoto')}
             >
               {avatarUrl ? (
@@ -153,7 +153,7 @@ export default function Perfil() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-2xl">
+                <div className="w-full h-full bg-gradient-to-br from-terracotta/40 to-terracotta/60 flex items-center justify-center text-white font-bold text-2xl">
                   {profile?.username?.[0]?.toUpperCase()}
                 </div>
               )}
@@ -174,13 +174,13 @@ export default function Perfil() {
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="text-lg font-semibold text-stone-900 truncate">{profile?.username}</p>
+            <p className="text-lg font-semibold text-ink truncate">{profile?.username}</p>
             {profile?.company && (
-              <p className="text-stone-500 text-sm truncate">🏢 {profile.company}</p>
+              <p className="text-ink/60 text-sm truncate">🏢 {profile.company}</p>
             )}
-            <p className="text-stone-400 text-sm truncate">{user?.email}</p>
+            <p className="text-ink/50 text-sm truncate">{user?.email}</p>
             <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded-full font-semibold">
+              <span className="text-xs bg-terracotta/10 text-terracotta border border-terracotta/20 px-2 py-0.5 rounded-full font-semibold">
                 {t('perfil.globalPts', { n: profile?.total_points ?? 0 })}
               </span>
             </div>
@@ -192,13 +192,13 @@ export default function Perfil() {
             {uploadError}
           </p>
         )}
-        <p className="mt-3 text-xs text-stone-400">
+        <p className="mt-3 text-xs text-ink/50">
           {t('perfil.photoHint')}
         </p>
 
         {/* Empresa */}
-        <div className="mt-4 pt-4 border-t border-stone-100">
-          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">{t('perfil.companySection')}</p>
+        <div className="mt-4 pt-4 border-t border-ink/15">
+          <p className="text-xs font-semibold text-ink/50 uppercase tracking-wider mb-2">{t('perfil.companySection')}</p>
           {editingCompany ? (
             <div className="flex gap-2">
               <input
@@ -227,12 +227,12 @@ export default function Perfil() {
             </div>
           ) : (
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-stone-700">
-                {profile?.company || <span className="text-stone-400 italic">{t('perfil.noCompany')}</span>}
+              <p className="text-sm text-ink/80">
+                {profile?.company || <span className="text-ink/50 italic">{t('perfil.noCompany')}</span>}
               </p>
               <button
                 onClick={() => setEditingCompany(true)}
-                className="text-xs text-amber-600 hover:text-amber-500 font-medium flex-shrink-0"
+                className="text-xs text-terracotta-600 hover:text-terracotta font-medium flex-shrink-0"
               >
                 {profile?.company ? t('perfil.editCompany') : t('perfil.addCompany')}
               </button>
@@ -244,23 +244,23 @@ export default function Perfil() {
 
       {/* Notificaciones */}
       <div>
-        <h3 className="text-sm font-semibold text-stone-400 uppercase tracking-wider mb-3">{t('perfil.notificationsSection')}</h3>
+        <h3 className="text-sm font-semibold text-ink/50 uppercase tracking-wider mb-3">{t('perfil.notificationsSection')}</h3>
         <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-stone-900">{t('perfil.remindersTitle')}</p>
-              <p className="text-xs text-stone-400 mt-0.5 leading-relaxed">
+              <p className="text-sm font-semibold text-ink">{t('perfil.remindersTitle')}</p>
+              <p className="text-xs text-ink/50 mt-0.5 leading-relaxed">
                 {t('perfil.remindersDesc')}
               </p>
             </div>
             <button
               onClick={handleToggleReminders}
               disabled={savingReminders}
-              className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
-                emailReminders ? 'bg-amber-500' : 'bg-stone-200'
+              className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-terracotta focus:ring-offset-2 ${
+                emailReminders ? 'bg-terracotta' : 'bg-paper-200'
               }`}
             >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-paper rounded-full shadow transition-transform duration-200 ${
                 emailReminders ? 'translate-x-5' : 'translate-x-0'
               }`} />
             </button>
@@ -270,21 +270,21 @@ export default function Perfil() {
 
       {/* Estadísticas */}
       <div>
-        <h3 className="text-sm font-semibold text-stone-400 uppercase tracking-wider mb-3">{t('perfil.statsSection')}</h3>
+        <h3 className="text-sm font-semibold text-ink/50 uppercase tracking-wider mb-3">{t('perfil.statsSection')}</h3>
         {loadingStats ? (
           <div className="flex justify-center py-6"><Spinner /></div>
         ) : stats ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: t('perfil.statPredictions'), value: stats.totalPredictions, icon: '📝', color: 'text-stone-700' },
-              { label: t('perfil.statExact'),       value: stats.exact,            icon: '🎯', color: 'text-amber-500' },
+              { label: t('perfil.statPredictions'), value: stats.totalPredictions, icon: '📝', color: 'text-ink/80' },
+              { label: t('perfil.statExact'),       value: stats.exact,            icon: '🎯', color: 'text-terracotta' },
               { label: t('perfil.statCorrect'),     value: stats.correct,          icon: '✓',  color: 'text-blue-500'  },
               { label: t('perfil.statAccuracy'),    value: stats.accuracy !== null ? `${stats.accuracy}%` : '—', icon: '📊', color: 'text-green-500' },
             ].map(({ label, value, icon, color }) => (
               <div key={label} className="card p-4 text-center">
                 <div className="text-xl mb-1">{icon}</div>
                 <div className={`text-xl font-bold ${color}`}>{value}</div>
-                <div className="text-xs text-stone-400 mt-0.5">{label}</div>
+                <div className="text-xs text-ink/50 mt-0.5">{label}</div>
               </div>
             ))}
           </div>

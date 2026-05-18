@@ -13,7 +13,7 @@ import { SkeletonBox } from './Skeleton'
 
 function Bar({ pct, color }) {
   return (
-    <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+    <div className="h-1.5 bg-paper rounded-full overflow-hidden">
       <div
         className={`h-full rounded-full transition-all duration-500 ${color}`}
         style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
@@ -29,28 +29,28 @@ function AccuracyColumn({ label, stats, t }) {
   return (
     <div className="flex-1 min-w-0 space-y-2.5">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">{label}</span>
-        <span className="text-[11px] text-stone-400">{t('postmortem.nPreds', { n: stats.total })}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-ink/60">{label}</span>
+        <span className="text-[11px] text-ink/50">{t('postmortem.nPreds', { n: stats.total })}</span>
       </div>
 
       <div className="space-y-1">
         <div className="flex items-center justify-between text-[11px]">
-          <span className="text-stone-600">🎯 {t('postmortem.exactPct')}</span>
-          <span className="font-bold text-amber-500 tabular-nums">{pctExact}%</span>
+          <span className="text-ink/70">🎯 {t('postmortem.exactPct')}</span>
+          <span className="font-bold text-terracotta tabular-nums">{pctExact}%</span>
         </div>
-        <Bar pct={pctExact} color="bg-amber-500" />
+        <Bar pct={pctExact} color="bg-terracotta" />
       </div>
 
       <div className="space-y-1">
         <div className="flex items-center justify-between text-[11px]">
-          <span className="text-stone-600">✓ {t('postmortem.correctPct')}</span>
+          <span className="text-ink/70">✓ {t('postmortem.correctPct')}</span>
           <span className="font-bold text-blue-500 tabular-nums">{pctCorrect}%</span>
         </div>
         <Bar pct={pctCorrect} color="bg-blue-500" />
       </div>
 
       {stats.top_score && (
-        <p className="text-[11px] text-stone-500 pt-1">
+        <p className="text-[11px] text-ink/60 pt-1">
           {t('postmortem.topScore', { score: stats.top_score })}
         </p>
       )}
@@ -103,7 +103,7 @@ export default function MatchPostmortem({ matchId, leagueId }) {
 
   if (!hasGlobal && !hasLeague) {
     return (
-      <p className="text-xs text-stone-400 italic text-center py-2">{t('postmortem.empty')}</p>
+      <p className="text-xs text-ink/50 italic text-center py-2">{t('postmortem.empty')}</p>
     )
   }
 
@@ -117,17 +117,17 @@ export default function MatchPostmortem({ matchId, leagueId }) {
     const diff = Math.round(lp - gp)
     if (Math.abs(diff) >= 5) {
       summary = diff > 0
-        ? { text: t('postmortem.leagueBeatsGlobal', { n: diff }),  cls: 'text-emerald-600' }
-        : { text: t('postmortem.globalBeatsLeague', { n: -diff }), cls: 'text-stone-500' }
+        ? { text: t('postmortem.leagueBeatsGlobal', { n: diff }),  cls: 'text-grass-600' }
+        : { text: t('postmortem.globalBeatsLeague', { n: -diff }), cls: 'text-ink/60' }
     } else {
-      summary = { text: t('postmortem.even'), cls: 'text-stone-500' }
+      summary = { text: t('postmortem.even'), cls: 'text-ink/60' }
     }
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-3 space-y-3">
+    <div className="rounded-xl border border-ink/20 bg-paper p-3 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-stone-700">{t('postmortem.title')}</p>
+        <p className="text-xs font-semibold text-ink/80">{t('postmortem.title')}</p>
         {summary && (
           <p className={`text-[11px] font-medium ${summary.cls}`}>{summary.text}</p>
         )}
@@ -136,7 +136,7 @@ export default function MatchPostmortem({ matchId, leagueId }) {
         {hasLeague && (
           <AccuracyColumn label={t('postmortem.colLeague')} stats={data.league} t={t} />
         )}
-        {hasLeague && hasGlobal && <div className="w-px bg-stone-200" />}
+        {hasLeague && hasGlobal && <div className="w-px bg-paper-200" />}
         {hasGlobal && (
           <AccuracyColumn label={t('postmortem.colGlobal')} stats={data.global} t={t} />
         )}

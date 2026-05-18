@@ -167,7 +167,7 @@ function ShareCard({ leagueName, inviteCode, joinText, appName }) {
         style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff 0px, #fff 1px, transparent 1px, transparent 36px)' }} />
 
       <div className="relative px-5 py-6 text-center space-y-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/70">{appName}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta-400/70">{appName}</p>
         <p className="text-xl font-black text-white uppercase tracking-wide leading-tight"
           style={{ textShadow: '0 0 20px rgba(245,158,11,0.45)' }}>
           {joinText}
@@ -178,8 +178,8 @@ function ShareCard({ leagueName, inviteCode, joinText, appName }) {
         <div className="my-3" style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(251,191,36,0.8), transparent)' }} />
 
         {/* Code */}
-        <p className="text-[10px] font-semibold text-amber-400/60 uppercase tracking-[0.15em]">Código</p>
-        <p className="font-black text-3xl tracking-[0.4em] text-amber-400 font-mono"
+        <p className="text-[10px] font-semibold text-terracotta-400/60 uppercase tracking-[0.15em]">Código</p>
+        <p className="font-black text-3xl tracking-[0.4em] text-terracotta-400 font-mono"
           style={{ textShadow: '0 0 20px rgba(245,158,11,0.55)' }}>
           {inviteCode}
         </p>
@@ -240,15 +240,15 @@ export default function LeagueCreatedModal({ league, onClose }) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-stone-900/60 backdrop-blur-md animate-fade-in px-3 sm:px-4 py-4 sm:py-8 overflow-y-auto"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/60 backdrop-blur-md animate-fade-in px-3 sm:px-4 py-4 sm:py-8 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
+      <div className="bg-paper rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
         {/* Hero */}
-        <div className="relative bg-gradient-to-br from-amber-500 via-amber-400 to-orange-400 p-6 text-stone-950 text-center flex-shrink-0">
+        <div className="relative bg-gradient-to-br from-terracotta/40 via-terracotta/40 to-terracotta/40 p-6 text-ink text-center flex-shrink-0">
           <div className="text-4xl mb-1">🎉</div>
           <h2 className="text-xl font-bold">{t('league.created')}</h2>
-          <p className="text-stone-900/80 text-sm mt-1">{t('league.createdReady', { name: league.name })}</p>
+          <p className="text-ink/80 text-sm mt-1">{t('league.createdReady', { name: league.name })}</p>
         </div>
 
         <div className="p-5 space-y-4 overflow-y-auto flex-1">
@@ -257,10 +257,10 @@ export default function LeagueCreatedModal({ league, onClose }) {
 
           {/* Invite code row */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{t('league.inviteCode')}</p>
+            <p className="text-xs font-semibold text-ink/60 uppercase tracking-wider">{t('league.inviteCode')}</p>
             <div className="flex items-center gap-2">
-              <div className="flex-1 bg-stone-100 border border-amber-500/30 rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold tracking-[0.3em] text-amber-500 font-mono">{league.invite_code}</p>
+              <div className="flex-1 bg-paper border border-terracotta/30 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold tracking-[0.3em] text-terracotta font-mono">{league.invite_code}</p>
               </div>
               <CopyButton text={league.invite_code} />
             </div>
@@ -268,12 +268,12 @@ export default function LeagueCreatedModal({ league, onClose }) {
 
           {/* Direct link row */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{t('league.directLink')}</p>
+            <p className="text-xs font-semibold text-ink/60 uppercase tracking-wider">{t('league.directLink')}</p>
             <div className="flex items-center gap-2">
-              <p className="flex-1 text-xs text-stone-500 bg-stone-100 rounded-xl px-3 py-2.5 font-mono truncate">{inviteLink}</p>
+              <p className="flex-1 text-xs text-ink/60 bg-paper rounded-xl px-3 py-2.5 font-mono truncate">{inviteLink}</p>
               <CopyButton text={inviteLink} />
             </div>
-            <p className="text-xs text-stone-400">{t('league.inviteFriends')}</p>
+            <p className="text-xs text-ink/50">{t('league.inviteFriends')}</p>
           </div>
 
           {/* WhatsApp — primary share channel */}

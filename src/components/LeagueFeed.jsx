@@ -8,10 +8,10 @@ import { LeagueFeedSkeleton } from './Skeleton'
 // Avatar reused from Clasificacion's style — kept local to avoid coupling.
 function Avatar({ url, username }) {
   if (url) {
-    return <img src={url} alt={username} className="w-8 h-8 rounded-full object-cover border border-stone-200 flex-shrink-0" />
+    return <img src={url} alt={username} className="w-8 h-8 rounded-full object-cover border border-ink/20 flex-shrink-0" />
   }
   return (
-    <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-300 text-stone-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+    <div className="w-8 h-8 rounded-full bg-paper border border-ink/30 text-ink/80 flex items-center justify-center text-xs font-bold flex-shrink-0">
       {username?.[0]?.toUpperCase()}
     </div>
   )
@@ -33,7 +33,7 @@ function timeAgo(ts, t) {
 function eventLabel(evt, t) {
   switch (evt.event_type) {
     case 'join':
-      return { icon: '🎉', text: t('feed.evtJoin'),    accent: 'text-stone-700' }
+      return { icon: '🎉', text: t('feed.evtJoin'),    accent: 'text-ink/80' }
     case 'submit_matches':
       return { icon: '📤', text: t('feed.evtSubmitMatches'), accent: 'text-blue-600' }
     case 'submit_extras':
@@ -47,7 +47,7 @@ function eventLabel(evt, t) {
           hs:   evt.data?.home_score,
           as:   evt.data?.away_score,
         }),
-        accent: 'text-amber-600',
+        accent: 'text-terracotta-600',
       }
     case 'correct':
       return {
@@ -56,10 +56,10 @@ function eventLabel(evt, t) {
           home: teamName(evt.data?.home_team),
           away: teamName(evt.data?.away_team),
         }),
-        accent: 'text-emerald-600',
+        accent: 'text-grass-600',
       }
     default:
-      return { icon: '•', text: '', accent: 'text-stone-500' }
+      return { icon: '•', text: '', accent: 'text-ink/60' }
   }
 }
 
@@ -119,8 +119,8 @@ export default function LeagueFeed({ leagueId }) {
   if (!events || events.length === 0) {
     return (
       <div className="card p-4 text-center">
-        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">{t('feed.title')}</p>
-        <p className="text-sm text-stone-500">{t('feed.empty')}</p>
+        <p className="text-xs font-semibold text-ink/50 uppercase tracking-wider mb-1">{t('feed.title')}</p>
+        <p className="text-sm text-ink/60">{t('feed.empty')}</p>
       </div>
     )
   }
@@ -129,26 +129,26 @@ export default function LeagueFeed({ leagueId }) {
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-3 py-2.5 border-b border-stone-100 flex items-center justify-between">
+      <div className="px-3 py-2.5 border-b border-ink/15 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm">📡</span>
-          <span className="text-sm font-semibold text-stone-700">{t('feed.title')}</span>
+          <span className="text-sm font-semibold text-ink/80">{t('feed.title')}</span>
         </div>
-        <span className="text-[11px] text-stone-400">{t('feed.count', { n: events.length })}</span>
+        <span className="text-[11px] text-ink/50">{t('feed.count', { n: events.length })}</span>
       </div>
-      <ul className="divide-y divide-stone-100">
+      <ul className="divide-y divide-ink/15">
         {visible.map((evt, i) => {
           const { icon, text, accent } = eventLabel(evt, t)
           return (
             <li key={`${evt.event_type}-${evt.user_id}-${evt.event_time}-${i}`} className="flex items-center gap-3 px-3 py-2.5">
               <Avatar url={evt.avatar_url} username={evt.username} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-stone-800 truncate">
+                <p className="text-sm text-ink truncate">
                   <span className="font-semibold">{evt.username}</span>{' '}
                   <span className={accent}>{icon}</span>{' '}
-                  <span className="text-stone-600">{text}</span>
+                  <span className="text-ink/70">{text}</span>
                 </p>
-                <p className="text-[11px] text-stone-400 mt-0.5">{timeAgo(evt.event_time, t)}</p>
+                <p className="text-[11px] text-ink/50 mt-0.5">{timeAgo(evt.event_time, t)}</p>
               </div>
             </li>
           )
@@ -157,7 +157,7 @@ export default function LeagueFeed({ leagueId }) {
       {events.length > 6 && (
         <button
           onClick={() => setExpanded(e => !e)}
-          className="w-full text-center py-2 text-xs font-medium text-amber-600 hover:bg-stone-50 border-t border-stone-100"
+          className="w-full text-center py-2 text-xs font-medium text-terracotta-600 hover:bg-cream border-t border-ink/15"
         >
           {expanded ? t('feed.collapse') : t('feed.expand', { n: events.length - 6 })}
         </button>

@@ -44,7 +44,7 @@ export default function ReportButton({ username, userEmail }) {
       {/* Botón flotante */}
       <button
         onClick={handleOpen}
-        className="fixed bottom-20 sm:bottom-5 right-3 sm:right-4 z-40 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white border border-stone-200 shadow-md text-stone-400 hover:text-stone-700 hover:border-stone-300 hover:shadow-lg transition-all duration-150 text-xs font-medium"
+        className="fixed bottom-20 sm:bottom-5 right-3 sm:right-4 z-40 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-paper border border-ink/20 shadow-md text-ink/50 hover:text-ink/80 hover:border-ink/30 hover:shadow-lg transition-all duration-150 text-xs font-medium"
         aria-label={t('report.btnLabel')}
       >
         <span className="text-sm leading-none">⚠️</span>
@@ -54,18 +54,18 @@ export default function ReportButton({ username, userEmail }) {
       {/* Modal */}
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 bg-stone-900/40 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 bg-ink/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
         >
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl shadow-stone-900/15 border border-stone-200 overflow-hidden animate-slide-up">
-            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-stone-100">
+          <div className="w-full max-w-md bg-paper rounded-2xl shadow-2xl shadow-ink/15 border border-ink/20 overflow-hidden animate-slide-up">
+            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-ink/15">
               <div>
-                <h2 className="font-semibold text-stone-900 text-base">{t('report.title')}</h2>
-                <p className="text-stone-400 text-xs mt-0.5">{t('report.subtitle')}</p>
+                <h2 className="font-semibold text-ink text-base">{t('report.title')}</h2>
+                <p className="text-ink/50 text-xs mt-0.5">{t('report.subtitle')}</p>
               </div>
               <button
                 onClick={handleClose}
-                className="text-stone-400 hover:text-stone-700 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-stone-100 active:bg-stone-200 transition-colors text-sm -mr-2"
+                className="text-ink/50 hover:text-ink/80 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-paper active:bg-paper-200 transition-colors text-sm -mr-2"
                 aria-label={t('common.close')}
               >
                 ✕
@@ -76,13 +76,13 @@ export default function ReportButton({ username, userEmail }) {
               {done ? (
                 <div className="text-center py-6 space-y-2">
                   <div className="text-4xl">✅</div>
-                  <p className="font-semibold text-stone-900">{t('report.sent')}</p>
-                  <p className="text-stone-400 text-sm">{t('report.sentDesc')}</p>
+                  <p className="font-semibold text-ink">{t('report.sent')}</p>
+                  <p className="text-ink/50 text-sm">{t('report.sentDesc')}</p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-3">
                   <textarea
-                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 resize-none transition-colors"
+                    className="w-full rounded-xl border border-ink/20 bg-cream px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/50 focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta-400 resize-none transition-colors"
                     rows={4}
                     placeholder={t('report.placeholder')}
                     value={message}
@@ -95,7 +95,7 @@ export default function ReportButton({ username, userEmail }) {
                     <p className="text-red-500 text-xs">{error}</p>
                   )}
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs text-stone-400">{message.length}/2000</span>
+                    <span className="text-xs text-ink/50">{message.length}/2000</span>
                     <div className="flex gap-2">
                       <button type="button" onClick={handleClose} className="btn-secondary text-sm px-3 py-1.5">
                         {t('report.cancel')}

@@ -43,16 +43,16 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4 relative">
+    <div className="min-h-screen bg-cream flex items-center justify-center px-4 relative">
       <LangToggle className="absolute top-4 right-4" />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-terracotta/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">⚽</div>
-          <h1 className="text-2xl font-bold text-stone-900">
+          <h1 className="text-2xl font-bold text-ink">
             {t('common.appName')}
           </h1>
         </div>
@@ -61,17 +61,17 @@ export default function ResetPassword() {
           {step === 'done' ? (
             <div className="text-center space-y-3 py-4">
               <div className="text-4xl">✅</div>
-              <p className="text-stone-900 font-semibold">{t('auth.passwordUpdated')}</p>
-              <p className="text-stone-400 text-sm">{t('auth.passwordUpdatedRedirect')}</p>
+              <p className="text-ink font-semibold">{t('auth.passwordUpdated')}</p>
+              <p className="text-ink/50 text-sm">{t('auth.passwordUpdatedRedirect')}</p>
             </div>
           ) : (
             <>
-              <h2 className="text-lg font-semibold text-stone-900 mb-1">{t('auth.newPassword')}</h2>
-              <p className="text-stone-400 text-sm mb-5">{t('auth.chooseNewPassword')}</p>
+              <h2 className="text-lg font-semibold text-ink mb-1">{t('auth.newPassword')}</h2>
+              <p className="text-ink/50 text-sm mb-5">{t('auth.chooseNewPassword')}</p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('auth.newPassword')}</label>
+                  <label className="block text-sm font-medium text-ink/80 mb-1.5">{t('auth.newPassword')}</label>
                   <input
                     type="password"
                     className="input"
@@ -85,7 +85,7 @@ export default function ResetPassword() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('auth.confirmPassword')}</label>
+                  <label className="block text-sm font-medium text-ink/80 mb-1.5">{t('auth.confirmPassword')}</label>
                   <input
                     type="password"
                     className="input"

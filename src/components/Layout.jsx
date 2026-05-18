@@ -39,39 +39,39 @@ function MobileUserMenu({ profile, onSignOut }) {
         aria-label={t('nav.profile')}
       >
         {profile?.avatar_url ? (
-          <img src={profile.avatar_url} alt={profile.username} className="w-9 h-9 rounded-full object-cover" />
+          <img src={profile.avatar_url} alt={profile.username} className="w-9 h-9 rounded-full object-cover border border-ink/30" />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+          <div className="w-9 h-9 rounded-full bg-ink flex items-center justify-center text-cream font-display text-sm">
             {profile?.username?.[0]?.toUpperCase() ?? '?'}
           </div>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-60 card shadow-2xl shadow-stone-300/50 py-1.5 z-50 animate-fade-in">
+        <div className="absolute right-0 top-full mt-1.5 w-60 bg-paper border border-ink/30 shadow-xl shadow-ink/15 py-1.5 z-50 animate-fade-in">
           <Link
             to="/perfil"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 hover:bg-stone-100"
+            className="flex items-center gap-3 px-3 py-2.5 hover:bg-cream"
           >
             <span className="text-base">👤</span>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-stone-900 truncate">{profile?.username ?? t('nav.profile')}</div>
-              <div className="text-xs text-stone-500">{t('nav.totalPts', { n: profile?.total_points ?? 0 })}</div>
+              <div className="text-sm font-semibold text-ink truncate">{profile?.username ?? t('nav.profile')}</div>
+              <div className="text-xs text-ink/60">{t('nav.totalPts', { n: profile?.total_points ?? 0 })}</div>
             </div>
           </Link>
           <Link
             to="/reglas"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 hover:bg-stone-100"
+            className="flex items-center gap-3 px-3 py-2.5 hover:bg-cream"
           >
             <span className="text-base">📖</span>
-            <span className="text-sm text-stone-700">{t('nav.rules')}</span>
+            <span className="text-sm text-ink/80">{t('nav.rules')}</span>
           </Link>
-          <div className="border-t border-stone-200 my-1" />
+          <div className="border-t border-ink/15 my-1" />
           <button
             onClick={() => { setOpen(false); onSignOut() }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm text-red-500 hover:bg-red-50"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm text-terracotta hover:bg-terracotta/10"
           >
             <span className="text-base">🚪</span>
             <span>{t('nav.signOutFull')}</span>
@@ -260,10 +260,10 @@ export default function Layout() {
   }
 
   return (
-    <div className="h-dvh flex flex-col bg-stone-50 overflow-hidden">
+    <div className="h-dvh flex flex-col bg-cream overflow-hidden">
       {/* ── HEADER ───────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/80 shadow-sm pt-safe">
-        <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-amber-500 via-orange-400 to-amber-500" />
+      <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur-md border-b border-ink/15 pt-safe">
+        <div className="absolute top-0 inset-x-0 h-px bg-terracotta" />
         <div className="max-w-5xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
           {/* Logo */}
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -274,9 +274,9 @@ export default function Layout() {
             >
               ⚽
             </button>
-            <Link to="/pronosticos" className="hidden sm:block">
-              <span className="font-bold text-stone-900 text-lg leading-tight">Porra</span>
-              <span className="font-bold text-amber-500 text-lg leading-tight"> Mundial 2026</span>
+            <Link to="/pronosticos" className="hidden sm:flex items-baseline gap-1.5">
+              <span className="font-display text-ink text-base leading-none">Porra Mundial 2026</span>
+              <span className="ed-mono text-terracotta text-[9px]">ED. 2026</span>
             </Link>
           </div>
 
@@ -291,17 +291,17 @@ export default function Layout() {
             {profile && (
               <Link
                 to="/perfil"
-                className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-stone-100 transition-all duration-150"
+                className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 hover:bg-paper transition-colors duration-150"
               >
                 {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt={profile.username} className="w-8 h-8 rounded-full object-cover shadow-sm" />
+                  <img src={profile.avatar_url} alt={profile.username} className="w-8 h-8 rounded-full object-cover border border-ink/20" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shadow-amber-500/30">
+                  <div className="w-8 h-8 rounded-full bg-ink flex items-center justify-center text-cream font-display text-xs">
                     {profile.username?.[0]?.toUpperCase()}
                   </div>
                 )}
-                <span className="text-stone-700 text-sm font-medium">{profile.username}</span>
-                <span className="bg-gradient-to-r from-amber-500/15 to-orange-400/10 text-amber-600 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                <span className="text-ink text-sm font-medium">{profile.username}</span>
+                <span className="bg-ink text-cream text-[10px] font-mono tracking-wider px-2 py-0.5 uppercase">
                   {profile.total_points ?? 0} pts
                 </span>
               </Link>
@@ -309,7 +309,7 @@ export default function Layout() {
             <LangToggle className="ml-1 hidden sm:flex" />
             <button
               onClick={handleSignOut}
-              className="hidden sm:inline-flex text-stone-400 hover:text-red-500 text-sm px-2.5 py-1.5 rounded-xl hover:bg-red-50 transition-all duration-150"
+              className="hidden sm:inline-flex text-ink/50 hover:text-terracotta text-sm px-2.5 py-1.5 hover:bg-terracotta/10 transition-colors duration-150"
             >
               {t('nav.signOut')}
             </button>
@@ -344,13 +344,13 @@ export default function Layout() {
 
       {/* Banda de contexto de liga activa */}
       {activeLeague && (
-        <div className="bg-gradient-to-r from-amber-500/8 via-amber-500/5 to-transparent border-b border-amber-500/15">
+        <div className="bg-paper border-b border-ink/15">
           <div className="max-w-5xl mx-auto px-3 sm:px-4 py-1 sm:py-1.5 flex items-center gap-2 overflow-hidden">
             {activeLeague.role === 'admin' && <span className="text-[11px] sm:text-xs">👑</span>}
-            <span className="text-[11px] sm:text-xs text-amber-500/70 font-medium truncate">{activeLeague.name}</span>
+            <span className="text-[11px] sm:text-xs text-ink/70 font-medium truncate">{activeLeague.name}</span>
             {activeLeague.role === 'admin' && (
-              <span className="text-[11px] sm:text-xs text-stone-400 truncate hidden min-[420px]:inline">
-                · <span className="font-mono text-amber-500/60 tracking-wider">{activeLeague.invite_code}</span>
+              <span className="text-[11px] sm:text-xs text-ink/50 truncate hidden min-[420px]:inline">
+                · <span className="font-mono text-terracotta tracking-wider">{activeLeague.invite_code}</span>
               </span>
             )}
           </div>
@@ -373,7 +373,7 @@ export default function Layout() {
                 transition: refreshing ? 'transform 200ms ease-out' : 'none',
               }}
             >
-              <div className="w-9 h-9 bg-white border border-stone-200 rounded-full shadow-md flex items-center justify-center text-amber-500">
+              <div className="w-9 h-9 bg-cream border border-ink/30 rounded-full shadow-md shadow-ink/15 flex items-center justify-center text-terracotta">
                 {refreshing ? (
                   <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="22 10" />
@@ -412,24 +412,24 @@ export default function Layout() {
           retry manually or dismiss to recover state. */}
       {freeLeagueError && (
         <div className="fixed inset-x-0 top-4 z-[70] flex justify-center px-3 pointer-events-none">
-          <div className="pointer-events-auto bg-red-50 border border-red-200 rounded-2xl shadow-lg shadow-red-900/10 px-4 py-3 max-w-sm w-full space-y-2">
+          <div className="pointer-events-auto bg-cream border border-terracotta shadow-xl shadow-ink/15 px-4 py-3 max-w-sm w-full space-y-2">
             <div className="flex items-start gap-2">
               <span className="text-lg">⚠️</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-red-700">{t('layout.freeLeagueErrorTitle')}</p>
-                <p className="text-xs text-red-600 mt-0.5">{t('layout.freeLeagueErrorDesc', { name: pendingPaymentName })}</p>
+                <p className="text-sm font-semibold text-terracotta-600">{t('layout.freeLeagueErrorTitle')}</p>
+                <p className="text-xs text-ink/70 mt-0.5">{t('layout.freeLeagueErrorDesc', { name: pendingPaymentName })}</p>
               </div>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => { setFreeLeagueError(false); setFreeLeagueAttempt(n => n + 1) }}
-                className="flex-1 text-xs font-semibold bg-red-600 text-white rounded-lg py-2 hover:bg-red-700 transition-colors"
+                className="flex-1 text-xs font-semibold bg-terracotta text-cream py-2 hover:bg-terracotta-600 transition-colors"
               >
                 {t('layout.freeLeagueRetry')}
               </button>
               <button
                 onClick={dismissFreeLeagueError}
-                className="flex-1 text-xs font-semibold bg-white text-red-700 border border-red-200 rounded-lg py-2 hover:bg-red-100 transition-colors"
+                className="flex-1 text-xs font-semibold bg-transparent text-ink border border-ink py-2 hover:bg-ink hover:text-cream transition-colors"
               >
                 {t('common.cancel')}
               </button>
@@ -446,20 +446,20 @@ export default function Layout() {
       )}
       {showMoreMenu && (
         <div
-          className="sm:hidden fixed right-3 z-40 card shadow-2xl shadow-stone-300/50 overflow-hidden min-w-[210px] animate-slide-up"
+          className="sm:hidden fixed right-3 z-40 bg-paper border border-ink/30 shadow-xl shadow-ink/15 overflow-hidden min-w-[210px] animate-slide-up"
           style={{ bottom: 'calc(60px + env(safe-area-inset-bottom) + 8px)' }}
         >
           {MOBILE_MORE.map(({ to, label, icon }, idx) => (
             <div key={to}>
               {idx > 0 && MOBILE_MORE[idx - 1].to === '/admin-liga' && (
-                <div className="mx-3 border-t border-stone-100" />
+                <div className="mx-3 border-t border-ink/15" />
               )}
               <ViewNavLink
                 to={to}
                 onClick={() => { haptics.tap(); setShowMoreMenu(false) }}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors ${
-                    isActive ? 'text-amber-600 bg-amber-500/5' : 'text-stone-700 active:bg-stone-100'
+                    isActive ? 'text-terracotta bg-terracotta/10' : 'text-ink active:bg-cream'
                   }`
                 }
               >
@@ -473,7 +473,7 @@ export default function Layout() {
 
       {/* ── BOTTOM NAV (solo móvil) ──────────────────────────── */}
       <nav
-        className="sm:hidden shrink-0 bg-white/95 backdrop-blur-md border-t border-stone-200 pb-safe"
+        className="sm:hidden shrink-0 bg-cream/95 backdrop-blur-md border-t border-ink/15 pb-safe"
         aria-label="Navegación principal"
       >
         <div className="grid grid-cols-5">
@@ -484,7 +484,7 @@ export default function Layout() {
               onClick={() => { if (location.pathname !== to) haptics.tap() }}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors min-h-[60px] ${
-                  isActive ? 'text-amber-600' : 'text-stone-500 active:text-stone-700'
+                  isActive ? 'text-terracotta' : 'text-ink/55 active:text-ink'
                 }`
               }
             >
@@ -503,10 +503,10 @@ export default function Layout() {
           <button
             onClick={() => { haptics.tap(); setShowMoreMenu(o => !o) }}
             className={`flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium min-h-[60px] transition-colors ${
-              showMoreMenu || isMoreActive ? 'text-amber-600' : 'text-stone-500 active:text-stone-700'
+              showMoreMenu || isMoreActive ? 'text-terracotta' : 'text-ink/55 active:text-ink'
             }`}
           >
-            <span className={`leading-none transition-transform ${showMoreMenu ? 'scale-110 text-amber-600' : ''}`}>
+            <span className={`leading-none transition-transform ${showMoreMenu ? 'scale-110 text-terracotta' : ''}`}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <circle cx="5"  cy="12" r="2" />
                 <circle cx="12" cy="12" r="2" />

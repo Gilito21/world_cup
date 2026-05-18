@@ -251,21 +251,21 @@ export default function SharePredictionCard({ match, prediction, username, onClo
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-stone-900/70 backdrop-blur-md animate-fade-in px-3 py-4 sm:px-4 sm:py-8 pt-safe pb-safe"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/70 backdrop-blur-md animate-fade-in px-3 py-4 sm:px-4 sm:py-8 pt-safe pb-safe"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
-        <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
-          <p className="text-base font-bold text-stone-900">{t('share.title')}</p>
+      <div className="bg-paper rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
+        <div className="px-5 py-4 border-b border-ink/15 flex items-center justify-between">
+          <p className="text-base font-bold text-ink">{t('share.title')}</p>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-700 text-2xl leading-none"
+            className="text-ink/50 hover:text-ink/80 text-2xl leading-none"
             aria-label={t('common.close')}
           >×</button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-stone-50">
-          <div className="aspect-square w-full rounded-2xl overflow-hidden bg-stone-900 shadow-lg shadow-stone-900/20 flex items-center justify-center">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-cream">
+          <div className="aspect-square w-full rounded-2xl overflow-hidden bg-ink shadow-lg shadow-ink/20 flex items-center justify-center">
             {/* Real canvas — hidden offscreen while building, then displayed via <img> */}
             <canvas
               ref={canvasRef}
@@ -278,7 +278,7 @@ export default function SharePredictionCard({ match, prediction, username, onClo
             ) : imgUrl ? (
               <img src={imgUrl} alt="" className="w-full h-full object-contain" />
             ) : (
-              <p className="text-sm text-stone-400">{t('share.errorBuild')}</p>
+              <p className="text-sm text-ink/50">{t('share.errorBuild')}</p>
             )}
           </div>
 
@@ -286,7 +286,7 @@ export default function SharePredictionCard({ match, prediction, username, onClo
             <p className="text-xs text-red-500 text-center">{error}</p>
           )}
           {shared && !error && (
-            <p className="text-xs text-emerald-600 text-center">{t('share.shared')}</p>
+            <p className="text-xs text-grass-600 text-center">{t('share.shared')}</p>
           )}
 
           <div className="flex gap-2">
@@ -305,7 +305,7 @@ export default function SharePredictionCard({ match, prediction, username, onClo
               <span>⬇️</span>{t('share.downloadBtn')}
             </button>
           </div>
-          <p className="text-[11px] text-stone-400 text-center leading-relaxed">
+          <p className="text-[11px] text-ink/50 text-center leading-relaxed">
             {t('share.hint')}
           </p>
         </div>

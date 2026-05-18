@@ -3,15 +3,15 @@ import { useLang } from '../contexts/LangContext'
 export default function LangToggle({ className = '' }) {
   const { lang, setLang } = useLang()
   return (
-    <div className={`flex items-center rounded-lg overflow-hidden border border-stone-200 bg-stone-100 ${className}`}>
+    <div className={`flex items-center overflow-hidden border border-ink ${className}`}>
       {['es', 'en'].map(l => (
         <button
           key={l}
           onClick={() => setLang(l)}
-          className={`px-2 py-1 text-xs font-semibold uppercase transition-colors ${
+          className={`px-2 py-1 text-[10px] font-mono uppercase tracking-[0.18em] transition-colors ${
             lang === l
-              ? 'bg-amber-500 text-stone-950'
-              : 'text-stone-500 hover:text-stone-800'
+              ? 'bg-ink text-cream'
+              : 'bg-transparent text-ink/60 hover:text-ink'
           }`}
         >
           {l}

@@ -8,13 +8,21 @@
   }
 
   body {
-    @apply bg-stone-50 text-stone-900 antialiased;
+    @apply bg-cream text-ink antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-tap-highlight-color: transparent;
-    /* No tocar overflow ni overscroll-behavior aquí — combinarlos con
-       <html> y elementos position:sticky rompe el wheel scroll vertical
-       en Chrome desktop. Si algún elemento concreto desborda lateral-
-       mente, se controla con min-w-0/truncate en ese elemento. */
+  }
+
+  /* Editorial paper grain — same overlay used on the landing so the whole
+     app reads as a single magazine. Pointer-events none, sits above bg. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/></svg>");
   }
 
   /* iOS no debe hacer zoom al focus de un input → fuente mínima 16px. */
@@ -43,46 +51,66 @@
 }
 
 @layer components {
+  /* Primary CTA — solid ink with cream text, sharp editorial corners. */
   .btn-primary {
-    @apply bg-gradient-to-r from-amber-500 to-amber-400
-           hover:from-amber-400 hover:to-amber-300
-           active:from-amber-600 active:to-amber-500
-           text-stone-950 font-semibold px-5 py-2.5 rounded-xl
-           transition-all duration-200
+    @apply bg-ink hover:bg-terracotta active:bg-terracotta-600
+           text-cream font-semibold px-5 py-2.5
+           border border-ink hover:border-terracotta active:border-terracotta-600
+           transition-colors duration-200
            disabled:opacity-50 disabled:cursor-not-allowed
-           shadow-sm shadow-amber-500/25
-           hover:shadow-md hover:shadow-amber-500/30
-           hover:-translate-y-px active:translate-y-0
            min-h-[44px];
   }
 
+  /* Secondary — ghost variant of btn-primary. */
   .btn-secondary {
-    @apply bg-white hover:bg-stone-50 active:bg-stone-100
-           text-stone-700 font-medium px-5 py-2.5 rounded-xl
-           transition-all duration-200
-           border border-stone-200
+    @apply bg-transparent hover:bg-ink active:bg-ink/90
+           text-ink hover:text-cream font-medium px-5 py-2.5
+           border border-ink
+           transition-colors duration-200
            disabled:opacity-50 disabled:cursor-not-allowed
-           shadow-sm hover:shadow
            min-h-[44px];
   }
 
+  /* Editorial card: paper bg, ink-tinted border, no rounded corners. */
   .card {
-    @apply bg-white border border-stone-200/60 rounded-2xl shadow-sm;
+    @apply bg-paper border border-ink/20;
   }
 
+  /* Input with cream bg + ink text — focused border is the same color
+     swap as the buttons (ink → terracotta on action). */
   .input {
-    @apply bg-stone-100 border border-stone-200 text-stone-900 rounded-xl px-4 py-2.5 w-full
-           focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15
-           transition-colors placeholder-stone-400
+    @apply bg-cream border border-ink/25 text-ink px-4 py-2.5 w-full
+           focus:outline-none focus:border-terracotta focus:ring-1 focus:ring-terracotta/40
+           transition-colors placeholder-ink/40
            min-h-[44px];
   }
 
+  /* Tab states — ink text, terracotta underline. */
   .tab-active {
-    @apply text-amber-500 border-b-2 border-amber-500 font-semibold;
+    @apply text-ink border-b-2 border-terracotta font-semibold;
   }
 
   .tab-inactive {
-    @apply text-stone-500 hover:text-stone-700 border-b-2 border-transparent transition-colors;
+    @apply text-ink/50 hover:text-ink border-b-2 border-transparent transition-colors;
+  }
+
+  /* Editorial typography helpers. Use these for big page titles, italic
+     accents and uppercase mono labels — same vocabulary as the landing. */
+  .ed-display {
+    font-family: 'Boldonse', Anton, 'Arial Black', sans-serif;
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+  }
+  .ed-serif {
+    font-family: 'Instrument Serif', 'Times New Roman', serif;
+    font-weight: 400;
+  }
+  .ed-mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
   }
 }
 
@@ -108,28 +136,15 @@
   }
 }
 
-/* ── View Transitions API ──────────────────────────────────────────────
-   Cuando el navegador soporta document.startViewTransition (Chrome 111+,
-   Safari 18+), las transiciones entre rutas se animan con un crossfade
-   suave en lugar del corte brusco por defecto. Los navegadores antiguos
-   ignoran estas reglas. La duración es corta a propósito (180 ms) para no
-   añadir latencia percibida en navegación. */
+/* ── View Transitions API ────────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation-duration: 180ms;
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
-  ::view-transition-old(root) {
-    animation-name: vt-fade-out;
-  }
-  ::view-transition-new(root) {
-    animation-name: vt-fade-in;
-  }
+  ::view-transition-old(root) { animation-name: vt-fade-out; }
+  ::view-transition-new(root) { animation-name: vt-fade-in;  }
 }
-@keyframes vt-fade-out {
-  to { opacity: 0; transform: translateY(-4px); }
-}
-@keyframes vt-fade-in {
-  from { opacity: 0; transform: translateY(6px); }
-}
+@keyframes vt-fade-out { to   { opacity: 0; transform: translateY(-4px); } }
+@keyframes vt-fade-in  { from { opacity: 0; transform: translateY(6px);  } }

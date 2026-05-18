@@ -62,7 +62,7 @@ function CutoffCountdown({ cutoffTime }) {
   if (!left) return <span className="font-semibold text-red-500">{t('extras.closedLabel')}</span>
   const { days, hours, minutes, seconds } = left
   return (
-    <span className="font-mono font-semibold text-stone-700">
+    <span className="font-mono font-semibold text-ink/80">
       {days > 0 && <>{days}d </>}
       {String(hours).padStart(2, '0')}h {String(minutes).padStart(2, '0')}m {String(seconds).padStart(2, '0')}s
     </span>
@@ -109,21 +109,21 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
       {/* Progress bar */}
       <div>
         <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
-          <span className="text-stone-500 font-medium">{t('extras.progressLabel')}</span>
-          <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-stone-600'}`}>
+          <span className="text-ink/60 font-medium">{t('extras.progressLabel')}</span>
+          <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-ink/70'}`}>
             {answeredCount} / {totalCount}
           </span>
         </div>
-        <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
+        <div className="h-2.5 bg-paper rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-amber-500'}`}
+            className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-terracotta'}`}
             style={{ width: `${pct}%` }}
           />
         </div>
       </div>
 
       {cutoffTime && !isPastCutoff && (
-        <p className="text-xs text-stone-400 flex items-center gap-1.5 flex-wrap">
+        <p className="text-xs text-ink/50 flex items-center gap-1.5 flex-wrap">
           <span>{t('extras.cutoffNote')}</span>
           <CutoffCountdown cutoffTime={cutoffTime} />
         </p>
@@ -156,7 +156,7 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
       )}
 
       {!isComplete && !isPastCutoff && (
-        <p className="text-xs text-center text-stone-400">
+        <p className="text-xs text-center text-ink/50">
           {t('extras.allRequired')}
         </p>
       )}
@@ -168,10 +168,10 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
 function ConfirmModal({ onConfirm, onCancel, submitting }) {
   const { t } = useLang()
   return (
-    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 animate-slide-up">
-        <h3 className="text-xl font-bold text-stone-900">{t('extras.confirmTitle')}</h3>
-        <p className="text-stone-500 text-sm leading-relaxed">
+    <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-paper rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 animate-slide-up">
+        <h3 className="text-xl font-bold text-ink">{t('extras.confirmTitle')}</h3>
+        <p className="text-ink/60 text-sm leading-relaxed">
           {t('extras.confirmBody')}
         </p>
         <div className="flex gap-3 pt-1">
@@ -210,23 +210,23 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
             disabled={locked}
             className={`relative rounded-xl sm:rounded-2xl border-2 p-3 sm:p-5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${
               isActive
-                ? 'border-amber-500 bg-amber-50 shadow-md shadow-amber-500/20'
-                : 'border-stone-200 bg-white hover:border-stone-300'
+                ? 'border-terracotta bg-terracotta/10 shadow-md shadow-ink/15'
+                : 'border-ink/20 bg-paper hover:border-ink/30'
             } ${locked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <div className="flex flex-col items-center gap-1.5 sm:gap-2">
               <EmojiImg emoji={opt.emoji} alt={opt.label} className="w-12 h-12 sm:w-20 sm:h-20" />
               <div className="text-center min-w-0 w-full">
-                <div className={`font-bold text-sm sm:text-lg truncate ${isActive ? 'text-amber-700' : 'text-stone-800'}`}>
+                <div className={`font-bold text-sm sm:text-lg truncate ${isActive ? 'text-terracotta-700' : 'text-ink'}`}>
                   {opt.label}
                 </div>
                 {opt.team && (
-                  <div className="text-[11px] sm:text-xs text-stone-500 mt-0.5">{opt.team}</div>
+                  <div className="text-[11px] sm:text-xs text-ink/60 mt-0.5">{opt.team}</div>
                 )}
               </div>
             </div>
             {isActive && (
-              <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] sm:text-xs font-bold">
+              <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-terracotta text-white flex items-center justify-center text-[10px] sm:text-xs font-bold">
                 ✓
               </span>
             )}
@@ -269,7 +269,7 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
 
       {!locked && (
         <div>
-          <p className="text-xs text-stone-500 mb-2">{t('extras.suggestions')}</p>
+          <p className="text-xs text-ink/60 mb-2">{t('extras.suggestions')}</p>
           <div className="flex flex-wrap gap-1.5">
             {MVP_SUGGESTIONS.map(s => {
               const isCurrent = (value ?? '').trim().toLowerCase() === s.name.toLowerCase()
@@ -279,8 +279,8 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
                   onClick={() => { onDraft(s.name) }}
                   className={`flex items-center gap-1.5 text-xs sm:text-sm px-2.5 py-1.5 rounded-full border transition-colors ${
                     isCurrent
-                      ? 'bg-amber-500 border-amber-500 text-stone-950 font-semibold'
-                      : 'bg-stone-100 border-stone-200 text-stone-700 hover:bg-stone-200'
+                      ? 'bg-terracotta border-terracotta text-ink font-semibold'
+                      : 'bg-paper border-ink/20 text-ink/80 hover:bg-paper-200'
                   }`}
                 >
                   <FlagImg cc={s.cc} />
@@ -335,7 +335,7 @@ function NumberQuestion({ value, draft, onDraft, onSave, locked }) {
       </div>
 
       {!locked && (
-        <p className="text-xs text-stone-500 leading-relaxed">
+        <p className="text-xs text-ink/60 leading-relaxed">
           {t('extras.referenceNote')}
         </p>
       )}
@@ -359,15 +359,15 @@ function QuestionCard({ question, answer, draft, onDraft, onSelect, onSave, lock
       <header className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm sm:text-lg font-bold text-stone-900 leading-tight">
+            <h3 className="text-sm sm:text-lg font-bold text-ink leading-tight">
               {question.prompt}
             </h3>
-            <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 border border-amber-500/30 flex-shrink-0">
+            <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-terracotta/15 text-terracotta-600 border border-terracotta/30 flex-shrink-0">
               +{question.points} pts
             </span>
           </div>
           {question.description && (
-            <p className="text-[11px] sm:text-sm text-stone-500 mt-1 leading-relaxed">
+            <p className="text-[11px] sm:text-sm text-ink/60 mt-1 leading-relaxed">
               {question.description}
             </p>
           )}
@@ -591,11 +591,11 @@ export default function Extras() {
   if (!leagueLoading && leagues.length === 0) {
     return (
       <>
-        <div className="card p-5 border-amber-500/30 bg-gradient-to-br from-amber-50 to-orange-50 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="card p-5 border-terracotta/30 bg-gradient-to-br from-terracotta/40 to-terracotta/40 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="text-3xl flex-shrink-0">🎲</div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-stone-900 text-sm sm:text-base">{t('extras.noLeague')}</p>
-            <p className="text-stone-500 text-xs sm:text-sm mt-0.5">{t('extras.noLeagueDesc')}</p>
+            <p className="font-bold text-ink text-sm sm:text-base">{t('extras.noLeague')}</p>
+            <p className="text-ink/60 text-xs sm:text-sm mt-0.5">{t('extras.noLeagueDesc')}</p>
           </div>
           <button
             onClick={() => setShowLeagueModal(true)}
@@ -636,8 +636,8 @@ export default function Extras() {
         <div className="flex items-start gap-2.5 sm:gap-3">
           <span className="text-xl sm:text-3xl">🎲</span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base sm:text-xl font-bold text-stone-900">{t('extras.title')}</h1>
-            <p className="text-[11px] sm:text-sm text-stone-500 mt-0.5">
+            <h1 className="font-display text-2xl sm:text-3xl text-ink leading-none">{t('extras.title')}</h1>
+            <p className="text-[11px] sm:text-sm text-ink/60 mt-0.5">
               {t('extras.subtitle')}
             </p>
           </div>
@@ -645,14 +645,14 @@ export default function Extras() {
 
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-stone-500">{t('extras.deadlineLabel')}</span>
+            <span className="text-ink/60">{t('extras.deadlineLabel')}</span>
             {cutoffTime
               ? <CutoffCountdown cutoffTime={cutoffTime} />
-              : <span className="text-stone-400">—</span>}
+              : <span className="text-ink/50">—</span>}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-stone-500">{t('extras.maxPtsLabel')}</span>
-            <span className="font-bold text-amber-600">+{totalPoints}</span>
+            <span className="text-ink/60">{t('extras.maxPtsLabel')}</span>
+            <span className="font-bold text-terracotta-600">+{totalPoints}</span>
           </div>
         </div>
       </section>

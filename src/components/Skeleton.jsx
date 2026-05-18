@@ -2,7 +2,7 @@
 // Use these instead of full-page spinners on data-heavy screens so the user
 // sees the page structure immediately and only the data-bound parts shimmer.
 
-const shimmer = 'bg-gradient-to-r from-stone-100 via-stone-200/70 to-stone-100 bg-[length:200%_100%] animate-skeleton'
+const shimmer = 'bg-gradient-to-r from-paper via-paper-200/70 to-paper bg-[length:200%_100%] animate-skeleton'
 
 export function SkeletonBox({ className = '' }) {
   return <div className={`${shimmer} rounded-md ${className}`} />
@@ -18,7 +18,7 @@ export function SkeletonCircle({ size = 40, className = '' }) {
 const NAME_WIDTHS = ['w-32', 'w-28', 'w-36', 'w-24', 'w-32', 'w-30', 'w-28', 'w-32']
 export function StandingsRowSkeleton({ idx = 0 }) {
   return (
-    <div className="flex items-center gap-3 px-3 py-3 border-b border-stone-100 last:border-0">
+    <div className="flex items-center gap-3 px-3 py-3 border-b border-ink/15 last:border-0">
       <SkeletonBox className="w-6 h-4" />
       <SkeletonCircle size={36} />
       <div className="flex-1 space-y-1.5">
@@ -44,11 +44,11 @@ export function StandingsSkeleton({ rows = 8 }) {
 export function LeagueFeedSkeleton({ rows = 5 }) {
   return (
     <div className="card overflow-hidden">
-      <div className="px-3 py-2.5 border-b border-stone-100 flex items-center justify-between">
+      <div className="px-3 py-2.5 border-b border-ink/15 flex items-center justify-between">
         <SkeletonBox className="h-3 w-24" />
         <SkeletonBox className="h-3 w-12" />
       </div>
-      <ul className="divide-y divide-stone-100">
+      <ul className="divide-y divide-ink/15">
         {Array.from({ length: rows }).map((_, i) => (
           <li key={i} className="flex items-center gap-3 px-3 py-2.5">
             <SkeletonCircle size={32} />
@@ -96,7 +96,7 @@ export function MatchCardSkeleton() {
         </div>
       </div>
       {/* Auto-save footer */}
-      <div className="pt-2 border-t border-stone-100 flex justify-end">
+      <div className="pt-2 border-t border-ink/15 flex justify-end">
         <SkeletonBox className="h-3 w-12" />
       </div>
     </div>

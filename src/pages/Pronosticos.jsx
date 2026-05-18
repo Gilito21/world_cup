@@ -65,11 +65,11 @@ function Countdown({ matchDate }) {
   if (!left) return null
   const { days, hours, minutes, seconds } = left
   return (
-    <span className="text-xs font-mono text-stone-400">
-      {days > 0 && <><b className="text-stone-600">{days}</b>d </>}
-      <b className="text-stone-600">{String(hours).padStart(2, '0')}</b>h{' '}
-      <b className="text-stone-600">{String(minutes).padStart(2, '0')}</b>m{' '}
-      <b className="text-stone-600">{String(seconds).padStart(2, '0')}</b>s
+    <span className="text-xs font-mono text-ink/50">
+      {days > 0 && <><b className="text-ink/70">{days}</b>d </>}
+      <b className="text-ink/70">{String(hours).padStart(2, '0')}</b>h{' '}
+      <b className="text-ink/70">{String(minutes).padStart(2, '0')}</b>m{' '}
+      <b className="text-ink/70">{String(seconds).padStart(2, '0')}</b>s
     </span>
   )
 }
@@ -84,7 +84,7 @@ function CutoffCountdown({ cutoffTime }) {
   if (!left) return <span className="font-semibold text-red-500">{t('pronosticos.closedLabel')}</span>
   const { days, hours, minutes, seconds } = left
   return (
-    <span className="font-mono font-semibold text-stone-700">
+    <span className="font-mono font-semibold text-ink/80">
       {days > 0 && <>{days}d </>}
       {String(hours).padStart(2, '0')}h {String(minutes).padStart(2, '0')}m {String(seconds).padStart(2, '0')}s
     </span>
@@ -114,12 +114,12 @@ function ScoreStepper({ value, onChange, disabled, placeholder }) {
   }
 
   return (
-    <div className={`inline-flex items-stretch bg-white border border-stone-300 rounded-xl shadow-sm overflow-hidden select-none ${disabled ? 'opacity-40' : ''}`}>
+    <div className={`inline-flex items-stretch bg-paper border border-ink/30 rounded-xl shadow-sm overflow-hidden select-none ${disabled ? 'opacity-40' : ''}`}>
       <button
         type="button"
         onClick={() => bump(-1)}
         disabled={disabled || (!isEmpty && Number(value) === 0)}
-        className="w-7 sm:w-8 h-11 sm:h-12 flex items-center justify-center text-stone-500 active:bg-stone-100 active:text-stone-800 disabled:text-stone-200 transition-colors touch-manipulation"
+        className="w-7 sm:w-8 h-11 sm:h-12 flex items-center justify-center text-ink/60 active:bg-paper active:text-ink disabled:text-cream/80 transition-colors touch-manipulation"
         aria-label="−1"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
@@ -127,7 +127,7 @@ function ScoreStepper({ value, onChange, disabled, placeholder }) {
         </svg>
       </button>
       <span className={`w-7 sm:w-8 flex items-center justify-center text-lg sm:text-xl font-bold tabular-nums ${
-        isEmpty ? 'text-stone-300' : 'text-stone-900'
+        isEmpty ? 'text-ink/40' : 'text-ink'
       }`}>
         {display}
       </span>
@@ -135,7 +135,7 @@ function ScoreStepper({ value, onChange, disabled, placeholder }) {
         type="button"
         onClick={() => bump(1)}
         disabled={disabled}
-        className="w-7 sm:w-8 h-11 sm:h-12 flex items-center justify-center text-stone-500 active:bg-stone-100 active:text-stone-800 disabled:text-stone-200 transition-colors touch-manipulation"
+        className="w-7 sm:w-8 h-11 sm:h-12 flex items-center justify-center text-ink/60 active:bg-paper active:text-ink disabled:text-cream/80 transition-colors touch-manipulation"
         aria-label="+1"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
@@ -184,11 +184,11 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
       <div className="card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
         <div>
           <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
-            <span className="text-stone-500 font-medium truncate">{t('pronosticos.progressLabel')}</span>
-            <span className="font-bold tabular-nums flex-shrink-0 text-stone-600">{filledCount} / {totalCount}</span>
+            <span className="text-ink/60 font-medium truncate">{t('pronosticos.progressLabel')}</span>
+            <span className="font-bold tabular-nums flex-shrink-0 text-ink/70">{filledCount} / {totalCount}</span>
           </div>
-          <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full bg-stone-300" style={{ width: `${pct}%` }} />
+          <div className="h-2.5 bg-paper rounded-full overflow-hidden">
+            <div className="h-full rounded-full bg-ink/20" style={{ width: `${pct}%` }} />
           </div>
         </div>
         <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 space-y-1">
@@ -213,39 +213,39 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
       <button
         type="button"
         onClick={() => setExpanded(e => !e)}
-        className="w-full px-3 sm:px-4 pt-3 pb-2.5 flex items-center gap-3 hover:bg-stone-50/80 active:bg-stone-100/60 transition-colors text-left"
+        className="w-full px-3 sm:px-4 pt-3 pb-2.5 flex items-center gap-3 hover:bg-cream/80 active:bg-paper/60 transition-colors text-left"
         aria-expanded={expanded}
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
-            <span className="text-stone-500 font-medium truncate">{t('pronosticos.progressLabel')}</span>
-            <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-stone-600'}`}>
+            <span className="text-ink/60 font-medium truncate">{t('pronosticos.progressLabel')}</span>
+            <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-ink/70'}`}>
               {filledCount} / {totalCount}
             </span>
           </div>
-          <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+          <div className="h-2 bg-paper rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-amber-500'}`}
+              className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-terracotta'}`}
               style={{ width: `${pct}%` }}
             />
           </div>
         </div>
-        <span className={`text-stone-400 text-xs flex-shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} aria-hidden="true">
+        <span className={`text-ink/50 text-xs flex-shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} aria-hidden="true">
           ▼
         </span>
       </button>
 
       {/* Expanded body: cutoff details + hint */}
       {expanded && (
-        <div className="px-3 sm:px-4 pb-3 pt-2 border-t border-stone-100 space-y-2">
+        <div className="px-3 sm:px-4 pb-3 pt-2 border-t border-ink/15 space-y-2">
           {cutoffTime && (
-            <p className="text-xs text-stone-400 flex items-center gap-1.5 flex-wrap">
+            <p className="text-xs text-ink/50 flex items-center gap-1.5 flex-wrap">
               <span>{t('pronosticos.cutoffNote')}</span>
               <CutoffCountdown cutoffTime={cutoffTime} />
             </p>
           )}
           {!isComplete && (
-            <p className="text-xs text-stone-400">{t('pronosticos.submitHint')}</p>
+            <p className="text-xs text-ink/50">{t('pronosticos.submitHint')}</p>
           )}
         </div>
       )}
@@ -273,15 +273,15 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
 function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
   const { t } = useLang()
   return (
-    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="card p-6 max-w-sm w-full space-y-5 shadow-2xl">
         <div className="text-center space-y-2">
           <span className="text-5xl">🏆</span>
-          <h3 className="text-xl font-bold text-stone-900">{t('pronosticos.confirmTitle')}</h3>
-          <p className="text-stone-500 text-sm">
+          <h3 className="text-xl font-bold text-ink">{t('pronosticos.confirmTitle')}</h3>
+          <p className="text-ink/60 text-sm">
             {t('pronosticos.confirmBody', { n: totalCount })}
           </p>
-          <p className="text-xs text-stone-400">{t('pronosticos.confirmIrreversible')}</p>
+          <p className="text-xs text-ink/50">{t('pronosticos.confirmIrreversible')}</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -313,7 +313,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
   const STATUS_BADGE = useMemo(() => ({
     scheduled: null,
     live:     { label: t('pronosticos.liveLabel'),     cls: 'bg-red-500/20 text-red-400 border-red-500/30 animate-pulse' },
-    finished: { label: t('pronosticos.finishedLabel'), cls: 'bg-stone-200 text-stone-500 border-stone-300' },
+    finished: { label: t('pronosticos.finishedLabel'), cls: 'bg-paper-200 text-ink/60 border-ink/30' },
   }), [t])
 
   const isFinished  = match.status === 'finished'
@@ -388,14 +388,14 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 
   return (
     <div className={`card p-3 sm:p-4 transition-all duration-200 ${
-      isFinished ? 'opacity-80' : submitted ? '' : 'hover:border-stone-300 hover:shadow-sm'
+      isFinished ? 'opacity-80' : submitted ? '' : 'hover:border-ink/30 hover:shadow-sm'
     }`}>
       {/* Header row */}
       <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-3">
         <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-          <span className="text-[11px] sm:text-xs text-stone-500 truncate">{formatDate(match.match_date, dateLocale)}</span>
+          <span className="text-[11px] sm:text-xs text-ink/60 truncate">{formatDate(match.match_date, dateLocale)}</span>
           {match.group_name && (
-            <span className="text-[11px] sm:text-xs text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
+            <span className="text-[11px] sm:text-xs text-ink/50 bg-paper px-1.5 py-0.5 rounded">
               {match.group_name}
             </span>
           )}
@@ -413,9 +413,9 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           {/* Points badge after results come in */}
           {isFinished && prediction && (() => {
             const pts = prediction.points_earned ?? 0
-            const cfg = pts === 3 ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+            const cfg = pts === 3 ? 'bg-terracotta/20 text-terracotta-400 border-terracotta/30'
                       : pts === 1 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                      :             'bg-stone-200 text-stone-500 border-stone-300'
+                      :             'bg-paper-200 text-ink/60 border-ink/30'
             return (
               <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full border ${cfg}`}>
                 {pts === 3 ? '+3' : pts === 1 ? '+1' : '0'}
@@ -426,7 +426,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             <button
               type="button"
               onClick={onPreview}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-stone-400 hover:text-amber-500 hover:bg-amber-50 active:bg-amber-100 transition-colors flex-shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-ink/50 hover:text-terracotta hover:bg-terracotta/10 active:bg-terracotta/20 transition-colors flex-shrink-0"
               aria-label={t('preview.openLabel')}
               title={t('preview.openLabel')}
             >
@@ -444,7 +444,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="flex-1 flex items-center justify-end gap-1.5 sm:gap-2 min-w-0">
           <span className={`text-sm font-semibold truncate text-right ${
-            isTbd(match.home_team) && predictedHome ? 'text-violet-600' : 'text-stone-900'
+            isTbd(match.home_team) && predictedHome ? 'text-violet-600' : 'text-ink'
           }`}>
             {teamName(displayHome)}
           </span>
@@ -453,10 +453,10 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {isFinished ? (
-            <div className="flex items-center gap-2 bg-stone-100 rounded-xl px-3 py-1.5">
-              <span className="text-xl font-bold text-stone-900">{match.home_score}</span>
-              <span className="text-stone-500">-</span>
-              <span className="text-xl font-bold text-stone-900">{match.away_score}</span>
+            <div className="flex items-center gap-2 bg-paper rounded-xl px-3 py-1.5">
+              <span className="text-xl font-bold text-ink">{match.home_score}</span>
+              <span className="text-ink/60">-</span>
+              <span className="text-xl font-bold text-ink">{match.away_score}</span>
             </div>
           ) : match.status === 'live' ? (
             <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-1.5">
@@ -473,7 +473,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
                   disabled={isLocked}
                   placeholder={!isLocked && home === '' && consensus ? consensus.home_score : undefined}
                 />
-                <span className="text-stone-400 font-bold text-sm">-</span>
+                <span className="text-ink/50 font-bold text-sm">-</span>
                 <ScoreStepper
                   value={away}
                   onChange={setAway}
@@ -483,7 +483,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               </div>
               {consensus && !isLocked && (home === '' || away === '') && (
                 <span
-                  className="text-[10px] text-stone-400 flex items-center gap-1 leading-none"
+                  className="text-[10px] text-ink/50 flex items-center gap-1 leading-none"
                   title={t('pronosticos.consensusTooltip', { n: consensus.total_voters })}
                 >
                   <span aria-hidden="true">🌐</span>
@@ -497,7 +497,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
         <div className="flex-1 flex items-center justify-start gap-1.5 sm:gap-2 min-w-0">
           <Flag team={displayAway} />
           <span className={`text-sm font-semibold truncate ${
-            isTbd(match.away_team) && predictedAway ? 'text-violet-600' : 'text-stone-900'
+            isTbd(match.away_team) && predictedAway ? 'text-violet-600' : 'text-ink'
           }`}>
             {teamName(displayAway)}
           </span>
@@ -506,16 +506,16 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 
       {/* Tiebreaker selector: knockout draw predictions only */}
       {isKnockout && isDraw && !isFinished && (
-        <div className="mt-3 pt-3 border-t border-stone-100 flex flex-col items-center gap-2">
-          <span className="text-xs text-stone-500 font-medium">{t('pronosticos.tiebreaker')}</span>
+        <div className="mt-3 pt-3 border-t border-ink/15 flex flex-col items-center gap-2">
+          <span className="text-xs text-ink/60 font-medium">{t('pronosticos.tiebreaker')}</span>
           <div className="flex gap-2">
             <button
               onClick={() => !isLocked && onTiebreakerChange(match.id, 'home')}
               disabled={isLocked}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 tiebreaker === 'home'
-                  ? 'bg-amber-500 border-amber-500 text-stone-950'
-                  : 'bg-white border-stone-200 text-stone-600 hover:border-amber-400 hover:text-stone-900'
+                  ? 'bg-terracotta border-terracotta text-ink'
+                  : 'bg-paper border-ink/20 text-ink/70 hover:border-terracotta-400 hover:text-ink'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               <Flag team={displayHome} />
@@ -526,8 +526,8 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               disabled={isLocked}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 tiebreaker === 'away'
-                  ? 'bg-amber-500 border-amber-500 text-stone-950'
-                  : 'bg-white border-stone-200 text-stone-600 hover:border-amber-400 hover:text-stone-900'
+                  ? 'bg-terracotta border-terracotta text-ink'
+                  : 'bg-paper border-ink/20 text-ink/70 hover:border-terracotta-400 hover:text-ink'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               <Flag team={displayAway} />
@@ -535,24 +535,24 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             </button>
           </div>
           {!tiebreaker && !isLocked && (
-            <span className="text-xs text-amber-600 font-medium">{t('pronosticos.tiebreakerRequired')}</span>
+            <span className="text-xs text-terracotta-600 font-medium">{t('pronosticos.tiebreakerRequired')}</span>
           )}
         </div>
       )}
 
       {/* Footer */}
       {isFinished && prediction && (
-        <div className="mt-3 pt-3 border-t border-stone-200 text-center text-xs text-stone-500 space-y-1">
+        <div className="mt-3 pt-3 border-t border-ink/20 text-center text-xs text-ink/60 space-y-1">
           <div>
             {t('pronosticos.myPrediction')}{' '}
-            <span className="text-stone-700 font-medium">
+            <span className="text-ink/80 font-medium">
               {teamName(displayHome)} {prediction.home_score} – {prediction.away_score} {teamName(displayAway)}
             </span>
           </div>
           {isKnockout && match.home_score === match.away_score && match.winner && (
             <div>
               {t('pronosticos.advanced')}{' '}
-              <span className="font-medium text-stone-600">
+              <span className="font-medium text-ink/70">
                 {match.winner === 'home' ? teamName(displayHome) : teamName(displayAway)}
               </span>
               {prediction.tiebreaker && (
@@ -568,12 +568,12 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 
       {/* Submitted lock footer */}
       {submitted && !isFinished && (
-        <div className="mt-3 pt-3 border-t border-stone-100 text-center text-xs text-stone-400 space-y-0.5">
+        <div className="mt-3 pt-3 border-t border-ink/15 text-center text-xs text-ink/50 space-y-0.5">
           <div className="flex items-center justify-center gap-1">
             <span>🔒</span>
             <span>
               {t('pronosticos.lockNote')}{' '}
-              <span className="font-medium text-stone-600">
+              <span className="font-medium text-ink/70">
                 {(home || prediction?.home_score) ?? '?'} – {(away || prediction?.away_score) ?? '?'}
               </span>
             </span>
@@ -581,7 +581,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           {isKnockout && tiebreaker && isDraw && (
             <div>
               {t('pronosticos.advancesNote')}{' '}
-              <span className="font-medium text-stone-600">
+              <span className="font-medium text-ink/70">
                 {tiebreaker === 'home' ? teamName(displayHome) : teamName(displayAway)}
               </span>
             </div>
@@ -591,9 +591,9 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 
       {/* Auto-save status row (only while the card is editable) */}
       {!submitted && !isLocked && !isFinished && (
-        <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-end gap-1.5 text-xs h-5">
+        <div className="mt-2 pt-2 border-t border-ink/15 flex items-center justify-end gap-1.5 text-xs h-5">
           {saving ? (
-            <span className="text-stone-400 flex items-center gap-1.5">
+            <span className="text-ink/50 flex items-center gap-1.5">
               <Spinner size="sm" /> <span>{t('pronosticos.saving')}</span>
             </span>
           ) : saveErr ? (
@@ -608,11 +608,11 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               <span>✓</span><span>{t('common.saved')}</span>
             </span>
           ) : changed ? (
-            <span className="text-amber-500/70">•</span>
+            <span className="text-terracotta/70">•</span>
           ) : prediction ? (
-            <span className="text-stone-300">✓</span>
+            <span className="text-ink/40">✓</span>
           ) : (
-            <span className="text-stone-300">{t('pronosticos.noDraft')}</span>
+            <span className="text-ink/40">{t('pronosticos.noDraft')}</span>
           )}
         </div>
       )}
@@ -643,9 +643,9 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
                 title={info.full}
                 disabled={!hasData}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                  isActive  ? 'bg-amber-500 text-stone-950 shadow-sm'
-                  : hasData ? 'text-stone-500 hover:bg-stone-100 hover:text-stone-800'
-                  :           'text-stone-300 cursor-default'
+                  isActive  ? 'bg-terracotta text-ink shadow-sm'
+                  : hasData ? 'text-ink/60 hover:bg-paper hover:text-ink'
+                  :           'text-ink/40 cursor-default'
                 }`}
               >
                 <span className="text-base flex-shrink-0 leading-none">{info.icon}</span>
@@ -654,7 +654,7 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
                 </span>
                 {unfilled > 0 && (
                   <span className={`opacity-0 group-hover/nav:opacity-100 transition-opacity duration-150 text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-                    isActive ? 'bg-stone-950/20 text-stone-950' : 'bg-amber-500/20 text-amber-600'
+                    isActive ? 'bg-ink/20 text-ink' : 'bg-terracotta/20 text-terracotta-600'
                   }`}>
                     {unfilled}
                   </span>
@@ -1127,19 +1127,19 @@ export default function Pronosticos() {
 
       {/* Page header */}
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-stone-900">{t('pronosticos.title')}</h2>
-        <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
+        <h2 className="font-display text-2xl sm:text-3xl text-ink leading-none">{t('pronosticos.title')}</h2>
+        <p className="font-serif italic text-ink/70 text-sm sm:text-base mt-1.5">
           {t('pronosticos.subtitle')}
         </p>
       </div>
 
       {/* No-league gate: banner replacing the submit panel */}
       {!leagueLoading && leagues.length === 0 ? (
-        <div className="card p-5 border-amber-500/30 bg-gradient-to-br from-amber-50 to-orange-50 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="card p-5 border-terracotta/30 bg-gradient-to-br from-terracotta/40 to-terracotta/40 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="text-3xl flex-shrink-0">🏆</div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-stone-900 text-sm sm:text-base">{t('pronosticos.noLeagueTitle')}</p>
-            <p className="text-stone-500 text-xs sm:text-sm mt-0.5">{t('pronosticos.noLeagueDesc')}</p>
+            <p className="font-bold text-ink text-sm sm:text-base">{t('pronosticos.noLeagueTitle')}</p>
+            <p className="text-ink/60 text-xs sm:text-sm mt-0.5">{t('pronosticos.noLeagueDesc')}</p>
           </div>
           <button
             onClick={() => setShowLeagueModal(true)}
@@ -1165,29 +1165,29 @@ export default function Pronosticos() {
 
       {/* Copy from league prompt */}
       {activeLeague && !hasPredictions && !isSubmitted && otherLeagues.length > 0 && (
-        <div className="card overflow-hidden border-amber-500/20 bg-amber-500/5">
+        <div className="card overflow-hidden border-terracotta/20 bg-terracotta/5">
           <button
             type="button"
             onClick={() => setReuseExpanded(e => !e)}
-            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-amber-500/10 active:bg-amber-500/20 transition-colors text-left"
+            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-terracotta/10 active:bg-terracotta/20 transition-colors text-left"
             aria-expanded={reuseExpanded}
           >
             <span className="text-base flex-shrink-0">📋</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-stone-800 truncate">{t('pronosticos.reuseTitle')}</p>
+              <p className="text-sm font-semibold text-ink truncate">{t('pronosticos.reuseTitle')}</p>
               {!reuseExpanded && (
-                <p className="text-[11px] text-stone-500 mt-0.5 truncate">
+                <p className="text-[11px] text-ink/60 mt-0.5 truncate">
                   {t('pronosticos.reuseHint', { n: otherLeagues.length, s: otherLeagues.length !== 1 ? 's' : '' })}
                 </p>
               )}
             </div>
-            <span className={`text-stone-400 text-xs flex-shrink-0 transition-transform duration-200 ${reuseExpanded ? 'rotate-180' : ''}`} aria-hidden="true">
+            <span className={`text-ink/50 text-xs flex-shrink-0 transition-transform duration-200 ${reuseExpanded ? 'rotate-180' : ''}`} aria-hidden="true">
               ▼
             </span>
           </button>
           {reuseExpanded && (
-            <div className="px-4 pb-3 pt-1 border-t border-amber-500/20 space-y-3">
-              <p className="text-xs text-stone-500">
+            <div className="px-4 pb-3 pt-1 border-t border-terracotta/20 space-y-3">
+              <p className="text-xs text-ink/60">
                 {t('pronosticos.reuseBody', { league: activeLeague.name })}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -1219,7 +1219,7 @@ export default function Pronosticos() {
       {matches.length === 0 ? (
         <div className="card p-6 sm:p-10 text-center">
           <div className="text-3xl sm:text-4xl mb-3">📅</div>
-          <p className="text-stone-500 text-sm">{t('pronosticos.noMatches')}</p>
+          <p className="text-ink/60 text-sm">{t('pronosticos.noMatches')}</p>
         </div>
       ) : (
         <div className="flex gap-3 items-start">
@@ -1243,15 +1243,15 @@ export default function Pronosticos() {
                     onClick={() => setActiveStage(stage)}
                     className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
                       activeStage === stage
-                        ? 'bg-amber-500 text-stone-950'
-                        : 'bg-stone-100 text-stone-500 hover:text-stone-800'
+                        ? 'bg-terracotta text-ink'
+                        : 'bg-paper text-ink/60 hover:text-ink'
                     }`}
                   >
                     <span>{info.icon}</span>
                     <span>{info.short}</span>
                     {unfilled > 0 && !isSubmitted && (
                       <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                        activeStage === stage ? 'bg-stone-950/20' : 'bg-amber-500/20 text-amber-600'
+                        activeStage === stage ? 'bg-ink/20' : 'bg-terracotta/20 text-terracotta-600'
                       }`}>
                         {unfilled}
                       </span>
@@ -1264,15 +1264,15 @@ export default function Pronosticos() {
             {/* Stage header */}
             <div className="flex items-center gap-2">
               <span className="text-xl">{STAGE_INFO[activeStage]?.icon}</span>
-              <h3 className="text-lg font-bold text-stone-800">{STAGE_INFO[activeStage]?.full}</h3>
-              <span className="text-sm text-stone-400">
+              <h3 className="text-lg font-bold text-ink">{STAGE_INFO[activeStage]?.full}</h3>
+              <span className="text-sm text-ink/50">
                 {t('pronosticos.matchCount', { n: filtered.length, s: filtered.length !== 1 ? 's' : '' })}
               </span>
               {!isSubmitted && (
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ml-1 ${
                   unfilledCount(activeStage) === 0
                     ? 'bg-green-100 text-green-600'
-                    : 'bg-amber-100 text-amber-600'
+                    : 'bg-terracotta/20 text-terracotta-600'
                 }`}>
                   {unfilledCount(activeStage) === 0
                     ? t('pronosticos.completeLabel')
@@ -1285,9 +1285,9 @@ export default function Pronosticos() {
                 edit, has at least one empty match, and we have consensus data
                 cached. Saves people from tapping +/− 60+ times. */}
             {!isSubmitted && !isPastCutoff && Object.keys(consensus).length > 0 && filledCount < totalCount && (
-              <div className="card p-3 bg-amber-50/40 border-amber-200/60 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+              <div className="card p-3 bg-terracotta/40 border-terracotta/60 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-semibold text-stone-800">
+                  <p className="text-xs sm:text-sm font-semibold text-ink">
                     {fillStatus.state === 'done' && fillStatus.failed > 0
                       ? t('pronosticos.fillConsensusPartial', {
                           ok:   fillStatus.count,
@@ -1303,7 +1303,7 @@ export default function Pronosticos() {
                           : t('pronosticos.fillConsensusBtn')}
                   </p>
                   {fillStatus.state === 'idle' && (
-                    <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
+                    <p className="text-[11px] text-ink/60 mt-0.5 leading-snug">
                       {t('pronosticos.fillConsensusHint')}
                     </p>
                   )}
@@ -1325,7 +1325,7 @@ export default function Pronosticos() {
             {/* Match cards by day */}
             {Object.entries(grouped).map(([day, dayMatches]) => (
               <div key={day}>
-                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 capitalize">{day}</p>
+                <p className="text-xs font-semibold text-ink/50 uppercase tracking-wider mb-2 capitalize">{day}</p>
                 <div className="space-y-3">
                   {dayMatches.map(m => (
                     <MatchCard
