@@ -784,7 +784,9 @@ const LANDING_CSS = `
 .landing-root .ln-display{font-family:"Boldonse","Anton","Arial Black",sans-serif;font-weight:400;line-height:.92;letter-spacing:-.01em}
 
 /* NAV */
-.landing-root .ln-top{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(244,236,214,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);transition:background .3s}
+.landing-root .ln-top{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 16px max(16px,env(safe-area-inset-left));background:rgba(244,236,214,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);transition:background .3s;gap:12px}
+@media (min-width:640px){.landing-root .ln-top{padding-left:max(32px,env(safe-area-inset-left));padding-right:max(32px,env(safe-area-inset-right))}}
+@media (max-width:520px){.landing-root .ln-top .ln-brand-sub{display:none}.landing-root .ln-brand-name{font-size:15px}.landing-root .ln-brand-mark{width:30px;height:30px}.landing-root .ln-btn{padding:9px 12px;font-size:12px}}
 .landing-root .ln-top.scrolled{background:rgba(244,236,214,.96)}
 .landing-root .ln-brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--ink)}
 .landing-root .ln-brand-mark{width:34px;height:34px;border-radius:50%;background:var(--ink);position:relative;overflow:hidden;flex-shrink:0}
@@ -806,15 +808,16 @@ const LANDING_CSS = `
 @media (max-width:880px){.landing-root .ln-nav-links{display:none}}
 
 /* HERO */
-.landing-root .ln-hero{position:relative;min-height:100vh;padding:130px 6vw 80px;overflow:hidden}
+.landing-root .ln-hero{position:relative;min-height:100vh;padding:calc(130px + env(safe-area-inset-top,0px)) 6vw 80px;overflow:hidden}
+@media (max-width:600px){.landing-root .ln-hero{padding-top:calc(96px + env(safe-area-inset-top,0px));padding-bottom:60px}}
 .landing-root .ln-hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
 @media (max-width:980px){.landing-root .ln-hero-grid{grid-template-columns:1fr;gap:40px}}
 .landing-root .ln-cover-meta{display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line-2);margin-bottom:36px;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);flex-wrap:wrap;gap:8px}
 .landing-root .ln-cover-meta span{display:flex;gap:14px;align-items:center}
 .landing-root .ln-dot{width:6px;height:6px;background:var(--terracotta);border-radius:50%}
 
-.landing-root .ln-hero-title{font-size:clamp(56px,9vw,160px);line-height:1.08;color:var(--ink);margin:0}
-.landing-root .ln-hero-title span,.landing-root .ln-hero-title em{display:inline-block;padding-bottom:.08em}
+.landing-root .ln-hero-title{font-size:clamp(40px,7vw,120px);line-height:1.18;color:var(--ink);margin:0}
+.landing-root .ln-hero-title span,.landing-root .ln-hero-title em{display:inline-block;padding-bottom:.12em}
 .landing-root .ln-hero-title em{font-style:italic;color:var(--terracotta);font-family:"Instrument Serif",serif;font-weight:400;letter-spacing:0}
 .landing-root .ln-hero-kicker{display:inline-block;background:var(--ink);color:var(--cream);padding:6px 12px;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:24px}
 .landing-root .ln-hero-lead{font-size:19px;line-height:1.55;color:#234;max-width:520px;margin:32px 0 28px}
