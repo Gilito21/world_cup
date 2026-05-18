@@ -636,7 +636,7 @@ export default function Extras() {
         <div className="flex items-start gap-2.5 sm:gap-3">
           <span className="text-xl sm:text-3xl">🎲</span>
           <div className="flex-1 min-w-0">
-            <h1 className="font-display text-2xl sm:text-3xl text-ink leading-none">{t('extras.title')}</h1>
+            <h1 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('extras.title')}</h1>
             <p className="text-[11px] sm:text-sm text-ink/60 mt-0.5">
               {t('extras.subtitle')}
             </p>

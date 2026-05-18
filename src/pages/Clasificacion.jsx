@@ -522,8 +522,8 @@ export default function Clasificacion() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-display text-2xl sm:text-3xl text-ink leading-none">{t('clasificacion.title')}</h2>
-          <p className="font-serif italic text-ink/70 text-sm sm:text-base mt-1.5">
+          <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('clasificacion.title')}</h2>
+          <p className="font-serif italic text-ink/70 text-sm mt-1">
             {t('clasificacion.subtitle')}
           </p>
         </div>

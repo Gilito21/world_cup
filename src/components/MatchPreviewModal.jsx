@@ -137,38 +137,38 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
           >
             ✕
           </button>
-          <div className="flex items-center gap-1.5 mb-3 text-[11px] uppercase tracking-wider text-terracotta-400/80 font-semibold">
+          <div className="flex items-center gap-1.5 mb-3 text-[11px] uppercase tracking-wider text-terracotta-400 font-semibold">
             {match.group_name && <span>{t('common.group', { g: match.group_name })}</span>}
-            {match.group_name && <span className="text-ink/60">·</span>}
-            <span>{formatDateTime(match.match_date, dateLocale)}</span>
+            {match.group_name && <span className="text-cream/40">·</span>}
+            <span className="text-cream/80">{formatDateTime(match.match_date, dateLocale)}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0 flex flex-col items-center text-center">
               <Flag team={match.home_team} className="w-10 h-10 text-3xl" />
-              <p className="text-sm font-bold mt-1 truncate w-full">{teamName(match.home_team)}</p>
+              <p className="text-sm font-bold mt-1 truncate w-full text-cream">{teamName(match.home_team)}</p>
             </div>
             <div className="flex-shrink-0 text-center px-2">
               {actualScore ? (
                 <>
                   <p className="text-3xl font-black text-terracotta-400">{actualScore}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-ink/50 mt-0.5">{t('pronosticos.finishedLabel')}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-cream/60 mt-0.5">{t('pronosticos.finishedLabel')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-2xl font-bold text-ink/40">vs</p>
+                  <p className="text-2xl font-bold text-cream/70">vs</p>
                   {!hasStarted && (
-                    <p className="text-[10px] uppercase tracking-wider text-ink/50 mt-0.5">{t('preview.upcoming')}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-cream/60 mt-0.5">{t('preview.upcoming')}</p>
                   )}
                 </>
               )}
             </div>
             <div className="flex-1 min-w-0 flex flex-col items-center text-center">
               <Flag team={match.away_team} className="w-10 h-10 text-3xl" />
-              <p className="text-sm font-bold mt-1 truncate w-full">{teamName(match.away_team)}</p>
+              <p className="text-sm font-bold mt-1 truncate w-full text-cream">{teamName(match.away_team)}</p>
             </div>
           </div>
           {match.venue && (
-            <p className="text-center text-[11px] text-ink/50 mt-3">📍 {match.venue}</p>
+            <p className="text-center text-[11px] text-cream/60 mt-3">📍 {match.venue}</p>
           )}
         </div>
 

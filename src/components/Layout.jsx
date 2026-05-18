@@ -264,7 +264,7 @@ export default function Layout() {
       {/* ── HEADER ───────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur-md border-b border-ink/15 pt-safe">
         <div className="absolute top-0 inset-x-0 h-px bg-terracotta" />
-        <div className="max-w-5xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
           {/* Logo */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
@@ -322,7 +322,7 @@ export default function Layout() {
         </div>
 
         {/* Tabs (solo desktop, en móvil hay bottom nav) */}
-        <div className="hidden sm:block max-w-5xl mx-auto px-3 sm:px-4">
+        <div className="hidden sm:block max-w-6xl mx-auto px-3 sm:px-4">
           <nav className="flex gap-1">
             {NAV.map(({ to, label, icon }) => (
               <ViewNavLink
@@ -345,7 +345,7 @@ export default function Layout() {
       {/* Banda de contexto de liga activa */}
       {activeLeague && (
         <div className="bg-paper border-b border-ink/15">
-          <div className="max-w-5xl mx-auto px-3 sm:px-4 py-1 sm:py-1.5 flex items-center gap-2 overflow-hidden">
+          <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1 sm:py-1.5 flex items-center gap-2 overflow-hidden">
             {activeLeague.role === 'admin' && <span className="text-[11px] sm:text-xs">👑</span>}
             <span className="text-[11px] sm:text-xs text-ink/70 font-medium truncate">{activeLeague.name}</span>
             {activeLeague.role === 'admin' && (
@@ -361,7 +361,7 @@ export default function Layout() {
       <PullRefreshContext.Provider value={pullCtx}>
         <main
           ref={mainRef}
-          className="relative flex-1 overflow-y-auto max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6 pb-mobile-nav animate-fade-in"
+          className="relative flex-1 overflow-y-auto max-w-6xl mx-auto w-full px-3 sm:px-4 py-3 sm:py-4 pb-mobile-nav animate-fade-in"
         >
           {/* Pull-to-refresh indicator (mobile only) */}
           {(pullDist > 0 || refreshing) && (

@@ -95,7 +95,8 @@ function ForgotPassword({ onBack }) {
           <span className="font-bold text-ink">Porra <span className="text-terracotta">Mundial 2026</span></span>
         </Link>
         <div className="bg-paper rounded-3xl shadow-xl shadow-ink/8 border border-ink/20 overflow-hidden">
-          <div className="bg-gradient-to-br from-terracotta/40 to-cream px-6 py-6 border-b border-ink/15">
+          <div className="bg-cream px-6 py-6 border-b border-ink/15 relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-px bg-terracotta" />
             <h2 className="text-lg font-bold text-ink">{t('auth.recoverTitle')}</h2>
             <p className="text-ink/60 text-sm mt-1">{t('auth.recoverHint')}</p>
           </div>
@@ -383,7 +384,8 @@ export default function Auth() {
         <div className="bg-paper rounded-3xl shadow-xl shadow-ink/8 border border-ink/20 overflow-hidden">
 
           {/* ── Light header ─────────────────────────────────── */}
-          <div className="bg-gradient-to-br from-terracotta/40 via-terracotta/40 to-cream px-6 pt-7 pb-5 border-b border-ink/15">
+          <div className="bg-cream px-6 pt-7 pb-5 border-b border-ink/15 relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-px bg-terracotta" />
             {/* Logo */}
             <div className="flex flex-col items-center text-center mb-5">
               <div className="text-4xl mb-2.5">⚽</div>
@@ -406,15 +408,15 @@ export default function Auth() {
             </div>
 
             {/* Tab switcher */}
-            <div className="flex rounded-xl overflow-hidden bg-paper p-1">
+            <div className="flex border border-ink/20 overflow-hidden bg-paper">
               {[['login', t('auth.loginTab')], ['register', t('auth.registerTab')]].map(([m, label]) => (
                 <button
                   key={m}
                   onClick={() => switchMode(m)}
-                  className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-150 ${
+                  className={`flex-1 py-2.5 text-sm font-semibold transition-colors duration-150 ${
                     mode === m
-                      ? 'bg-terracotta text-white shadow-sm'
-                      : 'text-ink/60 hover:text-ink'
+                      ? 'bg-ink text-cream'
+                      : 'text-ink/60 hover:text-ink hover:bg-cream'
                   }`}
                 >
                   {label}
