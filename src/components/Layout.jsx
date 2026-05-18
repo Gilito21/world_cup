@@ -266,15 +266,23 @@ export default function Layout() {
       <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur-md border-b border-ink/15 pt-safe">
         <div className="absolute top-0 inset-x-0 h-px bg-terracotta" />
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
-          {/* Logo: tile-as-refresh button + canonical wordmark on desktop */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          {/* Logo: tile is always visible (it's the refresh button), the
+              wordmark slides in from the left when the user hovers the
+              group — keeps the header tight while still exposing the
+              full brand on intent. */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 group">
             <BrandTile
               size={32}
               onClick={handleBallRefresh}
               ariaLabel="Actualizar"
               spinning={refreshing}
             />
-            <Link to="/pronosticos" className="hidden sm:flex items-baseline">
+            <Link
+              to="/pronosticos"
+              className="hidden sm:flex items-baseline opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto"
+              tabIndex={-1}
+              aria-hidden="true"
+            >
               <BrandMark compact size={0.45} />
             </Link>
           </div>
