@@ -34,6 +34,98 @@ const FROM_NAME   = 'Porra Mundial 2026'
 const APP_URL     = 'https://www.porradeempresas.com'
 const BREVO_API   = 'https://api.brevo.com/v3/smtp/email'
 
+// ── Brand shell editorial (duplicado de scripts/_brand-email.js porque
+//    Deno no puede importar módulos de Node desde este edge function). ────
+const BRAND = {
+  cream:    '#F4ECD6',
+  paper:    '#EDE3C4',
+  ink:      '#0E2A18',
+  inkSoft:  '#1C4D2C',
+  terra:    '#C8552B',
+  rule:     'rgba(14,42,24,0.18)',
+} as const
+
+function esc(s: string): string {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function wordmark(): string {
+  return `
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:collapse;">
+  <tr>
+    <td valign="middle" style="font-family:'Boldonse','Anton','Arial Black',Impact,Helvetica,sans-serif;font-weight:900;font-size:38px;color:${BRAND.ink};letter-spacing:-.02em;line-height:1;padding:0;">P</td>
+    <td valign="middle" style="padding:0 3px;line-height:0;">
+      <span style="display:inline-block;width:30px;height:30px;border-radius:50%;background-color:${BRAND.ink};background-image:radial-gradient(circle at 36% 30%,#ffffff 0 26%,${BRAND.ink} 27% 31%,#ffffff 32% 62%,${BRAND.ink} 63% 67%,#ffffff 68% 100%);box-shadow:inset 0 0 0 2px ${BRAND.ink};vertical-align:middle;">&nbsp;</span>
+    </td>
+    <td valign="middle" style="font-family:'Boldonse','Anton','Arial Black',Impact,Helvetica,sans-serif;font-weight:900;font-size:38px;color:${BRAND.ink};letter-spacing:-.02em;line-height:1;padding:0;">RRA</td>
+    <td valign="middle" style="padding:0 0 0 12px;font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-style:italic;font-weight:400;font-size:30px;color:${BRAND.terra};line-height:.9;">de empresas</td>
+  </tr>
+</table>`
+}
+
+function brandKicker(text: string): string {
+  return `<div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;margin:0 0 8px;">${esc(text)}</div>`
+}
+
+function brandHeadline(text: string): string {
+  return `<h1 style="margin:0 0 14px;font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-weight:400;font-size:34px;line-height:1.05;color:${BRAND.ink};letter-spacing:-.01em;">${esc(text)}</h1>`
+}
+
+function brandButton({ href, label }: { href: string; label: string }): string {
+  return `
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+  <tr>
+    <td align="center" bgcolor="${BRAND.ink}" style="background-color:${BRAND.ink};border:1px solid ${BRAND.ink};">
+      <a href="${href}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-weight:700;font-size:15px;line-height:1;letter-spacing:.01em;color:${BRAND.cream};text-decoration:none;">${esc(label)} &rarr;</a>
+    </td>
+  </tr>
+</table>`
+}
+
+function brandShell({ title, preheader = '', content, footerNote, appUrl = APP_URL }: {
+  title: string; preheader?: string; content: string; footerNote: string; appUrl?: string;
+}): string {
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>${esc(title)}</title>
+  <!--[if mso]>
+  <style type="text/css">table, td { mso-line-height-rule:exactly; }</style>
+  <![endif]-->
+</head>
+<body style="margin:0;padding:0;background:${BRAND.cream};font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${BRAND.ink};">
+  <div style="display:none !important;font-size:1px;color:${BRAND.cream};line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">${esc(preheader)}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${BRAND.cream}" style="background:${BRAND.cream};">
+    <tr><td align="center" style="padding:36px 16px 28px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+        <tr><td align="center" style="padding:4px 0 28px;">${wordmark()}</td></tr>
+        <tr><td bgcolor="${BRAND.paper}" style="background:${BRAND.paper};border:1px solid ${BRAND.ink};">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr><td style="padding:36px 36px 32px;">${content}</td></tr>
+          </table>
+        </td></tr>
+        <tr><td align="center" style="padding:22px 8px 6px;">
+          <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:${BRAND.ink};opacity:.65;line-height:1;">
+            ATLAS MUNDIAL &nbsp;<span style="color:${BRAND.terra};opacity:1;">★</span>&nbsp; EDICIÓN &rsquo;26
+          </div>
+        </td></tr>
+        <tr><td align="center" style="padding:10px 24px 0;">
+          <p style="margin:0 0 6px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:${BRAND.ink};opacity:.62;">${esc(footerNote)}</p>
+          <p style="margin:0;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:${BRAND.ink};opacity:.45;">
+            <a href="${appUrl}" style="color:${BRAND.ink};text-decoration:none;opacity:.7;">porradeempresas.com</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -104,94 +196,90 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── 1. Email al admin ─────────────────────────────────────────────────────
-  const adminHtml = `
-<!DOCTYPE html><html lang="es">
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#f5f5f4;font-family:system-ui,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f4;padding:32px 16px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e7e5e4;">
-        <tr><td style="background:linear-gradient(135deg,#10b981,#059669);padding:24px 32px;">
-          <p style="margin:0;font-size:22px;font-weight:700;color:#fff;">🎉 Nuevo usuario registrado</p>
-          <p style="margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">Porra Mundial 2026</p>
-        </td></tr>
-        <tr><td style="padding:28px 32px;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;">
-            <tr><td style="padding:16px 20px;border-bottom:1px solid #e7e5e4;">
-              <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em;">Usuario</p>
-              <p style="margin:0;font-size:15px;font-weight:600;color:#1c1917;">${username || '—'}</p>
-            </td></tr>
-            <tr><td style="padding:16px 20px;border-bottom:1px solid #e7e5e4;">
-              <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em;">Email</p>
-              <p style="margin:0;font-size:14px;color:#1c1917;">${email || '—'}</p>
-            </td></tr>
-            ${company ? `<tr><td style="padding:16px 20px;border-bottom:1px solid #e7e5e4;">
-              <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em;">Empresa</p>
-              <p style="margin:0;font-size:14px;color:#1c1917;">${company}</p>
-            </td></tr>` : ''}
-            <tr><td style="padding:16px 20px;">
-              <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#a8a29e;text-transform:uppercase;letter-spacing:.06em;">Fecha</p>
-              <p style="margin:0;font-size:14px;color:#1c1917;">${ts}</p>
-            </td></tr>
-          </table>
-        </td></tr>
-        <tr><td style="padding:0 32px 24px;text-align:center;">
-          <p style="margin:0;font-size:12px;color:#a8a29e;">Porra Mundial 2026 · porradeempresas.com</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`
+  const adminContent = `
+${brandKicker('Admin · alta confirmada')}
+${brandHeadline('Nuevo usuario en la porra.')}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:6px 0 24px;">
+  <tr><td style="padding:14px 0;border-top:1px solid ${BRAND.rule};">
+    <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;">Usuario</div>
+    <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;color:${BRAND.ink};margin-top:4px;">${esc(username) || '—'}</div>
+  </td></tr>
+  <tr><td style="padding:14px 0;border-top:1px solid ${BRAND.rule};">
+    <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;">Email</div>
+    <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};margin-top:4px;">${esc(email) || '—'}</div>
+  </td></tr>
+  ${company ? `<tr><td style="padding:14px 0;border-top:1px solid ${BRAND.rule};">
+    <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;">Empresa</div>
+    <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};margin-top:4px;">${esc(company)}</div>
+  </td></tr>` : ''}
+  <tr><td style="padding:14px 0;border-top:1px solid ${BRAND.rule};border-bottom:1px solid ${BRAND.rule};">
+    <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;">Fecha</div>
+    <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};margin-top:4px;">${esc(ts)}</div>
+  </td></tr>
+</table>`
+  const adminHtml = brandShell({
+    title: `Nuevo usuario · ${username || email}`,
+    preheader: `${username || email} acaba de confirmar su email${company ? ` (${company})` : ''}.`,
+    content: adminContent,
+    footerNote: 'Notificación interna · admin Porra de Empresas.',
+  })
 
   // ── 2. Email de bienvenida al usuario ─────────────────────────────────────
-  const welcomeHtml = `
-<!DOCTYPE html><html lang="es">
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#f5f5f4;font-family:system-ui,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f4;padding:32px 16px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e7e5e4;">
-        <tr><td style="background:linear-gradient(135deg,#f59e0b,#f97316);padding:32px;text-align:center;">
-          <p style="margin:0;font-size:40px;">⚽</p>
-          <p style="margin:8px 0 0;font-size:22px;font-weight:700;color:#fff;">¡Bienvenido a la Porra!</p>
-          <p style="margin:4px 0 0;font-size:14px;color:rgba(255,255,255,0.85);">Mundial 2026 · México, Canadá & USA</p>
-        </td></tr>
-        <tr><td style="padding:32px;">
-          <p style="margin:0 0 16px;font-size:16px;color:#1c1917;">Hola <strong>${username || 'crack'}</strong>,</p>
-          <p style="margin:0 0 20px;font-size:15px;color:#44403c;line-height:1.6;">
-            Ya eres parte de la porra del Mundial 2026. El torneo empieza el <strong>11 de junio de 2026</strong> — tienes tiempo de sobra para hacer tus pronósticos.
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf9;border:1px solid #e7e5e4;border-radius:12px;margin-bottom:24px;">
-            <tr><td style="padding:16px 20px;border-bottom:1px solid #e7e5e4;">
-              <p style="margin:0;font-size:14px;color:#1c1917;">🎯 <strong>Pronósticos</strong> — predice el marcador exacto de cada partido</p>
-            </td></tr>
-            <tr><td style="padding:16px 20px;border-bottom:1px solid #e7e5e4;">
-              <p style="margin:0;font-size:14px;color:#1c1917;">🏆 <strong>Ligas privadas</strong> — compite con tus amigos o compañeros</p>
-            </td></tr>
-            <tr><td style="padding:16px 20px;">
-              <p style="margin:0;font-size:14px;color:#1c1917;">🎲 <strong>Extras</strong> — preguntas especiales para ganar puntos bonus</p>
-            </td></tr>
-          </table>
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center">
-              <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#f97316);color:#1c1917;font-weight:700;font-size:15px;padding:14px 32px;border-radius:12px;text-decoration:none;">
-                Entrar a la app →
-              </a>
-            </td></tr>
-          </table>
-        </td></tr>
-        <tr><td style="padding:0 32px 24px;text-align:center;border-top:1px solid #f5f5f4;">
-          <p style="margin:16px 0 4px;font-size:12px;color:#a8a29e;">¿Preguntas? Responde a este email.</p>
-          <p style="margin:0;font-size:12px;color:#a8a29e;">Porra Mundial 2026 · porradeempresas.com</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`
+  const welcomeContent = `
+${brandKicker('Bienvenido · Edición ’26')}
+${brandHeadline(`Hola ${username || 'crack'}, ya estás dentro.`)}
+<p style="margin:0 0 18px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${BRAND.ink};">
+  Bienvenido a la <em style="font-family:'Instrument Serif',Georgia,serif;color:${BRAND.terra};font-style:italic;">Porra de Empresas</em> del Mundial 2026. El torneo arranca el <strong>11 de junio de 2026</strong> en México, Canadá y Estados Unidos — tienes tiempo de sobra para preparar tus pronósticos.
+</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 26px;border-collapse:collapse;">
+  <tr><td valign="top" style="padding:14px 0 14px 0;border-top:1px solid ${BRAND.rule};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td valign="top" width="32" style="font-family:'Instrument Serif',Georgia,serif;font-size:24px;color:${BRAND.terra};line-height:1;padding-right:14px;">01</td>
+        <td valign="top">
+          <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-weight:700;font-size:14px;color:${BRAND.ink};">Pronósticos</div>
+          <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:${BRAND.ink};opacity:.78;margin-top:2px;">Predice el marcador exacto de cada partido del torneo.</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+  <tr><td valign="top" style="padding:14px 0;border-top:1px solid ${BRAND.rule};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td valign="top" width="32" style="font-family:'Instrument Serif',Georgia,serif;font-size:24px;color:${BRAND.terra};line-height:1;padding-right:14px;">02</td>
+        <td valign="top">
+          <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-weight:700;font-size:14px;color:${BRAND.ink};">Ligas privadas</div>
+          <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:${BRAND.ink};opacity:.78;margin-top:2px;">Compite con amigos o con tu empresa en clasificaciones propias.</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+  <tr><td valign="top" style="padding:14px 0;border-top:1px solid ${BRAND.rule};border-bottom:1px solid ${BRAND.rule};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td valign="top" width="32" style="font-family:'Instrument Serif',Georgia,serif;font-size:24px;color:${BRAND.terra};line-height:1;padding-right:14px;">03</td>
+        <td valign="top">
+          <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-weight:700;font-size:14px;color:${BRAND.ink};">Extras</div>
+          <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:${BRAND.ink};opacity:.78;margin-top:2px;">Preguntas especiales (campeón, bota de oro, sorpresas) para sumar bonus.</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+
+${brandButton({ href: APP_URL, label: 'Entrar a la app' })}
+`
+  const welcomeHtml = brandShell({
+    title: 'Bienvenido a la Porra de Empresas',
+    preheader: 'Ya eres parte de la porra del Mundial 2026. Edición ’26.',
+    content: welcomeContent,
+    footerNote: '¿Preguntas? Responde a este email y te leemos.',
+  })
 
   const results = await Promise.allSettled([
-    sendEmail(BREVO_KEY, ADMIN_EMAIL, `🎉 Nuevo usuario: ${username || email} · Porra Mundial`, adminHtml),
-    email ? sendEmail(BREVO_KEY, email, '⚽ ¡Bienvenido a la Porra del Mundial 2026!', welcomeHtml) : Promise.resolve(),
+    sendEmail(BREVO_KEY, ADMIN_EMAIL, `Nuevo usuario · ${username || email} · Porra de Empresas`, adminHtml),
+    email ? sendEmail(BREVO_KEY, email, 'Bienvenido a la Porra de Empresas · Mundial 2026', welcomeHtml) : Promise.resolve(),
   ])
 
   const adminFailed   = results[0].status === 'rejected'
