@@ -116,7 +116,7 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
         </div>
         <div className="h-2.5 bg-paper rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-terracotta'}`}
+            className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-grass-500' : 'bg-ink/70'}`}
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -226,7 +226,7 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
               </div>
             </div>
             {isActive && (
-              <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-terracotta text-white flex items-center justify-center text-[10px] sm:text-xs font-bold">
+              <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-ink text-cream flex items-center justify-center text-[10px] sm:text-xs font-bold">
                 ✓
               </span>
             )}
@@ -279,7 +279,7 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
                   onClick={() => { onDraft(s.name) }}
                   className={`flex items-center gap-1.5 text-xs sm:text-sm px-2.5 py-1.5 rounded-full border transition-colors ${
                     isCurrent
-                      ? 'bg-terracotta border-terracotta text-ink font-semibold'
+                      ? 'bg-ink border-ink text-cream font-semibold'
                       : 'bg-paper border-ink/20 text-ink/80 hover:bg-paper-200'
                   }`}
                 >

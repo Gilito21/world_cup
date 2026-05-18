@@ -95,7 +95,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
               key={tabKey}
               onClick={() => switchTab(tabKey)}
               className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                tab === tabKey ? 'bg-terracotta text-ink' : 'text-ink/60 hover:text-ink/80'
+                tab === tabKey ? 'bg-ink text-cream' : 'text-ink/60 hover:text-ink/80'
               }`}
             >
               {label}

@@ -275,7 +275,7 @@ export default function AdminLeague() {
               onClick={() => setSelectedId(l.id)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                 l.id === activeLeague.id
-                  ? 'bg-terracotta text-ink'
+                  ? 'bg-ink text-cream'
                   : 'bg-paper text-ink/60 hover:bg-paper-200 border border-ink/30'
               }`}
             >

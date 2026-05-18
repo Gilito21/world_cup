@@ -58,9 +58,9 @@ function AuthBg({ children }) {
           backgroundSize: '24px 24px',
         }}
       />
-      {/* Soft glows */}
-      <div className="absolute -top-32 -right-32 w-96 h-96 bg-terracotta/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-grass-300/20 rounded-full blur-3xl pointer-events-none" />
+      {/* Soft glows — kept very subtle so they read as paper texture, not warning */}
+      <div className="absolute -top-32 -right-32 w-96 h-96 bg-grass-300/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-ink/5 rounded-full blur-3xl pointer-events-none" />
       <LangToggle className="absolute top-4 right-4 z-10" />
       {children}
     </div>

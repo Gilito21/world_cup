@@ -543,7 +543,7 @@ export default function Clasificacion() {
             onClick={() => handleTabChange(id)}
             className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-150 flex items-center justify-center gap-1.5 ${
               tab === id
-                ? 'bg-terracotta text-ink shadow-sm'
+                ? 'bg-ink text-cream shadow-sm'
                 : 'text-ink/60 hover:text-ink'
             }`}
           >
@@ -599,7 +599,7 @@ export default function Clasificacion() {
                           onClick={() => setActiveLeague(l)}
                           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                             activeLeague?.id === l.id
-                              ? 'bg-terracotta text-ink'
+                              ? 'bg-ink text-cream'
                               : 'bg-paper text-ink/60 hover:bg-paper-200 border border-ink/30'
                           }`}
                         >
