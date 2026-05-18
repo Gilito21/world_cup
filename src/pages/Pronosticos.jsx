@@ -149,123 +149,72 @@ function ScoreStepper({ value, onChange, disabled, placeholder }) {
 }
 
 // ─── SUBMIT PANEL ─────────────────────────────────────────────────────────────
+// Compact pill that sits inline with the stage header. Shows the
+// progress count and the submit action in one row; no expandable
+// section — the deadline countdown lives elsewhere (page header
+// editorial band) and a hint isn't needed once the user has reached
+// this part of the page.
 
-function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submittedAt, onSubmit, submitting }) {
-  const { t, dateLocale } = useLang()
-  const [expanded, setExpanded] = useState(false)
+function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, onSubmit, submitting }) {
+  const { t } = useLang()
   const pct          = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0
   const isPastCutoff = !!(cutoffTime && Date.now() >= cutoffTime)
   const isComplete   = filledCount === totalCount && totalCount > 0
   const canSubmit    = isComplete && !isPastCutoff && !isSubmitted
 
-  // Terminal: prediction was submitted — compact one-line success card
+  // Terminal: prediction was submitted — tiny green confirmation pill.
   if (isSubmitted) {
     return (
-      <div className="card p-3 sm:p-4 bg-green-50/80 border-green-200 flex items-center gap-3">
-        <span className="text-2xl sm:text-3xl flex-shrink-0">✅</span>
-        <div className="min-w-0">
-          <p className="font-bold text-green-700 text-sm sm:text-base">{t('pronosticos.submitted')}</p>
-          <p className="text-[11px] sm:text-xs text-green-600 mt-0.5">
-            {submittedAt
-              ? new Date(submittedAt).toLocaleDateString(dateLocale, {
-                  day: 'numeric', month: 'short',
-                  hour: '2-digit', minute: '2-digit',
-                })
-              : ''}
-            {' · '}{t('pronosticos.submittedDesc', { n: totalCount })}
-          </p>
-        </div>
-      </div>
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-grass-500/15 border border-grass-500/30 text-grass-600 text-xs font-bold whitespace-nowrap flex-shrink-0">
+        <span aria-hidden="true">✅</span>
+        <span className="hidden sm:inline">{t('pronosticos.submitted')}</span>
+      </span>
     )
   }
 
-  // Terminal: deadline missed — keep this fully visible since it's important
+  // Terminal: deadline missed.
   if (isPastCutoff) {
     return (
-      <div className="card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
-        <div>
-          <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
-            <span className="text-ink/60 font-medium truncate">{t('pronosticos.progressLabel')}</span>
-            <span className="font-bold tabular-nums flex-shrink-0 text-ink/70">{filledCount} / {totalCount}</span>
-          </div>
-          <div className="h-2.5 bg-paper rounded-full overflow-hidden">
-            <div className="h-full rounded-full bg-ink/20" style={{ width: `${pct}%` }} />
-          </div>
-        </div>
-        <div className="rounded-none bg-red-50 border border-red-200 px-4 py-3 space-y-1">
-          <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
-            <span>🔒</span>{t('pronosticos.closedMsg')}
-          </p>
-          <p className="text-xs text-red-500">
-            {filledCount > 0
-              ? t('pronosticos.missedDeadlinePartial', { n: filledCount, total: totalCount })
-              : t('pronosticos.missedDeadline')}
-          </p>
-        </div>
-      </div>
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 text-red-600 text-xs font-bold whitespace-nowrap flex-shrink-0">
+        <span aria-hidden="true">🔒</span>
+        <span>{t('pronosticos.closedLabel')}</span>
+      </span>
     )
   }
 
-  // Active state: collapsible. Header shows progress + counter + chevron.
-  // Submit button is always visible (key action). Body — cutoff countdown
-  // + hint text — folds in/out so the panel is clean while filling matches.
+  // Active: pill button that doubles as a progress bar. The ink fill
+  // grows left-to-right with completion; once full (canSubmit), the
+  // entire pill becomes the primary submit CTA.
   return (
-    <div className="card overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setExpanded(e => !e)}
-        className="w-full px-3 sm:px-4 pt-3 pb-2.5 flex items-center gap-3 hover:bg-cream/80 active:bg-paper/60 transition-colors text-left"
-        aria-expanded={expanded}
-      >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
-            <span className="text-ink/60 font-medium truncate">{t('pronosticos.progressLabel')}</span>
-            <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-ink/70'}`}>
-              {filledCount} / {totalCount}
-            </span>
-          </div>
-          <div className="h-2 bg-paper rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-grass-500' : 'bg-ink/70'}`}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-        </div>
-        <span className={`text-ink/50 text-xs flex-shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} aria-hidden="true">
-          ▼
-        </span>
-      </button>
-
-      {/* Expanded body: cutoff details + hint */}
-      {expanded && (
-        <div className="px-3 sm:px-4 pb-3 pt-2 border-t border-ink/15 space-y-2">
-          {cutoffTime && (
-            <p className="text-xs text-ink/50 flex items-center gap-1.5 flex-wrap">
-              <span>{t('pronosticos.cutoffNote')}</span>
-              <CutoffCountdown cutoffTime={cutoffTime} />
-            </p>
-          )}
-          {!isComplete && (
-            <p className="text-xs text-ink/50">{t('pronosticos.submitHint')}</p>
-          )}
-        </div>
+    <button
+      type="button"
+      onClick={onSubmit}
+      disabled={!canSubmit || submitting}
+      title={canSubmit ? t('pronosticos.submitBtn') : t('pronosticos.submitBtnPending', { n: totalCount - filledCount, s: totalCount - filledCount !== 1 ? 's' : '' })}
+      className={`relative inline-flex items-center gap-2 px-3 py-2 text-xs font-bold whitespace-nowrap overflow-hidden border transition-colors flex-shrink-0 ${
+        canSubmit
+          ? 'bg-ink hover:bg-terracotta border-ink hover:border-terracotta text-cream cursor-pointer'
+          : 'bg-paper border-ink/25 text-ink/80 cursor-default'
+      }`}
+    >
+      {/* Progress fill — only visible while filling. Sits under the text. */}
+      {!canSubmit && (
+        <span
+          className="absolute inset-y-0 left-0 bg-ink/10 transition-all duration-500"
+          style={{ width: `${pct}%` }}
+          aria-hidden="true"
+        />
       )}
-
-      {/* Submit button — always visible */}
-      <div className="px-3 sm:px-4 pb-3 pt-1">
-        <button
-          onClick={onSubmit}
-          disabled={!canSubmit || submitting}
-          className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-3"
-        >
-          {submitting ? <Spinner size="sm" /> : <span>🏆</span>}
-          {isComplete
-            ? t('pronosticos.submitBtn')
-            : t('pronosticos.submitBtnPending', { n: totalCount - filledCount, s: totalCount - filledCount !== 1 ? 's' : '' })}
-        </button>
-      </div>
-
-    </div>
+      <span className="relative flex items-center gap-1.5">
+        {submitting
+          ? <Spinner size="sm" />
+          : <span aria-hidden="true">🏆</span>}
+        <span className="tabular-nums">{filledCount} / {totalCount}</span>
+        <span className="hidden sm:inline">
+          {canSubmit ? t('pronosticos.submitBtn') : t('pronosticos.submitBtnPending', { n: totalCount - filledCount, s: totalCount - filledCount !== 1 ? 's' : '' })}
+        </span>
+      </span>
+    </button>
   )
 }
 
@@ -1157,18 +1106,9 @@ export default function Pronosticos() {
           </button>
         </div>
       ) : (
-        /* Submit panel — always visible when in a league */
-        matches.length > 0 && (
-          <SubmitPanel
-            filledCount={filledCount}
-            totalCount={totalCount}
-            cutoffTime={cutoffTime}
-            isSubmitted={isSubmitted}
-            submittedAt={submittedAt}
-            onSubmit={() => setShowConfirm(true)}
-            submitting={submitting}
-          />
-        )
+        /* Submit panel is now rendered inline with the stage header
+           below (compact pill on the right). Nothing to render here. */
+        null
       )}
 
       {/* Copy from league prompt */}
@@ -1269,23 +1209,36 @@ export default function Pronosticos() {
               })}
             </div>
 
-            {/* Stage header */}
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{STAGE_INFO[activeStage]?.icon}</span>
-              <h3 className="text-lg font-bold text-ink">{STAGE_INFO[activeStage]?.full}</h3>
-              <span className="text-sm text-ink/50">
-                {t('pronosticos.matchCount', { n: filtered.length, s: filtered.length !== 1 ? 's' : '' })}
-              </span>
-              {!isSubmitted && (
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ml-1 ${
-                  unfilledCount(activeStage) === 0
-                    ? 'bg-grass-500/15 text-grass-600 border border-grass-500/30'
-                    : 'bg-paper-200 text-ink/70 border border-ink/20'
-                }`}>
-                  {unfilledCount(activeStage) === 0
-                    ? t('pronosticos.completeLabel')
-                    : t('pronosticos.unfilledLabel', { n: unfilledCount(activeStage) })}
+            {/* Stage header + compact submit pill on the right */}
+            <div className="flex items-center gap-2 justify-between flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <span className="text-xl">{STAGE_INFO[activeStage]?.icon}</span>
+                <h3 className="text-lg font-bold text-ink">{STAGE_INFO[activeStage]?.full}</h3>
+                <span className="text-sm text-ink/50">
+                  {t('pronosticos.matchCount', { n: filtered.length, s: filtered.length !== 1 ? 's' : '' })}
                 </span>
+                {!isSubmitted && (
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    unfilledCount(activeStage) === 0
+                      ? 'bg-grass-500/15 text-grass-600 border border-grass-500/30'
+                      : 'bg-paper-200 text-ink/70 border border-ink/20'
+                  }`}>
+                    {unfilledCount(activeStage) === 0
+                      ? t('pronosticos.completeLabel')
+                      : t('pronosticos.unfilledLabel', { n: unfilledCount(activeStage) })}
+                  </span>
+                )}
+              </div>
+              {matches.length > 0 && (
+                <SubmitPanel
+                  filledCount={filledCount}
+                  totalCount={totalCount}
+                  cutoffTime={cutoffTime}
+                  isSubmitted={isSubmitted}
+                  submittedAt={submittedAt}
+                  onSubmit={() => setShowConfirm(true)}
+                  submitting={submitting}
+                />
               )}
             </div>
 
