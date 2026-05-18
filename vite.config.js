@@ -24,8 +24,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#1c1917',
-        theme_color: '#f59e0b',
+        background_color: '#F4ECD6',
+        theme_color: '#0E2A18',
         categories: ['sports', 'games', 'entertainment'],
         icons: [
           { src: '/pwa-192x192.png',  sizes: '192x192', type: 'image/png', purpose: 'any' },

@@ -148,3 +148,161 @@
 }
 @keyframes vt-fade-out { to   { opacity: 0; transform: translateY(-4px); } }
 @keyframes vt-fade-in  { from { opacity: 0; transform: translateY(6px);  } }
+
+/* ── Brand mark (canonical) ────────────────────────────────────────────
+   Direct port of the .pdm system from logo-03.html. Drives sizing via
+   --logo-size so a single React component can render the mark at hero,
+   nav and footer scales without separate CSS for each. */
+.pdm {
+  --logo-size: 1;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: .85;
+  color: #0E2A18;
+}
+.pdm .row { display: flex; align-items: center; line-height: .82; white-space: nowrap; }
+.pdm .ital { white-space: nowrap; }
+.pdm .word {
+  font-family: "Boldonse", sans-serif;
+  font-size: calc(56px * var(--logo-size));
+  letter-spacing: -.02em;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.pdm .ball {
+  --b: calc(.74em);
+  width: var(--b); height: var(--b);
+  border-radius: 50%;
+  display: inline-block; flex-shrink: 0;
+  margin: 0 .015em;
+  transform: translateY(.04em);
+  background: radial-gradient(circle at 36% 30%,
+    #fff 0 26%,
+    #0E2A18 27% 31%,
+    #fff 32% 62%,
+    #0E2A18 63% 67%,
+    #fff 68% 100%);
+  box-shadow: inset 0 0 0 calc(2px * var(--logo-size)) #0E2A18;
+}
+.pdm .ital {
+  font-family: "Instrument Serif", serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #C8552B;
+  font-size: calc(50px * var(--logo-size));
+  line-height: .85;
+  margin-top: calc(2px * var(--logo-size));
+  letter-spacing: .005em;
+}
+.pdm .sub {
+  font-family: "JetBrains Mono", monospace;
+  font-size: calc(10px * var(--logo-size));
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: #0E2A18;
+  margin-top: calc(12px * var(--logo-size));
+  padding-top: calc(10px * var(--logo-size));
+  border-top: 1px solid currentColor;
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  opacity: .85;
+}
+.pdm .sub .star { color: #C8552B; opacity: 1; }
+
+/* Compact one-line variant for nav: hides .ital/.sub, shrinks the
+   wordmark, and appends "de empresas" inline via ::after so the row
+   reads "P●RRA de empresas" baseline-aligned. */
+.pdm.compact { flex-direction: row; align-items: baseline; gap: 10px; }
+.pdm.compact .ital,
+.pdm.compact .sub { display: none; }
+.pdm.compact .word { font-size: calc(32px * var(--logo-size)); letter-spacing: -.015em; }
+.pdm.compact::after {
+  content: "de empresas";
+  font-family: "Instrument Serif", serif;
+  font-style: italic;
+  color: #C8552B;
+  font-size: calc(28px * var(--logo-size));
+  line-height: .85;
+  align-self: center;
+  margin-top: .05em;
+  white-space: nowrap;
+}
+
+/* On-dark / on-terracotta tone variants. Supports either a parent
+   wrapper (`.on-dark .pdm`) or a self-class (`.pdm.on-dark-self`),
+   which is what <BrandMark tone="dark"/> emits. */
+.on-dark .pdm,
+.pdm.on-dark-self {
+  color: #F4ECD6;
+}
+.on-dark .pdm .ball,
+.pdm.on-dark-self .ball {
+  background: radial-gradient(circle at 36% 30%,
+    #fff 0 26%,
+    #0E2A18 27% 31%,
+    #fff 32% 62%,
+    #0E2A18 63% 67%,
+    #fff 68% 100%);
+  box-shadow: inset 0 0 0 calc(2px * var(--logo-size)) #F4ECD6;
+}
+.on-dark .pdm .ital,
+.pdm.on-dark-self .ital { color: #E58A2E; }
+.on-dark .pdm .sub,
+.pdm.on-dark-self .sub  { color: #EBE0BD; border-top-color: rgba(244,236,214,.35); }
+
+.on-terra .pdm,
+.pdm.on-terra-self { color: #F4ECD6; }
+.on-terra .pdm .ball,
+.pdm.on-terra-self .ball {
+  background: radial-gradient(circle at 36% 30%,
+    #fff 0 26%,
+    #0E2A18 27% 31%,
+    #fff 32% 62%,
+    #0E2A18 63% 67%,
+    #fff 68% 100%);
+  box-shadow: inset 0 0 0 calc(2px * var(--logo-size)) #F4ECD6;
+}
+.on-terra .pdm .ital,
+.pdm.on-terra-self .ital { color: #0E2A18; }
+.on-terra .pdm .sub,
+.pdm.on-terra-self .sub  { color: #F4ECD6; border-top-color: rgba(244,236,214,.45); }
+
+/* ── Brand tile ─────────────────────────────────────────────────────────
+   The favicon-style square: ink background, soccer ball centered with
+   a cream rim. Used as the refresh button in Layout.jsx, the small
+   brand mark in narrow contexts, and conceptually as the favicon. */
+.brand-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #0E2A18;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform .15s ease-out;
+}
+.brand-tile:active { transform: scale(.92); }
+.brand-tile:focus-visible {
+  outline: 2px solid #C8552B;
+  outline-offset: 2px;
+}
+.brand-tile-ball {
+  display: inline-block;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%,
+    #fff 0 26%,
+    #0E2A18 27% 31%,
+    #fff 32% 62%,
+    #0E2A18 63% 67%,
+    #fff 68% 100%);
+  box-shadow: inset 0 0 0 2px #F4ECD6;
+}
+.brand-tile-spin { animation: brand-tile-spin 1s linear infinite; }
+@keyframes brand-tile-spin { to { transform: rotate(360deg); } }
