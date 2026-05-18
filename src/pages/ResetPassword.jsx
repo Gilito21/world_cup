@@ -46,7 +46,7 @@ export default function ResetPassword() {
     <div className="min-h-screen bg-cream flex items-center justify-center px-4 relative">
       <LangToggle className="absolute top-4 right-4" />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-terracotta/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-ink/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md animate-slide-up">
@@ -98,7 +98,7 @@ export default function ResetPassword() {
                 </div>
 
                 {error && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-none px-4 py-3 text-red-400 text-sm">
                     {error}
                   </div>
                 )}

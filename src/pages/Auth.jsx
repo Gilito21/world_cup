@@ -94,7 +94,7 @@ function ForgotPassword({ onBack }) {
           <span>⚽</span>
           <span className="font-bold text-ink">Porra <span className="text-terracotta">Mundial 2026</span></span>
         </Link>
-        <div className="bg-paper rounded-3xl shadow-xl shadow-ink/8 border border-ink/20 overflow-hidden">
+        <div className="bg-paper rounded-none shadow-xl shadow-ink/8 border border-ink/20 overflow-hidden">
           <div className="bg-cream px-6 py-6 border-b border-ink/15 relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-px bg-terracotta" />
             <h2 className="text-lg font-bold text-ink">{t('auth.recoverTitle')}</h2>
@@ -117,7 +117,7 @@ function ForgotPassword({ onBack }) {
                     required autoFocus autoComplete="email" />
                 </div>
                 {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">{error}</div>
+                  <div className="bg-red-50 border border-red-200 rounded-none px-4 py-3 text-red-600 text-sm">{error}</div>
                 )}
                 <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
                   {loading && <Spinner size="sm" />} {t('auth.sendLink')}
@@ -381,7 +381,7 @@ export default function Auth() {
         </div>
 
         {/* Card */}
-        <div className="bg-paper rounded-3xl shadow-xl shadow-ink/8 border border-ink/20 overflow-hidden">
+        <div className="bg-paper rounded-none shadow-xl shadow-ink/8 border border-ink/20 overflow-hidden">
 
           {/* ── Light header ─────────────────────────────────── */}
           <div className="bg-cream px-6 pt-7 pb-5 border-b border-ink/15 relative overflow-hidden">
@@ -484,14 +484,14 @@ export default function Auth() {
                   maxLength={80}
                 />
                 {showCompanySug && companySuggestions.length > 0 && (
-                  <div className="absolute z-20 top-full mt-1 w-full bg-paper border border-ink/20 rounded-xl shadow-lg overflow-hidden">
+                  <div className="absolute z-20 top-full mt-1 w-full bg-paper border border-ink/20 rounded-none shadow-lg overflow-hidden">
                     {companySuggestions.map((sug, i) => (
                       <button
                         key={sug}
                         type="button"
                         onMouseDown={() => { setCompany(sug); setShowCompanySug(false) }}
                         className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                          i === companyHighlight ? 'bg-terracotta/10 text-terracotta-700' : 'text-ink/80 hover:bg-cream'
+                          i === companyHighlight ? 'bg-paper-200 text-ink' : 'text-ink/80 hover:bg-cream'
                         }`}
                       >
                         {sug}
@@ -520,7 +520,7 @@ export default function Auth() {
                   <button
                     type="button"
                     onClick={() => setShowForgot(true)}
-                    className="text-xs text-terracotta-600 hover:text-terracotta hover:underline underline-offset-2"
+                    className="text-xs text-ink/70 hover:text-ink hover:underline underline-offset-2"
                   >
                     {t('auth.forgotPassword')}
                   </button>
@@ -545,9 +545,9 @@ export default function Auth() {
                   {[['none','👋', t('auth.laterBtn')],['join','🔗', t('auth.joinBtn')],['create','👑', t('auth.createBtn')]].map(([val, icon, label]) => (
                     <button
                       key={val} type="button" onClick={() => setLeagueMode(val)}
-                      className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                      className={`flex flex-col items-center gap-1 py-2.5 rounded-none border text-sm font-medium transition-all ${
                         leagueMode === val
-                          ? 'bg-terracotta/10 border-terracotta/40 text-terracotta-700'
+                          ? 'bg-paper-200 border-ink/30 text-ink'
                           : 'bg-cream border-ink/20 text-ink/60 hover:border-ink/30 hover:text-ink/80'
                       }`}
                     >
@@ -565,7 +565,7 @@ export default function Auth() {
                       value={leagueName} onChange={e => setLeagueName(e.target.value)}
                       maxLength={40} required
                     />
-                    <p className="text-xs text-terracotta-600 mt-1.5 flex items-center gap-1.5">
+                    <p className="text-xs text-ink/80 mt-1.5 flex items-center gap-1.5">
                       <span>💳</span>
                       {t('auth.leaguePriceNote', { price: LEAGUE_PRICE_LABEL })}
                     </p>
@@ -592,10 +592,10 @@ export default function Auth() {
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">{error}</div>
+              <div className="bg-red-50 border border-red-200 rounded-none px-4 py-3 text-red-600 text-sm">{error}</div>
             )}
             {success && (
-              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm">{success}</div>
+              <div className="bg-green-50 border border-green-200 rounded-none px-4 py-3 text-green-700 text-sm">{success}</div>
             )}
 
             <button
@@ -612,7 +612,7 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
-                className="text-terracotta-600 hover:text-terracotta hover:underline underline-offset-2 font-semibold"
+                className="text-ink/70 hover:text-ink hover:underline underline-offset-2 font-semibold"
               >
                 {mode === 'login' ? t('auth.toRegister') : t('auth.toLogin')}
               </button>

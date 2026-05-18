@@ -322,6 +322,7 @@ export default {
   },
 
   pronosticos: {
+    chapter: 'Pool · 2026',
     title: 'My predictions',
     noLeagueTitle: 'Join a league to submit your predictions',
     noLeagueDesc: 'Invite your friends and compete against them',
@@ -380,6 +381,7 @@ export default {
   },
 
   clasificacion: {
+    chapter: 'Ranking',
     title: 'Standings',
     subtitle: 'Exact = 3 pts · Correct = 1 pt',
     loadError: 'Could not load the standings. Check your connection.',
@@ -417,6 +419,7 @@ export default {
   },
 
   extras: {
+    chapter: 'Bonus',
     title: 'Bonus questions',
     subtitle: 'Fill in your answers and submit when ready. Once submitted they cannot be changed.',
     deadlineLabel: 'Deadline:',
@@ -448,6 +451,7 @@ export default {
   },
 
   resultados: {
+    chapter: 'Recap',
     title: 'Results',
     subtitle: 'Finished matches · Tap a match to see everyone\'s predictions',
     noPrediction: 'No prediction',
@@ -477,6 +481,7 @@ export default {
   },
 
   bracket: {
+    chapter: 'Knockouts',
     title: 'World Cup 2026 Bracket',
     subtitle: 'Live · {{n}}/12 groups completed',
     tabGroups: 'Groups',
@@ -507,6 +512,7 @@ export default {
   },
 
   perfil: {
+    chapter: 'Profile',
     title: 'My profile',
     subtitle: 'Your account and stats',
     changePhoto: 'Change photo',
@@ -534,6 +540,7 @@ export default {
   },
 
   reglas: {
+    chapter: 'Manual',
     title: 'How it works',
     subtitle: 'Rules and instructions',
     s1title: 'Your predictions',

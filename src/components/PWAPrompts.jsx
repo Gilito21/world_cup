@@ -36,7 +36,7 @@ function UpdateBanner() {
 
   return (
     <div className="fixed bottom-20 sm:bottom-4 inset-x-3 sm:inset-x-auto sm:right-4 sm:left-auto sm:max-w-sm z-50 animate-slide-up pb-safe">
-      <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-ink/60 border-terracotta/30">
+      <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-ink/60 border-ink/20">
         <span className="text-xl flex-shrink-0">🔄</span>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm text-ink">{t('pwa.updateTitle')}</p>
@@ -112,7 +112,7 @@ function InstallBanner() {
   if (deferred) {
     return (
       <div className="fixed bottom-20 sm:bottom-4 inset-x-3 sm:inset-x-auto sm:right-4 sm:left-auto sm:max-w-sm z-40 animate-slide-up pb-safe">
-        <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-ink/60 border-terracotta/30">
+        <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-ink/60 border-ink/20">
           <span className="text-2xl flex-shrink-0">⚽</span>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-ink">{t('pwa.installTitle')}</p>
@@ -132,7 +132,7 @@ function InstallBanner() {
   if (showIosHint) {
     return (
       <div className="fixed bottom-20 inset-x-3 z-40 animate-slide-up pb-safe">
-        <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-ink/60 border-terracotta/30">
+        <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-ink/60 border-ink/20">
           <span className="text-2xl flex-shrink-0">📲</span>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-ink">{t('pwa.iosTitle')}</p>

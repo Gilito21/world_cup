@@ -16,6 +16,7 @@ import PaymentModal from '../components/PaymentModal'
 import LeagueCreatedModal from '../components/LeagueCreatedModal'
 import { Flag, teamName } from '../utils/teams'
 import { computePredictedKnockout } from '../utils/tournament'
+import { EditorialBand } from '../components/Editorial'
 
 const STAGE_ORDER = ['group', 'round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
 
@@ -114,7 +115,7 @@ function ScoreStepper({ value, onChange, disabled, placeholder }) {
   }
 
   return (
-    <div className={`inline-flex items-stretch bg-paper border border-ink/30 rounded-xl shadow-sm overflow-hidden select-none ${disabled ? 'opacity-40' : ''}`}>
+    <div className={`inline-flex items-stretch bg-paper border border-ink/30 rounded-none shadow-sm overflow-hidden select-none ${disabled ? 'opacity-40' : ''}`}>
       <button
         type="button"
         onClick={() => bump(-1)}
@@ -191,7 +192,7 @@ function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, submitt
             <div className="h-full rounded-full bg-ink/20" style={{ width: `${pct}%` }} />
           </div>
         </div>
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 space-y-1">
+        <div className="rounded-none bg-red-50 border border-red-200 px-4 py-3 space-y-1">
           <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
             <span>🔒</span>{t('pronosticos.closedMsg')}
           </p>
@@ -413,7 +414,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           {/* Points badge after results come in */}
           {isFinished && prediction && (() => {
             const pts = prediction.points_earned ?? 0
-            const cfg = pts === 3 ? 'bg-terracotta/20 text-terracotta-400 border-terracotta/30'
+            const cfg = pts === 3 ? 'bg-grass-500/15 text-grass-600 border-grass-500/30'
                       : pts === 1 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                       :             'bg-paper-200 text-ink/60 border-ink/30'
             return (
@@ -426,7 +427,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             <button
               type="button"
               onClick={onPreview}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-ink/50 hover:text-terracotta hover:bg-terracotta/10 active:bg-terracotta/20 transition-colors flex-shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-ink/50 hover:text-ink hover:bg-paper-200 active:bg-cream transition-colors flex-shrink-0"
               aria-label={t('preview.openLabel')}
               title={t('preview.openLabel')}
             >
@@ -453,13 +454,13 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {isFinished ? (
-            <div className="flex items-center gap-2 bg-paper rounded-xl px-3 py-1.5">
+            <div className="flex items-center gap-2 bg-paper rounded-none px-3 py-1.5">
               <span className="text-xl font-bold text-ink">{match.home_score}</span>
               <span className="text-ink/60">-</span>
               <span className="text-xl font-bold text-ink">{match.away_score}</span>
             </div>
           ) : match.status === 'live' ? (
-            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-1.5">
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-none px-3 py-1.5">
               <span className="text-xl font-bold text-red-400">{match.home_score ?? 0}</span>
               <span className="text-red-500/60">-</span>
               <span className="text-xl font-bold text-red-400">{match.away_score ?? 0}</span>
@@ -512,10 +513,10 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             <button
               onClick={() => !isLocked && onTiebreakerChange(match.id, 'home')}
               disabled={isLocked}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium border transition-all ${
                 tiebreaker === 'home'
                   ? 'bg-ink border-ink text-cream'
-                  : 'bg-paper border-ink/20 text-ink/70 hover:border-terracotta-400 hover:text-ink'
+                  : 'bg-paper border-ink/20 text-ink/70 hover:border-ink/50 hover:text-ink'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               <Flag team={displayHome} />
@@ -524,10 +525,10 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             <button
               onClick={() => !isLocked && onTiebreakerChange(match.id, 'away')}
               disabled={isLocked}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium border transition-all ${
                 tiebreaker === 'away'
                   ? 'bg-ink border-ink text-cream'
-                  : 'bg-paper border-ink/20 text-ink/70 hover:border-terracotta-400 hover:text-ink'
+                  : 'bg-paper border-ink/20 text-ink/70 hover:border-ink/50 hover:text-ink'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               <Flag team={displayAway} />
@@ -535,7 +536,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             </button>
           </div>
           {!tiebreaker && !isLocked && (
-            <span className="text-xs text-terracotta-600 font-medium">{t('pronosticos.tiebreakerRequired')}</span>
+            <span className="text-xs text-ink/70 font-medium italic">{t('pronosticos.tiebreakerRequired')}</span>
           )}
         </div>
       )}
@@ -608,7 +609,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               <span>✓</span><span>{t('common.saved')}</span>
             </span>
           ) : changed ? (
-            <span className="text-terracotta/70">•</span>
+            <span className="text-ink/40">•</span>
           ) : prediction ? (
             <span className="text-ink/40">✓</span>
           ) : (
@@ -642,7 +643,7 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
                 onClick={() => hasData && onSelect(stage)}
                 title={info.full}
                 disabled={!hasData}
-                className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-none text-sm font-medium transition-all whitespace-nowrap ${
                   isActive  ? 'bg-ink text-cream shadow-sm'
                   : hasData ? 'text-ink/60 hover:bg-paper hover:text-ink'
                   :           'text-ink/40 cursor-default'
@@ -964,6 +965,11 @@ export default function Pronosticos() {
   // Knockout draws are skipped (no consensus tiebreaker → would require an
   // extra user decision; better to leave those for manual fill).
   const [fillStatus, setFillStatus] = useState({ state: 'idle', count: 0, failed: 0 })
+
+  // Lets the user hide the consensus-fill suggestion for the current session
+  // (e.g. they prefer to fill picks manually). Resets on page reload — no
+  // need to persist; reappearing is a useful nudge if they come back.
+  const [consensusDismissed, setConsensusDismissed] = useState(false)
   const fillTimerRef = useRef(null)
   const fillFromConsensus = useCallback(async () => {
     if (fillStatus.state === 'running') return
@@ -1127,15 +1133,17 @@ export default function Pronosticos() {
 
       {/* Page header */}
       <div>
-        <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('pronosticos.title')}</h2>
+        <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('pronosticos.chapter')}</span>
+            <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('pronosticos.title')}</h2>
         <p className="font-serif italic text-ink/70 text-sm mt-1">
           {t('pronosticos.subtitle')}
         </p>
+            <EditorialBand items={['PORRA', '104 PARTIDOS', '16 SEDES', 'EDICIÓN 2026']} />
       </div>
 
       {/* No-league gate: banner replacing the submit panel */}
       {!leagueLoading && leagues.length === 0 ? (
-        <div className="card p-5 border-terracotta/30 bg-gradient-to-br from-terracotta/40 to-terracotta/40 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="card p-5 border-ink/20 bg-cream flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="text-3xl flex-shrink-0">🏆</div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-ink text-sm sm:text-base">{t('pronosticos.noLeagueTitle')}</p>
@@ -1165,11 +1173,11 @@ export default function Pronosticos() {
 
       {/* Copy from league prompt */}
       {activeLeague && !hasPredictions && !isSubmitted && otherLeagues.length > 0 && (
-        <div className="card overflow-hidden border-terracotta/20 bg-terracotta/5">
+        <div className="card overflow-hidden border-ink/20 bg-paper-200">
           <button
             type="button"
             onClick={() => setReuseExpanded(e => !e)}
-            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-terracotta/10 active:bg-terracotta/20 transition-colors text-left"
+            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-paper active:bg-cream transition-colors text-left"
             aria-expanded={reuseExpanded}
           >
             <span className="text-base flex-shrink-0">📋</span>
@@ -1186,7 +1194,7 @@ export default function Pronosticos() {
             </span>
           </button>
           {reuseExpanded && (
-            <div className="px-4 pb-3 pt-1 border-t border-terracotta/20 space-y-3">
+            <div className="px-4 pb-3 pt-1 border-t border-ink/15 space-y-3">
               <p className="text-xs text-ink/60">
                 {t('pronosticos.reuseBody', { league: activeLeague.name })}
               </p>
@@ -1211,7 +1219,7 @@ export default function Pronosticos() {
       <UpcomingAlert />
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-none px-4 py-3 text-red-400 text-sm">
           {error}
         </div>
       )}
@@ -1241,7 +1249,7 @@ export default function Pronosticos() {
                   <button
                     key={stage}
                     onClick={() => setActiveStage(stage)}
-                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-none text-sm font-medium transition-colors ${
                       activeStage === stage
                         ? 'bg-ink text-cream'
                         : 'bg-paper text-ink/60 hover:text-ink'
@@ -1284,8 +1292,18 @@ export default function Pronosticos() {
             {/* Bulk-fill from consensus — only shown while the user can still
                 edit, has at least one empty match, and we have consensus data
                 cached. Saves people from tapping +/− 60+ times. */}
-            {!isSubmitted && !isPastCutoff && Object.keys(consensus).length > 0 && filledCount < totalCount && (
-              <div className="bg-paper border border-ink/20 border-l-4 border-l-terracotta p-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            {!isSubmitted && !isPastCutoff && !consensusDismissed && Object.keys(consensus).length > 0 && filledCount < totalCount && (
+              <div className="relative bg-paper border border-ink/20 border-l-4 border-l-ink p-3 pr-9 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setConsensusDismissed(true)}
+                  aria-label={t('common.close')}
+                  className="absolute top-1.5 right-1.5 w-7 h-7 flex items-center justify-center text-ink/50 hover:text-ink hover:bg-cream transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                </button>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-semibold text-ink">
                     {fillStatus.state === 'done' && fillStatus.failed > 0

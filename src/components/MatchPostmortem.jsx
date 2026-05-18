@@ -36,9 +36,9 @@ function AccuracyColumn({ label, stats, t }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-ink/70">🎯 {t('postmortem.exactPct')}</span>
-          <span className="font-bold text-terracotta tabular-nums">{pctExact}%</span>
+          <span className="font-bold text-ink tabular-nums">{pctExact}%</span>
         </div>
-        <Bar pct={pctExact} color="bg-terracotta" />
+        <Bar pct={pctExact} color="bg-ink" />
       </div>
 
       <div className="space-y-1">
@@ -125,7 +125,7 @@ export default function MatchPostmortem({ matchId, leagueId }) {
   }
 
   return (
-    <div className="rounded-xl border border-ink/20 bg-paper p-3 space-y-3">
+    <div className="rounded-none border border-ink/20 bg-paper p-3 space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-ink/80">{t('postmortem.title')}</p>
         {summary && (

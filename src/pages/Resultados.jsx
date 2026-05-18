@@ -9,6 +9,7 @@ import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 import { MatchListSkeleton } from '../components/Skeleton'
 import MatchPostmortem from '../components/MatchPostmortem'
+import { EditorialBand, EditorialStats } from '../components/Editorial'
 
 function formatDate(dateStr, locale) {
   return new Date(dateStr).toLocaleDateString(locale, {
@@ -31,14 +32,14 @@ function PredRow({ entry, realHome, realAway }) {
   const correct    = !exact && predWinner === realWinner
 
   return (
-    <div className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
-      exact   ? 'bg-terracotta/10'
+    <div className={`flex items-center gap-3 px-3 py-2 rounded-none text-sm ${
+      exact   ? 'bg-grass-500/10'
       : correct ? 'bg-blue-500/10'
       : 'bg-paper'
     }`}>
       {/* Avatar + nombre */}
       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-        exact ? 'bg-terracotta/30 text-terracotta-600' : correct ? 'bg-blue-500/20 text-blue-500' : 'bg-paper-200 text-ink/60'
+        exact ? 'bg-grass-500/20 text-grass-600' : correct ? 'bg-blue-500/20 text-blue-500' : 'bg-paper-200 text-ink/60'
       }`}>
         {entry.username?.[0]?.toUpperCase()}
       </div>
@@ -51,7 +52,7 @@ function PredRow({ entry, realHome, realAway }) {
 
       {/* Puntos */}
       <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
-        pts === 3 ? 'bg-terracotta/20 text-terracotta-400 border-terracotta/30'
+        pts === 3 ? 'bg-grass-500/15 text-grass-600 border-grass-500/30'
         : pts === 1 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
         : 'bg-paper-200 text-ink/60 border-ink/30'
       }`}>
@@ -146,10 +147,10 @@ function FinishedMatchCard({ match, myPrediction, league }) {
             <span className="text-xl flex-shrink-0">{match.home_flag}</span>
           </div>
 
-          <div className="flex-shrink-0 flex items-center gap-2 bg-paper rounded-xl px-4 py-2 border border-ink/30">
-            <span className={`text-xl font-bold ${winner === 'home' ? 'text-terracotta-400' : 'text-ink/80'}`}>{match.home_score}</span>
+          <div className="flex-shrink-0 flex items-center gap-2 bg-paper rounded-none px-4 py-2 border border-ink/30">
+            <span className={`text-xl font-bold ${winner === 'home' ? 'text-grass-500' : 'text-ink/80'}`}>{match.home_score}</span>
             <span className="text-ink/50 text-sm">-</span>
-            <span className={`text-xl font-bold ${winner === 'away' ? 'text-terracotta-400' : 'text-ink/80'}`}>{match.away_score}</span>
+            <span className={`text-xl font-bold ${winner === 'away' ? 'text-grass-500' : 'text-ink/80'}`}>{match.away_score}</span>
           </div>
 
           <div className={`flex-1 flex items-center justify-start gap-2 min-w-0 ${winner !== 'away' ? 'opacity-60' : ''}`}>
@@ -171,7 +172,7 @@ function FinishedMatchCard({ match, myPrediction, league }) {
                 </span>
                 {' · '}
                 <span className={
-                  myPrediction.points_earned === 3 ? 'text-terracotta-400 font-semibold' :
+                  myPrediction.points_earned === 3 ? 'text-grass-600 font-semibold' :
                   myPrediction.points_earned === 1 ? 'text-blue-400' : 'text-ink/60'
                 }>
                   {myPrediction.points_earned === 3 ? '🎯 +3 pts' :
@@ -185,7 +186,7 @@ function FinishedMatchCard({ match, myPrediction, league }) {
 
           <button
             onClick={loadAllPredictions}
-            className="flex items-center gap-1.5 text-xs text-terracotta hover:text-terracotta-400 transition-colors flex-shrink-0"
+            className="flex items-center gap-1.5 text-xs text-ink/70 hover:text-ink transition-colors flex-shrink-0"
           >
             <span>{expanded ? '▲' : '▼'}</span>
             <span>{expanded ? t('resultados.hide') : t('resultados.seeAll')}</span>
@@ -206,7 +207,7 @@ function FinishedMatchCard({ match, myPrediction, league }) {
               {/* Resumen rápido */}
               <div className="flex gap-3 text-xs text-ink/60">
                 <span>{t('resultados.quickTotal', { n: stats.total })}</span>
-                <span className="text-terracotta-400">{t('resultados.quickExact', { n: stats.exact })}</span>
+                <span className="text-ink">{t('resultados.quickExact', { n: stats.exact })}</span>
                 <span className="text-blue-400">{t('resultados.quickCorrect', { n: stats.correct })}</span>
                 <span>{t('resultados.quickWrong', { n: stats.wrong })}</span>
               </div>
@@ -365,30 +366,21 @@ export default function Resultados() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('resultados.title')}</h2>
+        <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('resultados.chapter')}</span>
+            <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('resultados.title')}</h2>
         <p className="font-serif italic text-ink/70 text-sm mt-1">
           {t('resultados.subtitle')}
         </p>
+            <EditorialBand items={['CRÓNICA', '104 PARTIDOS', 'EDICIÓN 2026']} />
       </div>
 
       {matches.length > 0 && (
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
-          {[
-            { label: t('resultados.statPoints'),  short: t('resultados.statPointsShort'),  value: stats.points,  color: 'text-terracotta-400', icon: '⭐' },
-            { label: t('resultados.statExact'),    short: t('resultados.statExactShort'),   value: stats.exact,   color: 'text-terracotta-300', icon: '🎯' },
-            { label: t('resultados.statCorrect'),  short: t('resultados.statCorrectShort'), value: stats.correct, color: 'text-blue-400',  icon: '✓' },
-            { label: t('resultados.statWrong'),    short: t('resultados.statWrongShort'),   value: stats.wrong,   color: 'text-ink/50', icon: '✗' },
-          ].map(({ label, short, value, color, icon }) => (
-            <div key={label} className="card p-2.5 sm:p-4 text-center">
-              <div className="text-sm sm:text-lg mb-0.5">{icon}</div>
-              <div className={`text-lg sm:text-2xl font-bold ${color}`}>{value}</div>
-              <div className="text-[10px] sm:text-xs text-ink/60 mt-0.5">
-                <span className="hidden sm:inline">{label}</span>
-                <span className="sm:hidden">{short}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        <EditorialStats items={[
+          { label: t('resultados.statPointsShort'),  value: stats.points },
+          { label: t('resultados.statExactShort'),   value: stats.exact },
+          { label: t('resultados.statCorrectShort'), value: stats.correct },
+          { label: t('resultados.statWrongShort'),   value: stats.wrong },
+        ]} />
       )}
 
       {matches.length === 0 ? (
@@ -408,7 +400,7 @@ export default function Resultados() {
               <button
                 key={key}
                 onClick={() => setFilter(key)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-none text-sm font-medium transition-colors ${
                   filter === key ? 'bg-ink text-cream' : 'bg-paper text-ink/50 hover:text-ink'
                 }`}
               >

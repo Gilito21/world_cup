@@ -254,7 +254,7 @@ export default function SharePredictionCard({ match, prediction, username, onClo
       className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/70 backdrop-blur-md animate-fade-in px-3 py-4 sm:px-4 sm:py-8 pt-safe pb-safe"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-paper rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
+      <div className="bg-paper rounded-none shadow-2xl w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
         <div className="px-5 py-4 border-b border-ink/15 flex items-center justify-between">
           <p className="text-base font-bold text-ink">{t('share.title')}</p>
           <button
@@ -265,7 +265,7 @@ export default function SharePredictionCard({ match, prediction, username, onClo
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-cream">
-          <div className="aspect-square w-full rounded-2xl overflow-hidden bg-ink shadow-lg shadow-ink/20 flex items-center justify-center">
+          <div className="aspect-square w-full rounded-none overflow-hidden bg-ink shadow-lg shadow-ink/20 flex items-center justify-center">
             {/* Real canvas — hidden offscreen while building, then displayed via <img> */}
             <canvas
               ref={canvasRef}

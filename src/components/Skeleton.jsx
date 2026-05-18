@@ -5,7 +5,7 @@
 const shimmer = 'bg-gradient-to-r from-paper via-paper-200/70 to-paper bg-[length:200%_100%] animate-skeleton'
 
 export function SkeletonBox({ className = '' }) {
-  return <div className={`${shimmer} rounded-md ${className}`} />
+  return <div className={`${shimmer} rounded-none ${className}`} />
 }
 
 export function SkeletonCircle({ size = 40, className = '' }) {
@@ -86,9 +86,9 @@ export function MatchCardSkeleton() {
           <SkeletonBox className="h-5 w-7 rounded-sm" />
         </div>
         <div className="flex items-center gap-1.5">
-          <SkeletonBox className="h-11 w-[5.5rem] rounded-xl" />
+          <SkeletonBox className="h-11 w-[5.5rem] rounded-none" />
           <SkeletonBox className="h-3 w-1" />
-          <SkeletonBox className="h-11 w-[5.5rem] rounded-xl" />
+          <SkeletonBox className="h-11 w-[5.5rem] rounded-none" />
         </div>
         <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
           <SkeletonBox className="h-5 w-7 rounded-sm" />

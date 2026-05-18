@@ -47,7 +47,7 @@ export default function LeagueSwitcher() {
       <>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 rounded-lg bg-terracotta/10 border border-terracotta/20 text-terracotta-400 hover:bg-terracotta/20 transition-colors min-h-[36px]"
+          className="flex items-center gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 rounded-none bg-paper-200 border border-ink/20 text-ink hover:bg-paper transition-colors min-h-[36px]"
         >
           <span>+</span>
           <span>{t('league.joinShort')}</span>
@@ -83,7 +83,7 @@ export default function LeagueSwitcher() {
       <div ref={ref} className="relative">
         <button
           onClick={() => setOpen(o => !o)}
-          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg bg-paper border border-ink/30 hover:border-ink/40 transition-colors max-w-[180px] sm:max-w-[220px] min-h-[36px]"
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-none bg-paper border border-ink/30 hover:border-ink/40 transition-colors max-w-[180px] sm:max-w-[220px] min-h-[36px]"
         >
           {/* Badge de admin */}
           {activeLeague?.role === 'admin' && (
@@ -119,18 +119,18 @@ export default function LeagueSwitcher() {
                     </div>
                     {league.role === 'admin' && (
                       <div className="text-xs text-ink/50 font-mono mt-0.5">
-                        {t('league.codeLabel')} <span className="text-terracotta/80 tracking-wider">{league.invite_code}</span>
+                        {t('league.codeLabel')} <span className="text-ink/60 tracking-wider">{league.invite_code}</span>
                       </div>
                     )}
                   </div>
                   {activeLeague?.id === league.id && (
-                    <span className="text-terracotta-400 text-sm flex-shrink-0">✓</span>
+                    <span className="text-ink text-sm flex-shrink-0">✓</span>
                   )}
                 </button>
                 {league.role === 'admin' && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setOpen(false); setCreatedLeague(league) }}
-                    className="flex-shrink-0 px-2.5 py-2.5 text-ink/50 hover:text-terracotta hover:bg-terracotta/10 transition-colors rounded-r-lg"
+                    className="flex-shrink-0 px-2.5 py-2.5 text-ink/50 hover:text-ink hover:bg-paper-200 transition-colors rounded-none"
                     title={t('league.shareBtn')}
                   >
                     📤
@@ -142,7 +142,7 @@ export default function LeagueSwitcher() {
             <div className="border-t border-ink/20 mt-1.5 pt-1.5">
               <button
                 onClick={() => { setOpen(false); setShowModal(true) }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-terracotta-400 hover:bg-paper transition-colors rounded-lg mx-0"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-ink hover:bg-paper transition-colors rounded-none mx-0"
               >
                 <span className="text-base">+</span>
                 <span>{t('league.createOrJoin')}</span>

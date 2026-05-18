@@ -1,4 +1,5 @@
 import { useLang } from '../contexts/LangContext'
+import { EditorialBand } from '../components/Editorial'
 
 export default function Reglas() {
   const { t } = useLang()
@@ -7,8 +8,10 @@ export default function Reglas() {
     <div className="max-w-2xl mx-auto space-y-5 sm:space-y-8">
       {/* Header */}
       <div>
-        <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('reglas.title')}</h2>
+        <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('reglas.chapter')}</span>
+            <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('reglas.title')}</h2>
         <p className="font-serif italic text-ink/70 text-sm mt-1">{t('reglas.subtitle')}</p>
+            <EditorialBand items={['MANUAL', '4 SECCIONES', 'EDICIÓN 2026']} />
       </div>
 
       {/* 1. Los pronósticos */}
@@ -39,7 +42,7 @@ export default function Reglas() {
           <ScoreRow
             label={t('reglas.s3exact')}
             badge={t('reglas.s3exactBadge')}
-            badgeClass="bg-terracotta/15 text-terracotta-600 border border-terracotta/30"
+            badgeClass="bg-paper-200 text-ink/80 border border-ink/20"
             description={t('reglas.s3exactDesc')}
           />
           <ScoreRow
@@ -63,11 +66,11 @@ export default function Reglas() {
         <p>{t('reglas.s4body')}</p>
 
         <div className="mt-4 grid sm:grid-cols-2 gap-3">
-          <div className="bg-cream border border-ink/20 rounded-2xl p-4">
+          <div className="bg-cream border border-ink/20 rounded-none p-4">
             <p className="font-semibold text-ink mb-1">{t('reglas.s4createTitle')}</p>
             <p className="text-sm text-ink/70">{t('reglas.s4createDesc')}</p>
           </div>
-          <div className="bg-cream border border-ink/20 rounded-2xl p-4">
+          <div className="bg-cream border border-ink/20 rounded-none p-4">
             <p className="font-semibold text-ink mb-1">{t('reglas.s4joinTitle')}</p>
             <p className="text-sm text-ink/70">{t('reglas.s4joinDesc')}</p>
           </div>
@@ -127,10 +130,10 @@ function Section({ icon, title, children }) {
 
 function Callout({ type, children }) {
   const styles = type === 'warning'
-    ? 'bg-terracotta/10 border-terracotta/30 text-terracotta-700'
+    ? 'bg-paper-200 border-ink/20 text-ink'
     : 'bg-blue-500/10 border-blue-500/30 text-blue-800'
   return (
-    <div className={`mt-3 rounded-xl border px-4 py-3 text-sm ${styles}`}>
+    <div className={`mt-3 rounded-none border px-4 py-3 text-sm ${styles}`}>
       {children}
     </div>
   )
@@ -138,7 +141,7 @@ function Callout({ type, children }) {
 
 function ScoreRow({ label, badge, badgeClass, description }) {
   return (
-    <div className="flex items-start gap-3 bg-cream border border-ink/20 rounded-xl p-3">
+    <div className="flex items-start gap-3 bg-cream border border-ink/20 rounded-none p-3">
       <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 mt-0.5 ${badgeClass}`}>
         {badge}
       </span>

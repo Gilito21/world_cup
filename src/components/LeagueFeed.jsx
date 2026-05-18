@@ -47,7 +47,7 @@ function eventLabel(evt, t) {
           hs:   evt.data?.home_score,
           as:   evt.data?.away_score,
         }),
-        accent: 'text-terracotta-600',
+        accent: 'text-ink',
       }
     case 'correct':
       return {
@@ -157,7 +157,7 @@ export default function LeagueFeed({ leagueId }) {
       {events.length > 6 && (
         <button
           onClick={() => setExpanded(e => !e)}
-          className="w-full text-center py-2 text-xs font-medium text-terracotta-600 hover:bg-cream border-t border-ink/15"
+          className="w-full text-center py-2 text-xs font-medium text-ink hover:bg-cream border-t border-ink/15"
         >
           {expanded ? t('feed.collapse') : t('feed.expand', { n: events.length - 6 })}
         </button>

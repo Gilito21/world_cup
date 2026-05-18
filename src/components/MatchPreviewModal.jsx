@@ -127,7 +127,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
       className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/60 backdrop-blur-md animate-fade-in px-3 py-4 sm:px-4 sm:py-8 pt-safe pb-safe"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-paper rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
+      <div className="bg-paper rounded-none shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-ink via-ink/90 to-ink p-5 text-white">
           <button
@@ -137,7 +137,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
           >
             ✕
           </button>
-          <div className="flex items-center gap-1.5 mb-3 text-[11px] uppercase tracking-wider text-terracotta-400 font-semibold">
+          <div className="flex items-center gap-1.5 mb-3 text-[11px] uppercase tracking-wider text-ink font-semibold">
             {match.group_name && <span>{t('common.group', { g: match.group_name })}</span>}
             {match.group_name && <span className="text-cream/40">·</span>}
             <span className="text-cream/80">{formatDateTime(match.match_date, dateLocale)}</span>
@@ -150,7 +150,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
             <div className="flex-shrink-0 text-center px-2">
               {actualScore ? (
                 <>
-                  <p className="text-3xl font-black text-terracotta-400">{actualScore}</p>
+                  <p className="text-3xl font-black text-ink">{actualScore}</p>
                   <p className="text-[10px] uppercase tracking-wider text-cream/60 mt-0.5">{t('pronosticos.finishedLabel')}</p>
                 </>
               ) : (
@@ -176,12 +176,12 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-4">
           {/* User's prediction summary */}
           {userPrediction ? (
-            <div className={`rounded-2xl border p-3 ${
+            <div className={`rounded-none border p-3 ${
               isFinished
                 ? pointsEarned > 0
                   ? 'bg-green-50 border-green-200'
                   : 'bg-cream border-ink/20'
-                : 'bg-terracotta/10 border-terracotta/30'
+                : 'bg-paper-200 border-ink/20'
             }`}>
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -203,21 +203,21 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               {hasStarted && (
                 <button
                   onClick={() => setShowShare(true)}
-                  className="mt-3 w-full text-sm font-semibold flex items-center justify-center gap-1.5 py-2 rounded-xl bg-paper border border-ink/20 hover:bg-cream active:bg-paper text-ink/80 transition-colors"
+                  className="mt-3 w-full text-sm font-semibold flex items-center justify-center gap-1.5 py-2 rounded-none bg-paper border border-ink/20 hover:bg-cream active:bg-paper text-ink/80 transition-colors"
                 >
                   <span>📤</span>{t('share.open')}
                 </button>
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-ink/20 bg-cream p-3 text-center">
+            <div className="rounded-none border border-ink/20 bg-cream p-3 text-center">
               <p className="text-sm text-ink/60">{t('preview.noPrediction')}</p>
             </div>
           )}
 
           {/* Consensus + member list (only after kickoff) */}
           {!hasStarted ? (
-            <div className="rounded-2xl border border-ink/20 bg-cream p-4 text-center space-y-1">
+            <div className="rounded-none border border-ink/20 bg-cream p-4 text-center space-y-1">
               <p className="text-2xl">🔒</p>
               <p className="text-sm font-semibold text-ink/80">{t('preview.lockedTitle')}</p>
               <p className="text-xs text-ink/60">{t('preview.lockedDesc')}</p>
@@ -242,7 +242,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               {/* Member-by-member */}
               <div>
                 <p className="text-[10px] uppercase tracking-wider font-semibold text-ink/60 mb-2">{t('preview.members')}</p>
-                <div className="rounded-2xl border border-ink/20 overflow-hidden">
+                <div className="rounded-none border border-ink/20 overflow-hidden">
                   {memberRows.map(m => (
                     <MemberRow
                       key={m.userId}
@@ -279,12 +279,12 @@ function ConsensusBar({ outcomes, total, homeTeam, awayTeam, t }) {
   return (
     <div className="space-y-1.5">
       <div className="flex h-3 rounded-full overflow-hidden bg-paper">
-        {homePct > 0 && <div style={{ width: `${homePct}%` }} className="bg-terracotta" />}
+        {homePct > 0 && <div style={{ width: `${homePct}%` }} className="bg-ink" />}
         {drawPct > 0 && <div style={{ width: `${drawPct}%` }} className="bg-ink/40" />}
         {awayPct > 0 && <div style={{ width: `${awayPct}%` }} className="bg-blue-500" />}
       </div>
       <div className="flex justify-between text-[11px] text-ink/60">
-        <span><span className="inline-block w-2 h-2 rounded-full bg-terracotta mr-1" />{teamName(homeTeam)} {homePct}%</span>
+        <span><span className="inline-block w-2 h-2 rounded-full bg-ink mr-1" />{teamName(homeTeam)} {homePct}%</span>
         <span><span className="inline-block w-2 h-2 rounded-full bg-ink/40 mr-1" />{t('preview.draw')} {drawPct}%</span>
         <span><span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1" />{teamName(awayTeam)} {awayPct}%</span>
       </div>
@@ -302,12 +302,12 @@ function MemberRow({ m, actual, t }) {
   )
   return (
     <div className={`flex items-center gap-2.5 px-3 py-2.5 border-b border-ink/15 last:border-0 ${
-      m.isMe ? 'bg-terracotta/60' : ''
+      m.isMe ? 'bg-paper-200' : ''
     }`}>
       {m.avatarUrl ? (
         <img src={m.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
       ) : (
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-terracotta/40 to-terracotta/60 flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0">
+        <div className="w-7 h-7 rounded-full bg-ink flex items-center justify-center text-cream font-bold text-[11px] flex-shrink-0">
           {m.username[0]?.toUpperCase()}
         </div>
       )}
@@ -315,12 +315,12 @@ function MemberRow({ m, actual, t }) {
         <p className={`text-sm truncate ${m.isMe ? 'font-bold text-ink' : 'font-medium text-ink/80'}`}>
           {m.username}
         </p>
-        {m.isMe && <span className="text-[10px] font-bold text-terracotta-600 bg-terracotta/20 px-1.5 py-0.5 rounded">{t('common.you').toUpperCase()}</span>}
+        {m.isMe && <span className="text-[10px] font-bold text-ink bg-paper-200 border border-ink/20 px-1.5 py-0.5 rounded">{t('common.you').toUpperCase()}</span>}
       </div>
       {score ? (
         <span className={`text-sm font-bold tabular-nums px-2 py-0.5 rounded ${
           isExact ? 'bg-green-100 text-green-700'
-          : isCorrect ? 'bg-terracotta/20 text-terracotta-700'
+          : isCorrect ? 'bg-paper-200 text-ink border border-ink/20'
           : 'text-ink/60'
         }`}>
           {score}

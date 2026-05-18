@@ -55,7 +55,7 @@ function MemberRow({ member, leagueId }) {
     <tr className="border-b border-ink/15 last:border-0 hover:bg-cream transition-colors">
       <td className="py-3 px-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-terracotta/40 to-terracotta/60 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-ink flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
             {member.username?.[0]?.toUpperCase() ?? '?'}
           </div>
           <div className="min-w-0">
@@ -75,7 +75,7 @@ function MemberRow({ member, leagueId }) {
           <button
             onClick={sendReminder}
             disabled={btnDisabled}
-            className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
+            className={`text-xs font-medium px-3 py-1.5 rounded-none transition-all ${
               status === 'sent' || status === 'cooldown'
                 ? 'bg-green-100 text-green-700'
                 : status === 'error'
@@ -184,7 +184,7 @@ function LeaguePanel({ league }) {
   return (
     <div className="card overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-terracotta/40 to-terracotta/40 px-5 py-4">
+      <div className="bg-cream border-b border-ink/20 px-5 py-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-base font-bold text-ink truncate">{league.name}</h2>

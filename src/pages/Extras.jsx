@@ -9,6 +9,7 @@ import { ExtrasSkeleton } from '../components/Skeleton'
 import LeagueModal from '../components/LeagueModal'
 import PaymentModal from '../components/PaymentModal'
 import LeagueCreatedModal from '../components/LeagueCreatedModal'
+import { EditorialBand } from '../components/Editorial'
 
 // Twemoji CDN URL for any emoji string (works on all browsers/OS)
 function emojiSrc(emoji) {
@@ -130,7 +131,7 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
       )}
 
       {isPastCutoff && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 space-y-1">
+        <div className="rounded-none bg-red-50 border border-red-200 px-4 py-3 space-y-1">
           <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
             <span>🔒</span>{t('extras.closedMsg')}
           </p>
@@ -169,7 +170,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting }) {
   const { t } = useLang()
   return (
     <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-paper rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 animate-slide-up">
+      <div className="bg-paper rounded-none shadow-xl max-w-sm w-full p-6 space-y-4 animate-slide-up">
         <h3 className="text-xl font-bold text-ink">{t('extras.confirmTitle')}</h3>
         <p className="text-ink/60 text-sm leading-relaxed">
           {t('extras.confirmBody')}
@@ -208,16 +209,16 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
             key={opt.value}
             onClick={() => !locked && onSelect(opt.value)}
             disabled={locked}
-            className={`relative rounded-xl sm:rounded-2xl border-2 p-3 sm:p-5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${
+            className={`relative rounded-none sm:rounded-none border-2 p-3 sm:p-5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${
               isActive
-                ? 'border-terracotta bg-terracotta/10 shadow-md shadow-ink/15'
+                ? 'border-ink bg-paper shadow-md shadow-ink/15'
                 : 'border-ink/20 bg-paper hover:border-ink/30'
             } ${locked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <div className="flex flex-col items-center gap-1.5 sm:gap-2">
               <EmojiImg emoji={opt.emoji} alt={opt.label} className="w-12 h-12 sm:w-20 sm:h-20" />
               <div className="text-center min-w-0 w-full">
-                <div className={`font-bold text-sm sm:text-lg truncate ${isActive ? 'text-terracotta-700' : 'text-ink'}`}>
+                <div className={`font-bold text-sm sm:text-lg truncate ${isActive ? 'text-ink font-bold' : 'text-ink/80'}`}>
                   {opt.label}
                 </div>
                 {opt.team && (
@@ -362,7 +363,7 @@ function QuestionCard({ question, answer, draft, onDraft, onSelect, onSave, lock
             <h3 className="text-sm sm:text-lg font-bold text-ink leading-tight">
               {question.prompt}
             </h3>
-            <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-terracotta/15 text-terracotta-600 border border-terracotta/30 flex-shrink-0">
+            <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-paper-200 text-ink/80 border border-ink/20 flex-shrink-0">
               +{question.points} pts
             </span>
           </div>
@@ -591,7 +592,7 @@ export default function Extras() {
   if (!leagueLoading && leagues.length === 0) {
     return (
       <>
-        <div className="card p-5 border-terracotta/30 bg-gradient-to-br from-terracotta/40 to-terracotta/40 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="card p-5 border-ink/20 bg-cream flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="text-3xl flex-shrink-0">🎲</div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-ink text-sm sm:text-base">{t('extras.noLeague')}</p>
@@ -636,10 +637,12 @@ export default function Extras() {
         <div className="flex items-start gap-2.5 sm:gap-3">
           <span className="text-xl sm:text-3xl">🎲</span>
           <div className="flex-1 min-w-0">
+            <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('extras.chapter')}</span>
             <h1 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('extras.title')}</h1>
             <p className="text-[11px] sm:text-sm text-ink/60 mt-0.5">
               {t('extras.subtitle')}
             </p>
+            <EditorialBand items={['BONUS', 'PREGUNTAS EXTRA', 'EDICIÓN 2026']} />
           </div>
         </div>
 
@@ -652,7 +655,7 @@ export default function Extras() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-ink/60">{t('extras.maxPtsLabel')}</span>
-            <span className="font-bold text-terracotta-600">+{totalPoints}</span>
+            <span className="font-bold text-ink">+{totalPoints}</span>
           </div>
         </div>
       </section>

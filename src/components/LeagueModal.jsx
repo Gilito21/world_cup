@@ -81,7 +81,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
           <h2 className="font-semibold text-ink text-lg">{t('league.title')}</h2>
           <button
             onClick={onClose}
-            className="text-ink/60 hover:text-ink w-10 h-10 flex items-center justify-center rounded-lg hover:bg-paper active:bg-paper-200 transition-colors -mr-2"
+            className="text-ink/60 hover:text-ink w-10 h-10 flex items-center justify-center rounded-none hover:bg-paper active:bg-paper-200 transition-colors -mr-2"
             aria-label={t('common.close')}
           >
             ✕
@@ -89,12 +89,12 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-paper mx-5 mt-5 rounded-xl">
+        <div className="flex gap-1 p-1 bg-paper mx-5 mt-5 rounded-none">
           {[['join', t('league.joinTab')], ['create', t('league.createTab')]].map(([tabKey, label]) => (
             <button
               key={tabKey}
               onClick={() => switchTab(tabKey)}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+              className={`flex-1 py-2 text-sm font-medium rounded-none transition-all ${
                 tab === tabKey ? 'bg-ink text-cream' : 'text-ink/60 hover:text-ink/80'
               }`}
             >
@@ -140,7 +140,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
               )}
 
               {error && (
-                <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+                <div className="bg-red-500/10 border border-red-500/30 rounded-none px-4 py-3 text-red-400 text-sm">
                   {error}
                 </div>
               )}
