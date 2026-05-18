@@ -978,8 +978,11 @@ const LANDING_CSS = `
 
 .landing-root .ln-map-card{background:var(--cream);border:1px solid var(--line-2);position:relative;overflow:hidden}
 .landing-root .ln-map-head{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--line-2);font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);flex-wrap:wrap;gap:8px}
+@media (max-width:520px){.landing-root .ln-map-head{padding:12px 16px;font-size:9px;letter-spacing:.14em}}
 .landing-root .ln-map-head .ln-coord{color:#666}
 .landing-root .ln-map-canvas{position:relative;aspect-ratio:16/10}
+@media (max-width:780px){.landing-root .ln-map-canvas{aspect-ratio:5/4}}
+@media (max-width:480px){.landing-root .ln-map-canvas{aspect-ratio:1/1}}
 .landing-root .ln-map-canvas svg{width:100%;height:100%;display:block}
 .landing-root .country{fill:#dbcd9c;stroke:#7d6f3a;stroke-width:1.2}
 .landing-root .city{cursor:pointer}
@@ -988,7 +991,7 @@ const LANDING_CSS = `
 @keyframes ln-ringPulse{0%{r:5;opacity:.9}100%{r:22;opacity:0}}
 .landing-root .city .pin{transform-origin:center;transform-box:fill-box;transform:scale(0);transition:transform .5s cubic-bezier(.2,1.4,.4,1)}
 .landing-root .city.in .pin{transform:scale(1)}
-.landing-root .city .lbl{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;fill:var(--ink);opacity:0;transition:opacity .4s}
+.landing-root .city .lbl{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;fill:var(--ink);opacity:0;transition:opacity .4s}
 .landing-root .city.in .lbl{opacity:1}
 .landing-root .city:hover .pin{transform:scale(1.4)}
 .landing-root .city:focus{outline:none}
@@ -1012,10 +1015,14 @@ const LANDING_CSS = `
 
 .landing-root .ln-map-foot{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--line-2)}
 @media (max-width:680px){.landing-root .ln-map-foot{grid-template-columns:1fr 1fr}}
+@media (max-width:680px){.landing-root .ln-map-foot .ln-cell:nth-child(2){border-right:0}}
+@media (max-width:680px){.landing-root .ln-map-foot .ln-cell:nth-child(-n+2){border-bottom:1px solid var(--line-2)}}
 .landing-root .ln-cell{padding:22px;border-right:1px solid var(--line-2)}
 .landing-root .ln-cell:last-child{border-right:0}
-.landing-root .ln-num{font-family:"Boldonse",sans-serif;font-size:36px;color:var(--ink);line-height:.9}
+@media (max-width:680px){.landing-root .ln-cell{padding:16px 18px}}
+.landing-root .ln-num{font-family:"Boldonse",sans-serif;font-size:clamp(26px,5.5vw,36px);color:var(--ink);line-height:.9}
 .landing-root .ln-lbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#666;margin-top:8px}
+@media (max-width:520px){.landing-root .ln-lbl{font-size:9px;letter-spacing:.14em}}
 
 .landing-root .ln-cities-list{margin-top:64px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px}
 @media (max-width:880px){.landing-root .ln-cities-list{grid-template-columns:1fr 1fr}}
