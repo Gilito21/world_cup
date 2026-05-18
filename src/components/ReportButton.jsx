@@ -82,7 +82,7 @@ export default function ReportButton({ username, userEmail }) {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-3">
                   <textarea
-                    className="w-full rounded-xl border border-ink/20 bg-cream px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/50 focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta-400 resize-none transition-colors"
+                    className="w-full rounded-xl border border-ink/20 bg-cream px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/50 focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-ink resize-none transition-colors"
                     rows={4}
                     placeholder={t('report.placeholder')}
                     value={message}

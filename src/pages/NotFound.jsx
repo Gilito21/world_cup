@@ -16,8 +16,8 @@ export default function NotFound() {
     <div className="min-h-screen bg-ink flex items-center justify-center px-4 overflow-hidden">
       {/* Fondo decorativo */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-terracotta/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-terracotta/8 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-ink/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-ink/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative text-center space-y-8 animate-slide-up max-w-md w-full">
@@ -39,7 +39,7 @@ export default function NotFound() {
           <p className="text-ink/50 text-sm leading-relaxed">
             {t('notFound.subtitle')}<br />
             {dots.length > 0
-              ? <span className="font-mono text-terracotta">{t('notFound.searching')}{dots}</span>
+              ? <span className="font-mono text-ink">{t('notFound.searching')}{dots}</span>
               : <span>{t('notFound.goBack')}</span>}
           </p>
         </div>

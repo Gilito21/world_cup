@@ -167,7 +167,7 @@ function ShareCard({ leagueName, inviteCode, joinText, appName }) {
         style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff 0px, #fff 1px, transparent 1px, transparent 36px)' }} />
 
       <div className="relative px-5 py-6 text-center space-y-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta-400/70">{appName}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-ink/70">{appName}</p>
         <p className="text-xl font-black text-white uppercase tracking-wide leading-tight"
           style={{ textShadow: '0 0 20px rgba(245,158,11,0.45)' }}>
           {joinText}
@@ -178,8 +178,8 @@ function ShareCard({ leagueName, inviteCode, joinText, appName }) {
         <div className="my-3" style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(251,191,36,0.8), transparent)' }} />
 
         {/* Code */}
-        <p className="text-[10px] font-semibold text-terracotta-400/60 uppercase tracking-[0.15em]">Código</p>
-        <p className="font-black text-3xl tracking-[0.4em] text-terracotta-400 font-mono"
+        <p className="text-[10px] font-semibold text-ink/60 uppercase tracking-[0.15em]">Código</p>
+        <p className="font-black text-3xl tracking-[0.4em] text-ink font-mono"
           style={{ textShadow: '0 0 20px rgba(245,158,11,0.55)' }}>
           {inviteCode}
         </p>
@@ -245,7 +245,7 @@ export default function LeagueCreatedModal({ league, onClose }) {
     >
       <div className="bg-paper rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
         {/* Hero */}
-        <div className="relative bg-gradient-to-br from-terracotta/40 via-terracotta/40 to-terracotta/40 p-6 text-ink text-center flex-shrink-0">
+        <div className="relative bg-cream border-b border-ink/20 p-6 text-ink text-center flex-shrink-0">
           <div className="text-4xl mb-1">🎉</div>
           <h2 className="text-xl font-bold">{t('league.created')}</h2>
           <p className="text-ink/80 text-sm mt-1">{t('league.createdReady', { name: league.name })}</p>
@@ -259,8 +259,8 @@ export default function LeagueCreatedModal({ league, onClose }) {
           <div className="space-y-2">
             <p className="text-xs font-semibold text-ink/60 uppercase tracking-wider">{t('league.inviteCode')}</p>
             <div className="flex items-center gap-2">
-              <div className="flex-1 bg-paper border border-terracotta/30 rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold tracking-[0.3em] text-terracotta font-mono">{league.invite_code}</p>
+              <div className="flex-1 bg-paper border border-ink/30 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold tracking-[0.3em] text-ink font-mono">{league.invite_code}</p>
               </div>
               <CopyButton text={league.invite_code} />
             </div>

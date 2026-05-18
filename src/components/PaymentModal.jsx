@@ -86,7 +86,7 @@ function PaymentForm({ leagueName, paymentIntentId, onSuccess, onClose }) {
       <button
         type="submit"
         disabled={!stripe || submitting}
-        className="w-full bg-gradient-to-r from-terracotta/40 to-terracotta/60 hover:from-terracotta/40 hover:to-terracotta/60 active:from-terracotta/40 active:to-terracotta/60 text-ink font-semibold py-3.5 rounded-2xl shadow-lg shadow-ink/15 hover:shadow-ink/15 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full bg-ink hover:bg-ink/90 active:bg-ink/95 text-cream font-semibold py-3.5 rounded-2xl shadow-lg shadow-ink/15 hover:shadow-ink/15 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {submitting
           ? <><Spinner size="sm" /> {t('payment.processing')}</>
@@ -162,7 +162,7 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
   return createPortal(
     <Backdrop onClose={onClose}>
       {/* Hero */}
-      <div className="relative bg-gradient-to-br from-terracotta/40 via-terracotta/40 to-terracotta/40 p-5 sm:p-6 text-ink">
+      <div className="relative bg-cream border-b border-ink/20 p-5 sm:p-6 text-ink">
         <button
           onClick={onClose}
           className="absolute top-3 right-3 w-10 h-10 rounded-full bg-paper/30 hover:bg-paper/50 active:bg-paper/60 backdrop-blur-sm flex items-center justify-center text-ink transition-colors"
@@ -187,7 +187,7 @@ export default function PaymentModal({ leagueName, onSuccess, onClose }) {
         <ul className="space-y-2">
           {FEATURES.map(f => (
             <li key={f} className="flex items-start gap-2.5 text-sm text-ink/80">
-              <span className="text-terracotta font-bold flex-shrink-0 mt-0.5">✓</span>
+              <span className="text-grass-500 font-bold flex-shrink-0 mt-0.5">✓</span>
               <span>{f}</span>
             </li>
           ))}

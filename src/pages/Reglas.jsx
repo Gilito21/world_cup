@@ -39,7 +39,7 @@ export default function Reglas() {
           <ScoreRow
             label={t('reglas.s3exact')}
             badge={t('reglas.s3exactBadge')}
-            badgeClass="bg-terracotta/15 text-terracotta-600 border border-terracotta/30"
+            badgeClass="bg-paper-200 text-ink/80 border border-ink/20"
             description={t('reglas.s3exactDesc')}
           />
           <ScoreRow
@@ -127,7 +127,7 @@ function Section({ icon, title, children }) {
 
 function Callout({ type, children }) {
   const styles = type === 'warning'
-    ? 'bg-terracotta/10 border-terracotta/30 text-terracotta-700'
+    ? 'bg-paper-200 border-ink/20 text-ink'
     : 'bg-blue-500/10 border-blue-500/30 text-blue-800'
   return (
     <div className={`mt-3 rounded-xl border px-4 py-3 text-sm ${styles}`}>

@@ -491,7 +491,7 @@ export default function Auth() {
                         type="button"
                         onMouseDown={() => { setCompany(sug); setShowCompanySug(false) }}
                         className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                          i === companyHighlight ? 'bg-terracotta/10 text-terracotta-700' : 'text-ink/80 hover:bg-cream'
+                          i === companyHighlight ? 'bg-paper-200 text-ink' : 'text-ink/80 hover:bg-cream'
                         }`}
                       >
                         {sug}
@@ -520,7 +520,7 @@ export default function Auth() {
                   <button
                     type="button"
                     onClick={() => setShowForgot(true)}
-                    className="text-xs text-terracotta-600 hover:text-terracotta hover:underline underline-offset-2"
+                    className="text-xs text-ink/70 hover:text-ink hover:underline underline-offset-2"
                   >
                     {t('auth.forgotPassword')}
                   </button>
@@ -547,7 +547,7 @@ export default function Auth() {
                       key={val} type="button" onClick={() => setLeagueMode(val)}
                       className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                         leagueMode === val
-                          ? 'bg-terracotta/10 border-terracotta/40 text-terracotta-700'
+                          ? 'bg-paper-200 border-ink/30 text-ink'
                           : 'bg-cream border-ink/20 text-ink/60 hover:border-ink/30 hover:text-ink/80'
                       }`}
                     >
@@ -565,7 +565,7 @@ export default function Auth() {
                       value={leagueName} onChange={e => setLeagueName(e.target.value)}
                       maxLength={40} required
                     />
-                    <p className="text-xs text-terracotta-600 mt-1.5 flex items-center gap-1.5">
+                    <p className="text-xs text-ink/80 mt-1.5 flex items-center gap-1.5">
                       <span>💳</span>
                       {t('auth.leaguePriceNote', { price: LEAGUE_PRICE_LABEL })}
                     </p>
@@ -612,7 +612,7 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
-                className="text-terracotta-600 hover:text-terracotta hover:underline underline-offset-2 font-semibold"
+                className="text-ink/70 hover:text-ink hover:underline underline-offset-2 font-semibold"
               >
                 {mode === 'login' ? t('auth.toRegister') : t('auth.toLogin')}
               </button>

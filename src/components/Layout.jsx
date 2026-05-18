@@ -71,7 +71,7 @@ function MobileUserMenu({ profile, onSignOut }) {
           <div className="border-t border-ink/15 my-1" />
           <button
             onClick={() => { setOpen(false); onSignOut() }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm text-terracotta hover:bg-terracotta/10"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
           >
             <span className="text-base">🚪</span>
             <span>{t('nav.signOutFull')}</span>
@@ -309,7 +309,7 @@ export default function Layout() {
             <LangToggle className="ml-1 hidden sm:flex" />
             <button
               onClick={handleSignOut}
-              className="hidden sm:inline-flex text-ink/50 hover:text-terracotta text-sm px-2.5 py-1.5 hover:bg-terracotta/10 transition-colors duration-150"
+              className="hidden sm:inline-flex text-ink/50 hover:text-red-600 text-sm px-2.5 py-1.5 hover:bg-red-50 transition-colors duration-150"
             >
               {t('nav.signOut')}
             </button>
@@ -350,7 +350,7 @@ export default function Layout() {
             <span className="text-[11px] sm:text-xs text-ink/70 font-medium truncate">{activeLeague.name}</span>
             {activeLeague.role === 'admin' && (
               <span className="text-[11px] sm:text-xs text-ink/50 truncate hidden min-[420px]:inline">
-                · <span className="font-mono text-terracotta tracking-wider">{activeLeague.invite_code}</span>
+                · <span className="font-mono text-ink tracking-wider">{activeLeague.invite_code}</span>
               </span>
             )}
           </div>
@@ -412,18 +412,18 @@ export default function Layout() {
           retry manually or dismiss to recover state. */}
       {freeLeagueError && (
         <div className="fixed inset-x-0 top-4 z-[70] flex justify-center px-3 pointer-events-none">
-          <div className="pointer-events-auto bg-cream border border-terracotta shadow-xl shadow-ink/15 px-4 py-3 max-w-sm w-full space-y-2">
+          <div className="pointer-events-auto bg-red-50 border border-red-300 shadow-xl shadow-ink/15 px-4 py-3 max-w-sm w-full space-y-2">
             <div className="flex items-start gap-2">
               <span className="text-lg">⚠️</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-terracotta-600">{t('layout.freeLeagueErrorTitle')}</p>
+                <p className="text-sm font-semibold text-red-700">{t('layout.freeLeagueErrorTitle')}</p>
                 <p className="text-xs text-ink/70 mt-0.5">{t('layout.freeLeagueErrorDesc', { name: pendingPaymentName })}</p>
               </div>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => { setFreeLeagueError(false); setFreeLeagueAttempt(n => n + 1) }}
-                className="flex-1 text-xs font-semibold bg-terracotta text-cream py-2 hover:bg-terracotta-600 transition-colors"
+                className="flex-1 text-xs font-semibold bg-red-600 text-cream py-2 hover:bg-red-700 transition-colors"
               >
                 {t('layout.freeLeagueRetry')}
               </button>

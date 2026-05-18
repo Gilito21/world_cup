@@ -143,7 +143,7 @@ export default function Perfil() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="relative w-16 h-16 rounded-full overflow-hidden group focus:outline-none focus:ring-2 focus:ring-terracotta focus:ring-offset-2"
+              className="relative w-16 h-16 rounded-full overflow-hidden group focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
               title={t('perfil.changePhoto')}
             >
               {avatarUrl ? (
@@ -153,7 +153,7 @@ export default function Perfil() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-terracotta/40 to-terracotta/60 flex items-center justify-center text-white font-bold text-2xl">
+                <div className="w-full h-full bg-ink flex items-center justify-center text-cream font-bold text-2xl">
                   {profile?.username?.[0]?.toUpperCase()}
                 </div>
               )}
@@ -180,7 +180,7 @@ export default function Perfil() {
             )}
             <p className="text-ink/50 text-sm truncate">{user?.email}</p>
             <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-xs bg-terracotta/10 text-terracotta border border-terracotta/20 px-2 py-0.5 rounded-full font-semibold">
+              <span className="text-xs bg-paper-200 text-ink border border-ink/20 px-2 py-0.5 rounded-full font-semibold">
                 {t('perfil.globalPts', { n: profile?.total_points ?? 0 })}
               </span>
             </div>
@@ -232,7 +232,7 @@ export default function Perfil() {
               </p>
               <button
                 onClick={() => setEditingCompany(true)}
-                className="text-xs text-terracotta-600 hover:text-terracotta font-medium flex-shrink-0"
+                className="text-xs text-ink/70 hover:text-ink font-medium flex-shrink-0"
               >
                 {profile?.company ? t('perfil.editCompany') : t('perfil.addCompany')}
               </button>
@@ -256,8 +256,8 @@ export default function Perfil() {
             <button
               onClick={handleToggleReminders}
               disabled={savingReminders}
-              className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-terracotta focus:ring-offset-2 ${
-                emailReminders ? 'bg-terracotta' : 'bg-paper-200'
+              className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 ${
+                emailReminders ? 'bg-ink' : 'bg-paper-200'
               }`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-paper rounded-full shadow transition-transform duration-200 ${
@@ -277,7 +277,7 @@ export default function Perfil() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: t('perfil.statPredictions'), value: stats.totalPredictions, icon: '📝', color: 'text-ink/80' },
-              { label: t('perfil.statExact'),       value: stats.exact,            icon: '🎯', color: 'text-terracotta' },
+              { label: t('perfil.statExact'),       value: stats.exact,            icon: '🎯', color: 'text-grass-500' },
               { label: t('perfil.statCorrect'),     value: stats.correct,          icon: '✓',  color: 'text-blue-500'  },
               { label: t('perfil.statAccuracy'),    value: stats.accuracy !== null ? `${stats.accuracy}%` : '—', icon: '📊', color: 'text-green-500' },
             ].map(({ label, value, icon, color }) => (

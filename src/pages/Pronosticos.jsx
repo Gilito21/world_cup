@@ -413,7 +413,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           {/* Points badge after results come in */}
           {isFinished && prediction && (() => {
             const pts = prediction.points_earned ?? 0
-            const cfg = pts === 3 ? 'bg-terracotta/20 text-terracotta-400 border-terracotta/30'
+            const cfg = pts === 3 ? 'bg-grass-500/15 text-grass-600 border-grass-500/30'
                       : pts === 1 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                       :             'bg-paper-200 text-ink/60 border-ink/30'
             return (
@@ -426,7 +426,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             <button
               type="button"
               onClick={onPreview}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-ink/50 hover:text-terracotta hover:bg-terracotta/10 active:bg-terracotta/20 transition-colors flex-shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-ink/50 hover:text-ink hover:bg-paper-200 active:bg-cream transition-colors flex-shrink-0"
               aria-label={t('preview.openLabel')}
               title={t('preview.openLabel')}
             >
@@ -515,7 +515,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 tiebreaker === 'home'
                   ? 'bg-ink border-ink text-cream'
-                  : 'bg-paper border-ink/20 text-ink/70 hover:border-terracotta-400 hover:text-ink'
+                  : 'bg-paper border-ink/20 text-ink/70 hover:border-ink/50 hover:text-ink'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               <Flag team={displayHome} />
@@ -527,7 +527,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 tiebreaker === 'away'
                   ? 'bg-ink border-ink text-cream'
-                  : 'bg-paper border-ink/20 text-ink/70 hover:border-terracotta-400 hover:text-ink'
+                  : 'bg-paper border-ink/20 text-ink/70 hover:border-ink/50 hover:text-ink'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               <Flag team={displayAway} />
@@ -535,7 +535,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
             </button>
           </div>
           {!tiebreaker && !isLocked && (
-            <span className="text-xs text-terracotta-600 font-medium">{t('pronosticos.tiebreakerRequired')}</span>
+            <span className="text-xs text-ink/70 font-medium italic">{t('pronosticos.tiebreakerRequired')}</span>
           )}
         </div>
       )}
@@ -608,7 +608,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               <span>✓</span><span>{t('common.saved')}</span>
             </span>
           ) : changed ? (
-            <span className="text-terracotta/70">•</span>
+            <span className="text-ink/40">•</span>
           ) : prediction ? (
             <span className="text-ink/40">✓</span>
           ) : (
@@ -1135,7 +1135,7 @@ export default function Pronosticos() {
 
       {/* No-league gate: banner replacing the submit panel */}
       {!leagueLoading && leagues.length === 0 ? (
-        <div className="card p-5 border-terracotta/30 bg-gradient-to-br from-terracotta/40 to-terracotta/40 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="card p-5 border-ink/20 bg-cream flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="text-3xl flex-shrink-0">🏆</div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-ink text-sm sm:text-base">{t('pronosticos.noLeagueTitle')}</p>
@@ -1165,11 +1165,11 @@ export default function Pronosticos() {
 
       {/* Copy from league prompt */}
       {activeLeague && !hasPredictions && !isSubmitted && otherLeagues.length > 0 && (
-        <div className="card overflow-hidden border-terracotta/20 bg-terracotta/5">
+        <div className="card overflow-hidden border-ink/20 bg-paper-200">
           <button
             type="button"
             onClick={() => setReuseExpanded(e => !e)}
-            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-terracotta/10 active:bg-terracotta/20 transition-colors text-left"
+            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-paper active:bg-cream transition-colors text-left"
             aria-expanded={reuseExpanded}
           >
             <span className="text-base flex-shrink-0">📋</span>
@@ -1186,7 +1186,7 @@ export default function Pronosticos() {
             </span>
           </button>
           {reuseExpanded && (
-            <div className="px-4 pb-3 pt-1 border-t border-terracotta/20 space-y-3">
+            <div className="px-4 pb-3 pt-1 border-t border-ink/15 space-y-3">
               <p className="text-xs text-ink/60">
                 {t('pronosticos.reuseBody', { league: activeLeague.name })}
               </p>

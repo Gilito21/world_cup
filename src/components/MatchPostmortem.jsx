@@ -36,9 +36,9 @@ function AccuracyColumn({ label, stats, t }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-ink/70">🎯 {t('postmortem.exactPct')}</span>
-          <span className="font-bold text-terracotta tabular-nums">{pctExact}%</span>
+          <span className="font-bold text-ink tabular-nums">{pctExact}%</span>
         </div>
-        <Bar pct={pctExact} color="bg-terracotta" />
+        <Bar pct={pctExact} color="bg-ink" />
       </div>
 
       <div className="space-y-1">

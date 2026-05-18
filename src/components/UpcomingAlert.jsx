@@ -73,14 +73,14 @@ export default function UpcomingAlert() {
     <div className={`rounded-2xl border p-4 flex gap-3 ${
       urgentCount > 0
         ? 'bg-red-500/10 border-red-500/30'
-        : 'bg-terracotta/10 border-terracotta/30'
+        : 'bg-paper-200 border-ink/20'
     }`}>
       <div className="text-xl flex-shrink-0 mt-0.5">
         {urgentCount > 0 ? '🚨' : '⏰'}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`font-semibold text-sm ${urgentCount > 0 ? 'text-terracotta-300' : 'text-terracotta-300'}`}>
+        <p className={`font-semibold text-sm ${urgentCount > 0 ? 'text-grass-500' : 'text-grass-500'}`}>
           {urgentCount > 0
             ? t('upcoming.urgentTitle', { n: urgentCount, s: urgentCount > 1 ? 's' : '' })
             : t('upcoming.normalTitle', { n: missing.length, s: missing.length > 1 ? 's' : '', h: WINDOW_HOURS })}
