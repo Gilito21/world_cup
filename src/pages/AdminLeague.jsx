@@ -13,7 +13,7 @@ function StatusBadge({ submitted }) {
       ✅ {t('adminLeague.submitted')}
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-stone-500 bg-stone-100 rounded-full px-2 py-0.5">
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-ink/60 bg-paper rounded-full px-2 py-0.5">
       ⏳ {t('adminLeague.pending')}
     </span>
   )
@@ -52,15 +52,15 @@ function MemberRow({ member, leagueId }) {
   }
 
   return (
-    <tr className="border-b border-stone-100 last:border-0 hover:bg-stone-50 transition-colors">
+    <tr className="border-b border-ink/15 last:border-0 hover:bg-cream transition-colors">
       <td className="py-3 px-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-terracotta/40 to-terracotta/60 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
             {member.username?.[0]?.toUpperCase() ?? '?'}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-stone-900 truncate">{member.username}</p>
-            {member.company && <p className="text-[11px] text-stone-400 truncate">{member.company}</p>}
+            <p className="text-sm font-semibold text-ink truncate">{member.username}</p>
+            {member.company && <p className="text-[11px] text-ink/50 truncate">{member.company}</p>}
           </div>
         </div>
       </td>
@@ -87,7 +87,7 @@ function MemberRow({ member, leagueId }) {
             {btnLabel()}
           </button>
         ) : (
-          <span className="text-xs text-stone-300">—</span>
+          <span className="text-xs text-ink/40">—</span>
         )}
       </td>
     </tr>
@@ -184,16 +184,16 @@ function LeaguePanel({ league }) {
   return (
     <div className="card overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-amber-500 to-orange-400 px-5 py-4">
+      <div className="bg-gradient-to-r from-terracotta/40 to-terracotta/40 px-5 py-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-base font-bold text-stone-950 truncate">{league.name}</h2>
-            <p className="text-xs text-stone-800/70 mt-0.5">{t('adminLeague.inviteCode', { code: league.invite_code })}</p>
+            <h2 className="text-base font-bold text-ink truncate">{league.name}</h2>
+            <p className="text-xs text-ink/70 mt-0.5">{t('adminLeague.inviteCode', { code: league.invite_code })}</p>
           </div>
           {members && (
             <div className="text-right flex-shrink-0">
-              <p className="text-2xl font-black text-stone-950">{totalSubmitted}/{members.length}</p>
-              <p className="text-[10px] text-stone-800/70">{t('adminLeague.submitted')}</p>
+              <p className="text-2xl font-black text-ink">{totalSubmitted}/{members.length}</p>
+              <p className="text-[10px] text-ink/70">{t('adminLeague.submitted')}</p>
             </div>
           )}
         </div>
@@ -208,16 +208,16 @@ function LeaguePanel({ league }) {
           <button onClick={loadMembers} className="btn-secondary text-sm">{t('common.retry')}</button>
         </div>
       ) : !members || members.length === 0 ? (
-        <p className="text-center text-stone-400 text-sm py-8">{t('adminLeague.noMembers')}</p>
+        <p className="text-center text-ink/50 text-sm py-8">{t('adminLeague.noMembers')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-stone-50 border-b border-stone-100">
-                <th className="py-2.5 px-4 text-left text-xs font-semibold text-stone-500 uppercase tracking-wide">{t('adminLeague.members')}</th>
-                <th className="py-2.5 px-4 text-center text-xs font-semibold text-stone-500 uppercase tracking-wide">{t('adminLeague.predictions')}</th>
-                <th className="py-2.5 px-4 text-center text-xs font-semibold text-stone-500 uppercase tracking-wide">{t('adminLeague.extras')}</th>
-                <th className="py-2.5 px-4 text-right text-xs font-semibold text-stone-500 uppercase tracking-wide"></th>
+              <tr className="bg-cream border-b border-ink/15">
+                <th className="py-2.5 px-4 text-left text-xs font-semibold text-ink/60 uppercase tracking-wide">{t('adminLeague.members')}</th>
+                <th className="py-2.5 px-4 text-center text-xs font-semibold text-ink/60 uppercase tracking-wide">{t('adminLeague.predictions')}</th>
+                <th className="py-2.5 px-4 text-center text-xs font-semibold text-ink/60 uppercase tracking-wide">{t('adminLeague.extras')}</th>
+                <th className="py-2.5 px-4 text-right text-xs font-semibold text-ink/60 uppercase tracking-wide"></th>
               </tr>
             </thead>
             <tbody>
@@ -257,7 +257,7 @@ export default function AdminLeague() {
     return (
       <div className="max-w-lg mx-auto py-16 text-center">
         <div className="text-4xl mb-3">🏆</div>
-        <p className="text-stone-500 text-sm">{t('adminLeague.noAdminLeagues')}</p>
+        <p className="text-ink/60 text-sm">{t('adminLeague.noAdminLeagues')}</p>
       </div>
     )
   }
@@ -275,8 +275,8 @@ export default function AdminLeague() {
               onClick={() => setSelectedId(l.id)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                 l.id === activeLeague.id
-                  ? 'bg-amber-500 text-stone-950'
-                  : 'bg-stone-100 text-stone-500 hover:bg-stone-200 border border-stone-300'
+                  ? 'bg-terracotta text-ink'
+                  : 'bg-paper text-ink/60 hover:bg-paper-200 border border-ink/30'
               }`}
             >
               {l.name}

@@ -36,11 +36,11 @@ function UpdateBanner() {
 
   return (
     <div className="fixed bottom-20 sm:bottom-4 inset-x-3 sm:inset-x-auto sm:right-4 sm:left-auto sm:max-w-sm z-50 animate-slide-up pb-safe">
-      <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-stone-300/60 border-amber-500/30">
+      <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-ink/60 border-terracotta/30">
         <span className="text-xl flex-shrink-0">🔄</span>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-stone-900">{t('pwa.updateTitle')}</p>
-          <p className="text-xs text-stone-500 mt-0.5">{t('pwa.updateDesc')}</p>
+          <p className="font-semibold text-sm text-ink">{t('pwa.updateTitle')}</p>
+          <p className="text-xs text-ink/60 mt-0.5">{t('pwa.updateDesc')}</p>
           <div className="flex gap-2 mt-3">
             <button
               onClick={() => updateServiceWorker(true)}
@@ -50,7 +50,7 @@ function UpdateBanner() {
             </button>
             <button
               onClick={() => setNeedRefresh(false)}
-              className="text-stone-500 hover:text-stone-700 text-sm px-3 py-1.5"
+              className="text-ink/60 hover:text-ink/80 text-sm px-3 py-1.5"
             >
               {t('pwa.later')}
             </button>
@@ -112,14 +112,14 @@ function InstallBanner() {
   if (deferred) {
     return (
       <div className="fixed bottom-20 sm:bottom-4 inset-x-3 sm:inset-x-auto sm:right-4 sm:left-auto sm:max-w-sm z-40 animate-slide-up pb-safe">
-        <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-stone-300/60 border-amber-500/30">
+        <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-ink/60 border-terracotta/30">
           <span className="text-2xl flex-shrink-0">⚽</span>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-stone-900">{t('pwa.installTitle')}</p>
-            <p className="text-xs text-stone-500 mt-0.5">{t('pwa.installDesc')}</p>
+            <p className="font-semibold text-sm text-ink">{t('pwa.installTitle')}</p>
+            <p className="text-xs text-ink/60 mt-0.5">{t('pwa.installDesc')}</p>
             <div className="flex gap-2 mt-3">
               <button onClick={install} className="btn-primary text-sm px-3 py-1.5 min-h-0">{t('pwa.install')}</button>
-              <button onClick={dismiss} className="text-stone-500 hover:text-stone-700 text-sm px-3 py-1.5">
+              <button onClick={dismiss} className="text-ink/60 hover:text-ink/80 text-sm px-3 py-1.5">
                 {t('pwa.notNow')}
               </button>
             </div>
@@ -132,15 +132,15 @@ function InstallBanner() {
   if (showIosHint) {
     return (
       <div className="fixed bottom-20 inset-x-3 z-40 animate-slide-up pb-safe">
-        <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-stone-300/60 border-amber-500/30">
+        <div className="card p-4 flex items-start gap-3 shadow-2xl shadow-ink/60 border-terracotta/30">
           <span className="text-2xl flex-shrink-0">📲</span>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-stone-900">{t('pwa.iosTitle')}</p>
-            <p className="text-xs text-stone-500 mt-0.5">
+            <p className="font-semibold text-sm text-ink">{t('pwa.iosTitle')}</p>
+            <p className="text-xs text-ink/60 mt-0.5">
               Toca <span className="inline-block px-1 font-mono">⎙</span> Compartir y luego{' '}
               <span className="font-semibold">«Añadir a pantalla de inicio»</span>.
             </p>
-            <button onClick={dismiss} className="text-stone-500 hover:text-stone-700 text-xs mt-2">
+            <button onClick={dismiss} className="text-ink/60 hover:text-ink/80 text-xs mt-2">
               {t('pwa.iosClose')}
             </button>
           </div>

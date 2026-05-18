@@ -124,22 +124,22 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-900/60 backdrop-blur-md animate-fade-in px-3 py-4 sm:px-4 sm:py-8 pt-safe pb-safe"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/60 backdrop-blur-md animate-fade-in px-3 py-4 sm:px-4 sm:py-8 pt-safe pb-safe"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
+      <div className="bg-paper rounded-3xl shadow-2xl shadow-black/40 w-full max-w-md overflow-hidden animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 p-5 text-white">
+        <div className="relative bg-gradient-to-br from-ink via-ink/90 to-ink p-5 text-white">
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
+            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-paper/10 hover:bg-paper/20 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
             aria-label={t('common.close')}
           >
             ✕
           </button>
-          <div className="flex items-center gap-1.5 mb-3 text-[11px] uppercase tracking-wider text-amber-400/80 font-semibold">
+          <div className="flex items-center gap-1.5 mb-3 text-[11px] uppercase tracking-wider text-terracotta-400/80 font-semibold">
             {match.group_name && <span>{t('common.group', { g: match.group_name })}</span>}
-            {match.group_name && <span className="text-stone-500">·</span>}
+            {match.group_name && <span className="text-ink/60">·</span>}
             <span>{formatDateTime(match.match_date, dateLocale)}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
@@ -150,14 +150,14 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
             <div className="flex-shrink-0 text-center px-2">
               {actualScore ? (
                 <>
-                  <p className="text-3xl font-black text-amber-400">{actualScore}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-stone-400 mt-0.5">{t('pronosticos.finishedLabel')}</p>
+                  <p className="text-3xl font-black text-terracotta-400">{actualScore}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-ink/50 mt-0.5">{t('pronosticos.finishedLabel')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-2xl font-bold text-stone-300">vs</p>
+                  <p className="text-2xl font-bold text-ink/40">vs</p>
                   {!hasStarted && (
-                    <p className="text-[10px] uppercase tracking-wider text-stone-400 mt-0.5">{t('preview.upcoming')}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-ink/50 mt-0.5">{t('preview.upcoming')}</p>
                   )}
                 </>
               )}
@@ -168,7 +168,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
             </div>
           </div>
           {match.venue && (
-            <p className="text-center text-[11px] text-stone-400 mt-3">📍 {match.venue}</p>
+            <p className="text-center text-[11px] text-ink/50 mt-3">📍 {match.venue}</p>
           )}
         </div>
 
@@ -180,18 +180,18 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               isFinished
                 ? pointsEarned > 0
                   ? 'bg-green-50 border-green-200'
-                  : 'bg-stone-50 border-stone-200'
-                : 'bg-amber-50 border-amber-200'
+                  : 'bg-cream border-ink/20'
+                : 'bg-terracotta/10 border-terracotta/30'
             }`}>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-stone-500">{t('preview.yourPrediction')}</p>
-                  <p className="text-xl font-bold text-stone-900 mt-0.5">{userScore}</p>
+                  <p className="text-[10px] uppercase tracking-wider font-semibold text-ink/60">{t('preview.yourPrediction')}</p>
+                  <p className="text-xl font-bold text-ink mt-0.5">{userScore}</p>
                 </div>
                 {isFinished && (
                   <div className="text-right">
-                    <p className="text-[10px] uppercase tracking-wider font-semibold text-stone-500">{t('preview.pointsEarned')}</p>
-                    <p className={`text-2xl font-black ${pointsEarned > 0 ? 'text-green-600' : 'text-stone-400'}`}>
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-ink/60">{t('preview.pointsEarned')}</p>
+                    <p className={`text-2xl font-black ${pointsEarned > 0 ? 'text-green-600' : 'text-ink/50'}`}>
                       +{pointsEarned ?? 0}
                     </p>
                   </div>
@@ -203,24 +203,24 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               {hasStarted && (
                 <button
                   onClick={() => setShowShare(true)}
-                  className="mt-3 w-full text-sm font-semibold flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 active:bg-stone-100 text-stone-700 transition-colors"
+                  className="mt-3 w-full text-sm font-semibold flex items-center justify-center gap-1.5 py-2 rounded-xl bg-paper border border-ink/20 hover:bg-cream active:bg-paper text-ink/80 transition-colors"
                 >
                   <span>📤</span>{t('share.open')}
                 </button>
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3 text-center">
-              <p className="text-sm text-stone-500">{t('preview.noPrediction')}</p>
+            <div className="rounded-2xl border border-ink/20 bg-cream p-3 text-center">
+              <p className="text-sm text-ink/60">{t('preview.noPrediction')}</p>
             </div>
           )}
 
           {/* Consensus + member list (only after kickoff) */}
           {!hasStarted ? (
-            <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4 text-center space-y-1">
+            <div className="rounded-2xl border border-ink/20 bg-cream p-4 text-center space-y-1">
               <p className="text-2xl">🔒</p>
-              <p className="text-sm font-semibold text-stone-700">{t('preview.lockedTitle')}</p>
-              <p className="text-xs text-stone-500">{t('preview.lockedDesc')}</p>
+              <p className="text-sm font-semibold text-ink/80">{t('preview.lockedTitle')}</p>
+              <p className="text-xs text-ink/60">{t('preview.lockedDesc')}</p>
             </div>
           ) : loading ? (
             <div className="flex justify-center py-6"><Spinner /></div>
@@ -228,12 +228,12 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
             <>
               {/* Consensus */}
               <div>
-                <p className="text-[10px] uppercase tracking-wider font-semibold text-stone-500 mb-2">
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-ink/60 mb-2">
                   {t('preview.leagueConsensus', { n: consensus.total })}
                 </p>
                 <ConsensusBar outcomes={consensus.outcomes} total={consensus.total} homeTeam={match.home_team} awayTeam={match.away_team} t={t} />
                 {consensus.topScore && (
-                  <p className="text-xs text-stone-500 mt-2 text-center">
+                  <p className="text-xs text-ink/60 mt-2 text-center">
                     {t('preview.topScore', { score: consensus.topScore.score.replace('-', '–'), n: consensus.topScore.count })}
                   </p>
                 )}
@@ -241,8 +241,8 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
 
               {/* Member-by-member */}
               <div>
-                <p className="text-[10px] uppercase tracking-wider font-semibold text-stone-500 mb-2">{t('preview.members')}</p>
-                <div className="rounded-2xl border border-stone-200 overflow-hidden">
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-ink/60 mb-2">{t('preview.members')}</p>
+                <div className="rounded-2xl border border-ink/20 overflow-hidden">
                   {memberRows.map(m => (
                     <MemberRow
                       key={m.userId}
@@ -255,7 +255,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               </div>
             </>
           ) : (
-            <p className="text-center text-sm text-stone-400 py-4">{t('preview.noLeaguePredictions')}</p>
+            <p className="text-center text-sm text-ink/50 py-4">{t('preview.noLeaguePredictions')}</p>
           )}
         </div>
       </div>
@@ -278,14 +278,14 @@ function ConsensusBar({ outcomes, total, homeTeam, awayTeam, t }) {
   const awayPct = 100 - homePct - drawPct
   return (
     <div className="space-y-1.5">
-      <div className="flex h-3 rounded-full overflow-hidden bg-stone-100">
-        {homePct > 0 && <div style={{ width: `${homePct}%` }} className="bg-amber-500" />}
-        {drawPct > 0 && <div style={{ width: `${drawPct}%` }} className="bg-stone-400" />}
+      <div className="flex h-3 rounded-full overflow-hidden bg-paper">
+        {homePct > 0 && <div style={{ width: `${homePct}%` }} className="bg-terracotta" />}
+        {drawPct > 0 && <div style={{ width: `${drawPct}%` }} className="bg-ink/40" />}
         {awayPct > 0 && <div style={{ width: `${awayPct}%` }} className="bg-blue-500" />}
       </div>
-      <div className="flex justify-between text-[11px] text-stone-500">
-        <span><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1" />{teamName(homeTeam)} {homePct}%</span>
-        <span><span className="inline-block w-2 h-2 rounded-full bg-stone-400 mr-1" />{t('preview.draw')} {drawPct}%</span>
+      <div className="flex justify-between text-[11px] text-ink/60">
+        <span><span className="inline-block w-2 h-2 rounded-full bg-terracotta mr-1" />{teamName(homeTeam)} {homePct}%</span>
+        <span><span className="inline-block w-2 h-2 rounded-full bg-ink/40 mr-1" />{t('preview.draw')} {drawPct}%</span>
         <span><span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1" />{teamName(awayTeam)} {awayPct}%</span>
       </div>
     </div>
@@ -301,32 +301,32 @@ function MemberRow({ m, actual, t }) {
     (m.pred.home_score === m.pred.away_score && actual.home === actual.away)
   )
   return (
-    <div className={`flex items-center gap-2.5 px-3 py-2.5 border-b border-stone-100 last:border-0 ${
-      m.isMe ? 'bg-amber-50/60' : ''
+    <div className={`flex items-center gap-2.5 px-3 py-2.5 border-b border-ink/15 last:border-0 ${
+      m.isMe ? 'bg-terracotta/60' : ''
     }`}>
       {m.avatarUrl ? (
         <img src={m.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
       ) : (
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0">
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-terracotta/40 to-terracotta/60 flex items-center justify-center text-white font-bold text-[11px] flex-shrink-0">
           {m.username[0]?.toUpperCase()}
         </div>
       )}
       <div className="flex-1 min-w-0 flex items-center gap-1.5">
-        <p className={`text-sm truncate ${m.isMe ? 'font-bold text-stone-900' : 'font-medium text-stone-700'}`}>
+        <p className={`text-sm truncate ${m.isMe ? 'font-bold text-ink' : 'font-medium text-ink/80'}`}>
           {m.username}
         </p>
-        {m.isMe && <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">{t('common.you').toUpperCase()}</span>}
+        {m.isMe && <span className="text-[10px] font-bold text-terracotta-600 bg-terracotta/20 px-1.5 py-0.5 rounded">{t('common.you').toUpperCase()}</span>}
       </div>
       {score ? (
         <span className={`text-sm font-bold tabular-nums px-2 py-0.5 rounded ${
           isExact ? 'bg-green-100 text-green-700'
-          : isCorrect ? 'bg-amber-100 text-amber-700'
-          : 'text-stone-500'
+          : isCorrect ? 'bg-terracotta/20 text-terracotta-700'
+          : 'text-ink/60'
         }`}>
           {score}
         </span>
       ) : (
-        <span className="text-xs text-stone-300">—</span>
+        <span className="text-xs text-ink/40">—</span>
       )}
     </div>
   )

@@ -38,13 +38,13 @@ export default function JoinLeague() {
   if (error) {
     const isFull = errorCode === 'league_full'
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
         <div className="card p-6 sm:p-8 max-w-sm w-full text-center space-y-3 sm:space-y-4">
           <div className="text-3xl sm:text-4xl">{isFull ? '😔' : '⚠️'}</div>
-          <p className="text-stone-900 font-semibold text-sm sm:text-base">
+          <p className="text-ink font-semibold text-sm sm:text-base">
             {isFull ? t('league.fullTitle') : t('league.cantJoin')}
           </p>
-          <p className="text-stone-500 text-xs sm:text-sm">{error}</p>
+          <p className="text-ink/60 text-xs sm:text-sm">{error}</p>
           <button onClick={() => navigate('/pronosticos')} className="btn-primary w-full">{t('league.goHome')}</button>
         </div>
       </div>
@@ -52,10 +52,10 @@ export default function JoinLeague() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+    <div className="min-h-screen bg-cream flex items-center justify-center">
       <div className="text-center space-y-3">
         <Spinner size="lg" />
-        <p className="text-stone-500 text-sm">{t('league.joining')}</p>
+        <p className="text-ink/60 text-sm">{t('league.joining')}</p>
       </div>
     </div>
   )

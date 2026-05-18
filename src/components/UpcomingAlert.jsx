@@ -73,14 +73,14 @@ export default function UpcomingAlert() {
     <div className={`rounded-2xl border p-4 flex gap-3 ${
       urgentCount > 0
         ? 'bg-red-500/10 border-red-500/30'
-        : 'bg-amber-500/10 border-amber-500/30'
+        : 'bg-terracotta/10 border-terracotta/30'
     }`}>
       <div className="text-xl flex-shrink-0 mt-0.5">
         {urgentCount > 0 ? '🚨' : '⏰'}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`font-semibold text-sm ${urgentCount > 0 ? 'text-red-300' : 'text-amber-300'}`}>
+        <p className={`font-semibold text-sm ${urgentCount > 0 ? 'text-terracotta-300' : 'text-terracotta-300'}`}>
           {urgentCount > 0
             ? t('upcoming.urgentTitle', { n: urgentCount, s: urgentCount > 1 ? 's' : '' })
             : t('upcoming.normalTitle', { n: missing.length, s: missing.length > 1 ? 's' : '', h: WINDOW_HOURS })}
@@ -93,14 +93,14 @@ export default function UpcomingAlert() {
             return (
               <li key={m.id} className="flex items-center gap-2 text-sm">
                 <Flag team={m.home_team} />
-                <span className="text-stone-700 truncate">
+                <span className="text-ink/80 truncate">
                   {teamName(m.home_team)} vs {teamName(m.away_team)}
                 </span>
                 {timeStr && (
                   <span className={`ml-auto flex-shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
                     hoursLeft < 3
                       ? 'bg-red-500/20 text-red-400'
-                      : 'bg-stone-200 text-stone-500'
+                      : 'bg-paper-200 text-ink/60'
                   }`}>
                     en {timeStr}
                   </span>
@@ -109,14 +109,14 @@ export default function UpcomingAlert() {
             )
           })}
           {missing.length > 3 && (
-            <li className="text-xs text-stone-400">{t('upcoming.moreMatches', { n: missing.length - 3 })}</li>
+            <li className="text-xs text-ink/50">{t('upcoming.moreMatches', { n: missing.length - 3 })}</li>
           )}
         </ul>
       </div>
 
       <button
         onClick={() => setDismissed(true)}
-        className="text-stone-500 hover:text-stone-700 transition-colors flex-shrink-0 self-start text-lg leading-none"
+        className="text-ink/60 hover:text-ink/80 transition-colors flex-shrink-0 self-start text-lg leading-none"
         aria-label={t('upcoming.closeBtn')}
       >
         ✕

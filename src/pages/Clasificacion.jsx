@@ -17,9 +17,9 @@ const MEDALS = ['🥇', '🥈', '🥉']
 
 function StatBadge({ label, value, color }) {
   return (
-    <div className="text-center px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-300">
+    <div className="text-center px-3 py-1.5 rounded-lg bg-paper border border-ink/30">
       <div className={`text-sm font-bold ${color}`}>{value}</div>
-      <div className="text-xs text-stone-500">{label}</div>
+      <div className="text-xs text-ink/60">{label}</div>
     </div>
   )
 }
@@ -40,7 +40,7 @@ function Avatar({ url, username, size = 'md', isMe = false }) {
         src={url}
         alt={username}
         className={`${sz} rounded-full object-cover flex-shrink-0 ${
-          isMe ? 'border-2 border-amber-500/50' : 'border border-stone-200'
+          isMe ? 'border-2 border-terracotta/50' : 'border border-ink/20'
         }`}
       />
     )
@@ -48,8 +48,8 @@ function Avatar({ url, username, size = 'md', isMe = false }) {
   return (
     <div className={`${sz} rounded-full flex items-center justify-center font-bold flex-shrink-0 ${
       isMe
-        ? 'bg-amber-500/20 border-2 border-amber-500/50 text-amber-400'
-        : 'bg-stone-100 border border-stone-300 text-stone-700'
+        ? 'bg-terracotta/20 border-2 border-terracotta/50 text-terracotta-400'
+        : 'bg-paper border border-ink/30 text-ink/80'
     }`}>
       {username?.[0]?.toUpperCase()}
     </div>
@@ -115,7 +115,7 @@ function ProfileModal({ profile, currentUserId, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-ink/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
@@ -128,19 +128,19 @@ function ProfileModal({ profile, currentUserId, onClose }) {
             <Avatar url={profile.avatar_url} username={profile.username} size="xl" isMe={isMe} />
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-lg font-bold text-stone-900 truncate">{profile.username}</h3>
+                <h3 className="text-lg font-bold text-ink truncate">{profile.username}</h3>
                 {isMe && (
-                  <span className="text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded flex-shrink-0">{t('common.you')}</span>
+                  <span className="text-xs text-terracotta/70 bg-terracotta/10 px-1.5 rounded flex-shrink-0">{t('common.you')}</span>
                 )}
               </div>
               {profile.company && (
-                <p className="text-sm text-stone-500 mt-0.5 truncate">🏢 {profile.company}</p>
+                <p className="text-sm text-ink/60 mt-0.5 truncate">🏢 {profile.company}</p>
               )}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-600 transition-colors text-2xl leading-none flex-shrink-0 mt-0.5"
+            className="text-ink/50 hover:text-ink/70 transition-colors text-2xl leading-none flex-shrink-0 mt-0.5"
           >
             ×
           </button>
@@ -148,7 +148,7 @@ function ProfileModal({ profile, currentUserId, onClose }) {
 
         {/* Best league stats */}
         <div>
-          <p className="text-xs text-stone-400 mb-3 font-medium uppercase tracking-wider">
+          <p className="text-xs text-ink/50 mb-3 font-medium uppercase tracking-wider">
             {loading
               ? t('clasificacion.loading')
               : stats?.leagueName
@@ -159,10 +159,10 @@ function ProfileModal({ profile, currentUserId, onClose }) {
             <div className="flex justify-center py-4"><Spinner size="sm" /></div>
           ) : (
             <div className="grid grid-cols-4 gap-2">
-              <StatBadge label={t('clasificacion.statPoints')}  value={stats.points}  color="text-amber-400" />
-              <StatBadge label={t('clasificacion.statExact')}   value={stats.exact}   color="text-amber-400" />
+              <StatBadge label={t('clasificacion.statPoints')}  value={stats.points}  color="text-terracotta-400" />
+              <StatBadge label={t('clasificacion.statExact')}   value={stats.exact}   color="text-terracotta-400" />
               <StatBadge label={t('clasificacion.statCorrect')} value={stats.correct} color="text-blue-400" />
-              <StatBadge label={t('clasificacion.statTotal')}   value={stats.total}   color="text-stone-600" />
+              <StatBadge label={t('clasificacion.statTotal')}   value={stats.total}   color="text-ink/70" />
             </div>
           )}
         </div>
@@ -414,7 +414,7 @@ export default function Clasificacion() {
       <>
         {myEntry && (
           <div
-            className="card p-3 sm:p-4 border-amber-500/30 bg-amber-500/5 cursor-pointer hover:border-amber-500/50 transition-colors"
+            className="card p-3 sm:p-4 border-terracotta/30 bg-terracotta/5 cursor-pointer hover:border-terracotta/50 transition-colors"
             onClick={() => setSelectedProfile(myEntry)}
           >
             <div className="flex items-center justify-between gap-3">
@@ -422,25 +422,25 @@ export default function Clasificacion() {
                 <Avatar url={myEntry.avatar_url} username={myEntry.username} size="lg" isMe />
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-semibold text-stone-900 truncate">{myEntry.username}</span>
-                    <span className="text-[10px] sm:text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded">{t('common.you')}</span>
+                    <span className="font-semibold text-ink truncate">{myEntry.username}</span>
+                    <span className="text-[10px] sm:text-xs text-terracotta/70 bg-terracotta/10 px-1.5 rounded">{t('common.you')}</span>
                     {myEntry.role === 'admin' && (
-                      <span className="text-[10px] sm:text-xs text-amber-600/80 bg-amber-600/10 px-1.5 rounded">👑</span>
+                      <span className="text-[10px] sm:text-xs text-terracotta-600/80 bg-terracotta-600/10 px-1.5 rounded">👑</span>
                     )}
                   </div>
-                  <div className="text-xs sm:text-sm text-stone-400">{t('clasificacion.positionLabel', { n: myEntry.position })}</div>
+                  <div className="text-xs sm:text-sm text-ink/50">{t('clasificacion.positionLabel', { n: myEntry.position })}</div>
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <div className="text-xl sm:text-2xl font-bold text-amber-400">{myEntry.league_points}</div>
-                <div className="text-[10px] sm:text-xs text-stone-500">{t('common.pts')}</div>
+                <div className="text-xl sm:text-2xl font-bold text-terracotta-400">{myEntry.league_points}</div>
+                <div className="text-[10px] sm:text-xs text-ink/60">{t('common.pts')}</div>
               </div>
             </div>
             {showStats && (
               <div className="flex gap-2 mt-3">
-                <StatBadge label={t('clasificacion.statExact')}   value={myLeagueStats.exact}   color="text-amber-400" />
+                <StatBadge label={t('clasificacion.statExact')}   value={myLeagueStats.exact}   color="text-terracotta-400" />
                 <StatBadge label={t('clasificacion.statCorrect')} value={myLeagueStats.correct} color="text-blue-400" />
-                <StatBadge label={t('clasificacion.statTotal')}   value={myLeagueStats.total}   color="text-stone-700" />
+                <StatBadge label={t('clasificacion.statTotal')}   value={myLeagueStats.total}   color="text-ink/80" />
               </div>
             )}
           </div>
@@ -449,11 +449,11 @@ export default function Clasificacion() {
         {standings.length === 0 ? (
           <div className="card p-6 sm:p-10 text-center">
             <div className="text-3xl sm:text-4xl mb-3">🏆</div>
-            <p className="text-stone-400 text-sm">{t('clasificacion.noPointsYet')}</p>
+            <p className="text-ink/50 text-sm">{t('clasificacion.noPointsYet')}</p>
           </div>
         ) : (
           <div className="card overflow-hidden">
-            <div className="grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-stone-200 text-[11px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider">
+            <div className="grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-ink/20 text-[11px] sm:text-xs font-semibold text-ink/60 uppercase tracking-wider">
               <div>#</div>
               <div>{t('clasificacion.colPlayer')}</div>
               <div className="hidden sm:block text-center">{t('clasificacion.colExact')}</div>
@@ -461,7 +461,7 @@ export default function Clasificacion() {
               <div className="hidden sm:block text-center">{t('clasificacion.colTotal')}</div>
               <div className="text-right">{t('clasificacion.colPts')}</div>
             </div>
-            <div className="divide-y divide-stone-200">
+            <div className="divide-y divide-ink/20">
               {standings.map(entry => {
                 const isMe  = entry.id === user.id
                 const isTop = entry.position <= 3
@@ -470,13 +470,13 @@ export default function Clasificacion() {
                     key={entry.id}
                     onClick={() => setSelectedProfile(entry)}
                     className={`grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3.5 items-center transition-colors cursor-pointer ${
-                      isMe ? 'bg-amber-500/5 hover:bg-amber-500/10 active:bg-amber-500/15' : 'hover:bg-stone-100/60 active:bg-stone-100'
+                      isMe ? 'bg-terracotta/5 hover:bg-terracotta/10 active:bg-terracotta/15' : 'hover:bg-paper/60 active:bg-paper'
                     }`}
                   >
                     <div className="font-bold text-base">
                       {isTop
                         ? MEDALS[entry.position - 1]
-                        : <span className="text-stone-500 text-sm">#{entry.position}</span>
+                        : <span className="text-ink/60 text-sm">#{entry.position}</span>
                       }
                     </div>
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -484,27 +484,27 @@ export default function Clasificacion() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {entry.role === 'admin' && <span className="text-xs flex-shrink-0">👑</span>}
-                          <span className={`font-medium truncate ${isMe ? 'text-amber-500' : 'text-stone-900'}`}>
+                          <span className={`font-medium truncate ${isMe ? 'text-terracotta' : 'text-ink'}`}>
                             {entry.username}
                           </span>
-                          {isMe && <span className="text-xs text-amber-500/60 flex-shrink-0">{t('common.you')}</span>}
+                          {isMe && <span className="text-xs text-terracotta/60 flex-shrink-0">{t('common.you')}</span>}
                         </div>
                       </div>
                     </div>
-                    <div className="hidden sm:block text-center text-amber-400 font-semibold text-sm">
+                    <div className="hidden sm:block text-center text-terracotta-400 font-semibold text-sm">
                       {entry.stats.exact}
                     </div>
                     <div className="hidden sm:block text-center text-blue-400 font-medium text-sm">
                       {entry.stats.correct}
                     </div>
-                    <div className="hidden sm:block text-center text-stone-400 text-sm">
+                    <div className="hidden sm:block text-center text-ink/50 text-sm">
                       {entry.stats.total}
                     </div>
                     <div className="text-right">
-                      <span className={`text-lg font-bold ${isTop ? 'text-amber-400' : 'text-stone-900'}`}>
+                      <span className={`text-lg font-bold ${isTop ? 'text-terracotta-400' : 'text-ink'}`}>
                         {entry.league_points}
                       </span>
-                      <span className="text-stone-400 text-xs ml-0.5">{t('common.pts')}</span>
+                      <span className="text-ink/50 text-xs ml-0.5">{t('common.pts')}</span>
                     </div>
                   </div>
                 )
@@ -522,29 +522,29 @@ export default function Clasificacion() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-xl sm:text-2xl font-bold text-stone-900">{t('clasificacion.title')}</h2>
-          <p className="text-stone-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-ink">{t('clasificacion.title')}</h2>
+          <p className="text-ink/50 text-xs sm:text-sm mt-0.5 sm:mt-1">
             {t('clasificacion.subtitle')}
           </p>
         </div>
         {tab === 'league' && activeLeague?.role === 'admin' && (
           <div className="flex-shrink-0 card p-2.5 sm:p-3 text-center min-w-[110px] sm:min-w-[140px]">
-            <p className="text-[10px] sm:text-xs text-stone-500 mb-0.5 sm:mb-1">{t('league.leagueCodeLabel')}</p>
-            <p className="font-mono font-bold text-amber-400 tracking-widest text-sm sm:text-lg">{activeLeague.invite_code}</p>
+            <p className="text-[10px] sm:text-xs text-ink/60 mb-0.5 sm:mb-1">{t('league.leagueCodeLabel')}</p>
+            <p className="font-mono font-bold text-terracotta-400 tracking-widest text-sm sm:text-lg">{activeLeague.invite_code}</p>
           </div>
         )}
       </div>
 
       {/* Tabs */}
-      <div className="flex rounded-xl overflow-hidden bg-stone-100 p-1">
+      <div className="flex rounded-xl overflow-hidden bg-paper p-1">
         {tabs.map(({ id, label, icon }) => (
           <button
             key={id}
             onClick={() => handleTabChange(id)}
             className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-150 flex items-center justify-center gap-1.5 ${
               tab === id
-                ? 'bg-amber-500 text-stone-950 shadow-sm'
-                : 'text-stone-500 hover:text-stone-800'
+                ? 'bg-terracotta text-ink shadow-sm'
+                : 'text-ink/60 hover:text-ink'
             }`}
           >
             <span>{icon}</span>
@@ -572,7 +572,7 @@ export default function Clasificacion() {
           {/* ── Global ── */}
           {tab === 'global' && (
             <>
-              <p className="text-stone-400 text-sm -mt-2">
+              <p className="text-ink/50 text-sm -mt-2">
                 {t('clasificacion.nParticipants', { n: globalStandings.length, s: globalStandings.length !== 1 ? 's' : '' })}
               </p>
               <IndividualTable standings={globalStandings} />
@@ -585,8 +585,8 @@ export default function Clasificacion() {
               {leagues.length === 0 ? (
                 <div className="card p-6 sm:p-10 text-center space-y-3 sm:space-y-4">
                   <div className="text-3xl sm:text-4xl">🏆</div>
-                  <p className="text-stone-700 font-medium text-sm sm:text-base">{t('clasificacion.noLeague')}</p>
-                  <p className="text-stone-500 text-xs sm:text-sm">{t('clasificacion.noLeagueDesc')}</p>
+                  <p className="text-ink/80 font-medium text-sm sm:text-base">{t('clasificacion.noLeague')}</p>
+                  <p className="text-ink/60 text-xs sm:text-sm">{t('clasificacion.noLeagueDesc')}</p>
                   <button onClick={() => setShowModal(true)} className="btn-primary">{t('clasificacion.createOrJoinBtn')}</button>
                 </div>
               ) : (
@@ -599,8 +599,8 @@ export default function Clasificacion() {
                           onClick={() => setActiveLeague(l)}
                           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                             activeLeague?.id === l.id
-                              ? 'bg-amber-500 text-stone-950'
-                              : 'bg-stone-100 text-stone-500 hover:bg-stone-200 border border-stone-300'
+                              ? 'bg-terracotta text-ink'
+                              : 'bg-paper text-ink/60 hover:bg-paper-200 border border-ink/30'
                           }`}
                         >
                           {l.name}
@@ -608,12 +608,12 @@ export default function Clasificacion() {
                       ))}
                     </div>
                   )}
-                  <p className="text-stone-400 text-sm -mt-2">
+                  <p className="text-ink/50 text-sm -mt-2">
                     {t('clasificacion.nParticipantsLeague', { name: activeLeague?.name, n: leagueStandings.length, s: leagueStandings.length !== 1 ? 's' : '' })}
                   </p>
                   <IndividualTable standings={leagueStandings} showStats />
                   {activeLeague && <LeagueFeed leagueId={activeLeague.id} />}
-                  <p className="text-center text-stone-400 text-xs">
+                  <p className="text-center text-ink/50 text-xs">
                     {t('clasificacion.leaguePointsNote')}
                   </p>
                 </>
@@ -624,23 +624,23 @@ export default function Clasificacion() {
           {/* ── Empresas ── */}
           {tab === 'companies' && (
             <>
-              <p className="text-stone-400 text-sm -mt-2">
+              <p className="text-ink/50 text-sm -mt-2">
                 {t('clasificacion.companiesSubtitle', { n: companyStandings.length, s: companyStandings.length !== 1 ? 's' : '' })}
               </p>
               {companyStandings.length === 0 ? (
                 <div className="card p-6 sm:p-10 text-center">
                   <div className="text-3xl sm:text-4xl mb-3">🏢</div>
-                  <p className="text-stone-400 text-sm">{t('clasificacion.noCompanies')}</p>
+                  <p className="text-ink/50 text-sm">{t('clasificacion.noCompanies')}</p>
                 </div>
               ) : (
                 <div className="card overflow-hidden">
-                  <div className="grid grid-cols-[2rem_1fr_3.5rem_3.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-stone-200 text-[11px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                  <div className="grid grid-cols-[2rem_1fr_3.5rem_3.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-ink/20 text-[11px] sm:text-xs font-semibold text-ink/60 uppercase tracking-wider">
                     <div>#</div>
                     <div>{t('clasificacion.colCompany')}</div>
                     <div className="text-center">{t('clasificacion.colMembers')}</div>
                     <div className="text-right">{t('clasificacion.colAvg')}</div>
                   </div>
-                  <div className="divide-y divide-stone-200">
+                  <div className="divide-y divide-ink/20">
                     {companyStandings.map(entry => {
                       const isTop       = entry.position <= 3
                       const isMyCompany = entry.hasMe
@@ -648,34 +648,34 @@ export default function Clasificacion() {
                         <div
                           key={entry.name}
                           className={`grid grid-cols-[2rem_1fr_3.5rem_3.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3.5 items-center transition-colors ${
-                            isMyCompany ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-stone-100/60'
+                            isMyCompany ? 'bg-terracotta/5 hover:bg-terracotta/10' : 'hover:bg-paper/60'
                           }`}
                         >
                           <div className="font-bold text-base">
                             {isTop
                               ? MEDALS[entry.position - 1]
-                              : <span className="text-stone-500 text-sm">#{entry.position}</span>
+                              : <span className="text-ink/60 text-sm">#{entry.position}</span>
                             }
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`font-medium truncate text-sm ${isMyCompany ? 'text-amber-500' : 'text-stone-900'}`}>
+                              <span className={`font-medium truncate text-sm ${isMyCompany ? 'text-terracotta' : 'text-ink'}`}>
                                 {entry.name}
                               </span>
                               {isMyCompany && (
-                                <span className="text-[10px] sm:text-xs text-amber-500/70 bg-amber-500/10 px-1.5 rounded flex-shrink-0">{t('clasificacion.yourCompany')}</span>
+                                <span className="text-[10px] sm:text-xs text-terracotta/70 bg-terracotta/10 px-1.5 rounded flex-shrink-0">{t('clasificacion.yourCompany')}</span>
                               )}
                             </div>
-                            <div className="text-[11px] sm:text-xs text-stone-400 mt-0.5 truncate">
+                            <div className="text-[11px] sm:text-xs text-ink/50 mt-0.5 truncate">
                               {t('clasificacion.topPlayer', { name: entry.top?.username ?? '—' })}
                               {(entry.top?.total_points ?? 0) > 0 && ` · ${entry.top.total_points} ${t('common.pts')}`}
                             </div>
                           </div>
-                          <div className="text-center text-stone-500 text-xs sm:text-sm tabular-nums">
+                          <div className="text-center text-ink/60 text-xs sm:text-sm tabular-nums">
                             {entry.count}
                           </div>
                           <div className="text-right">
-                            <span className={`text-base sm:text-lg font-bold ${isTop ? 'text-amber-400' : 'text-stone-900'}`}>
+                            <span className={`text-base sm:text-lg font-bold ${isTop ? 'text-terracotta-400' : 'text-ink'}`}>
                               {entry.avg % 1 === 0 ? entry.avg : entry.avg.toFixed(1)}
                             </span>
                           </div>
@@ -685,7 +685,7 @@ export default function Clasificacion() {
                   </div>
                 </div>
               )}
-              <p className="text-center text-stone-400 text-xs">
+              <p className="text-center text-ink/50 text-xs">
                 {t('clasificacion.companyScoreNote')}
               </p>
             </>

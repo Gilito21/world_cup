@@ -49,19 +49,19 @@ function expandAliases(query) {
 // ── Shared light background ─────────────────────────────────────────────────
 function AuthBg({ children }) {
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-cream flex items-center justify-center px-4 py-8 relative overflow-hidden">
       {/* Subtle dot pattern */}
       <div
-        className="absolute inset-0 opacity-50 pointer-events-none"
+        className="absolute inset-0 opacity-40 pointer-events-none"
         style={{
-          backgroundImage: 'radial-gradient(circle, #d6d3d1 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, #7d6f3a 0.8px, transparent 0.8px)',
           backgroundSize: '24px 24px',
         }}
       />
-      {/* Soft amber glow */}
-      <div className="absolute -top-32 -right-32 w-96 h-96 bg-amber-100/70 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-orange-50 rounded-full blur-3xl pointer-events-none" />
-      <LangToggle className="absolute top-4 right-4" />
+      {/* Soft glows */}
+      <div className="absolute -top-32 -right-32 w-96 h-96 bg-terracotta/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-grass-300/20 rounded-full blur-3xl pointer-events-none" />
+      <LangToggle className="absolute top-4 right-4 z-10" />
       {children}
     </div>
   )
@@ -90,27 +90,27 @@ function ForgotPassword({ onBack }) {
     <AuthBg>
       <ReportButton />
       <div className="relative w-full max-w-sm animate-slide-up">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-6 text-stone-600 hover:text-stone-900 transition-colors text-sm font-medium">
+        <Link to="/" className="flex items-center justify-center gap-2 mb-6 text-ink/70 hover:text-ink transition-colors text-sm font-medium">
           <span>⚽</span>
-          <span className="font-bold text-stone-900">Porra <span className="text-amber-500">Mundial 2026</span></span>
+          <span className="font-bold text-ink">Porra <span className="text-terracotta">Mundial 2026</span></span>
         </Link>
-        <div className="bg-white rounded-3xl shadow-xl shadow-stone-900/8 border border-stone-200 overflow-hidden">
-          <div className="bg-gradient-to-br from-amber-50 to-stone-50 px-6 py-6 border-b border-stone-100">
-            <h2 className="text-lg font-bold text-stone-900">{t('auth.recoverTitle')}</h2>
-            <p className="text-stone-500 text-sm mt-1">{t('auth.recoverHint')}</p>
+        <div className="bg-paper rounded-3xl shadow-xl shadow-ink/8 border border-ink/20 overflow-hidden">
+          <div className="bg-gradient-to-br from-terracotta/40 to-cream px-6 py-6 border-b border-ink/15">
+            <h2 className="text-lg font-bold text-ink">{t('auth.recoverTitle')}</h2>
+            <p className="text-ink/60 text-sm mt-1">{t('auth.recoverHint')}</p>
           </div>
           <div className="p-6">
             {sent ? (
               <div className="text-center space-y-3 py-4">
                 <div className="text-4xl">📧</div>
-                <p className="text-stone-900 font-semibold">{t('auth.emailSent')}</p>
-                <p className="text-stone-500 text-sm">{t('auth.emailSentDesc')}</p>
+                <p className="text-ink font-semibold">{t('auth.emailSent')}</p>
+                <p className="text-ink/60 text-sm">{t('auth.emailSentDesc')}</p>
                 <button onClick={onBack} className="btn-secondary w-full mt-2">{t('auth.backToLogin')}</button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('auth.email')}</label>
+                  <label className="block text-sm font-medium text-ink/80 mb-1.5">{t('auth.email')}</label>
                   <input type="email" className="input" placeholder={t('auth.emailPlaceholder')}
                     value={email} onChange={e => setEmail(e.target.value)}
                     required autoFocus autoComplete="email" />
@@ -121,7 +121,7 @@ function ForgotPassword({ onBack }) {
                 <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
                   {loading && <Spinner size="sm" />} {t('auth.sendLink')}
                 </button>
-                <button type="button" onClick={onBack} className="w-full text-center text-stone-400 text-sm hover:text-stone-700 transition-colors">
+                <button type="button" onClick={onBack} className="w-full text-center text-ink/50 text-sm hover:text-ink/80 transition-colors">
                   {t('auth.backToAuth')}
                 </button>
               </form>
@@ -374,23 +374,23 @@ export default function Auth() {
 
         {/* Back to landing */}
         <div className="text-center mb-5">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-800 text-sm transition-colors font-medium">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-ink/60 hover:text-ink text-sm transition-colors font-medium">
             {t('auth.backToLanding')}
           </Link>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-3xl shadow-xl shadow-stone-900/8 border border-stone-200 overflow-hidden">
+        <div className="bg-paper rounded-3xl shadow-xl shadow-ink/8 border border-ink/20 overflow-hidden">
 
           {/* ── Light header ─────────────────────────────────── */}
-          <div className="bg-gradient-to-br from-amber-50 via-orange-50/40 to-stone-50 px-6 pt-7 pb-5 border-b border-stone-100">
+          <div className="bg-gradient-to-br from-terracotta/40 via-terracotta/40 to-cream px-6 pt-7 pb-5 border-b border-ink/15">
             {/* Logo */}
             <div className="flex flex-col items-center text-center mb-5">
               <div className="text-4xl mb-2.5">⚽</div>
-              <h1 className="text-xl font-bold text-stone-900">
-                Porra <span className="text-amber-500">Mundial 2026</span>
+              <h1 className="text-xl font-bold text-ink">
+                Porra <span className="text-terracotta">Mundial 2026</span>
               </h1>
-              <p className="text-stone-400 text-xs mt-1">{t('auth.firstMatchSub')}</p>
+              <p className="text-ink/50 text-xs mt-1">{t('auth.firstMatchSub')}</p>
             </div>
 
             {/* Stats pills */}
@@ -398,7 +398,7 @@ export default function Auth() {
               {[t('auth.stat48'), t('auth.stat104'), t('auth.stat1')].map(s => (
                 <span
                   key={s}
-                  className="text-[10px] sm:text-xs text-stone-500 bg-white/80 border border-stone-200 px-2.5 py-1 rounded-full"
+                  className="text-[10px] sm:text-xs text-ink/60 bg-paper/80 border border-ink/20 px-2.5 py-1 rounded-full"
                 >
                   {s}
                 </span>
@@ -406,15 +406,15 @@ export default function Auth() {
             </div>
 
             {/* Tab switcher */}
-            <div className="flex rounded-xl overflow-hidden bg-stone-100 p-1">
+            <div className="flex rounded-xl overflow-hidden bg-paper p-1">
               {[['login', t('auth.loginTab')], ['register', t('auth.registerTab')]].map(([m, label]) => (
                 <button
                   key={m}
                   onClick={() => switchMode(m)}
                   className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-150 ${
                     mode === m
-                      ? 'bg-amber-500 text-white shadow-sm'
-                      : 'text-stone-500 hover:text-stone-800'
+                      ? 'bg-terracotta text-white shadow-sm'
+                      : 'text-ink/60 hover:text-ink'
                   }`}
                 >
                   {label}
@@ -429,7 +429,7 @@ export default function Auth() {
             {/* Username */}
             {mode === 'register' && (
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                <label className="block text-sm font-medium text-ink/80 mb-1.5">
                   {t('auth.username')} <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
@@ -453,7 +453,7 @@ export default function Auth() {
                 </div>
                 <p className={`text-xs mt-1.5 ${
                   usernameStatus === 'available' ? 'text-green-600' :
-                  usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'text-red-500' : 'text-stone-400'
+                  usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'text-red-500' : 'text-ink/50'
                 }`}>
                   {usernameStatus === 'available' && t('auth.usernameAvailable')}
                   {usernameStatus === 'taken'     && t('auth.usernameTaken')}
@@ -467,8 +467,8 @@ export default function Auth() {
             {/* Empresa */}
             {mode === 'register' && (
               <div ref={companyContainerRef} className="relative">
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                  {t('auth.company')} <span className="text-stone-400 font-normal text-xs">{t('auth.companyOptional')}</span>
+                <label className="block text-sm font-medium text-ink/80 mb-1.5">
+                  {t('auth.company')} <span className="text-ink/50 font-normal text-xs">{t('auth.companyOptional')}</span>
                 </label>
                 <input
                   type="text"
@@ -482,14 +482,14 @@ export default function Auth() {
                   maxLength={80}
                 />
                 {showCompanySug && companySuggestions.length > 0 && (
-                  <div className="absolute z-20 top-full mt-1 w-full bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden">
+                  <div className="absolute z-20 top-full mt-1 w-full bg-paper border border-ink/20 rounded-xl shadow-lg overflow-hidden">
                     {companySuggestions.map((sug, i) => (
                       <button
                         key={sug}
                         type="button"
                         onMouseDown={() => { setCompany(sug); setShowCompanySug(false) }}
                         className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                          i === companyHighlight ? 'bg-amber-50 text-amber-700' : 'text-stone-700 hover:bg-stone-50'
+                          i === companyHighlight ? 'bg-terracotta/10 text-terracotta-700' : 'text-ink/80 hover:bg-cream'
                         }`}
                       >
                         {sug}
@@ -502,7 +502,7 @@ export default function Auth() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('auth.email')}</label>
+              <label className="block text-sm font-medium text-ink/80 mb-1.5">{t('auth.email')}</label>
               <input
                 type="email" className="input" placeholder={t('auth.emailPlaceholder')}
                 value={form.email} onChange={update('email')}
@@ -513,12 +513,12 @@ export default function Auth() {
             {/* Contraseña */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-medium text-stone-700">{t('auth.password')}</label>
+                <label className="text-sm font-medium text-ink/80">{t('auth.password')}</label>
                 {mode === 'login' && (
                   <button
                     type="button"
                     onClick={() => setShowForgot(true)}
-                    className="text-xs text-amber-600 hover:text-amber-500 hover:underline underline-offset-2"
+                    className="text-xs text-terracotta-600 hover:text-terracotta hover:underline underline-offset-2"
                   >
                     {t('auth.forgotPassword')}
                   </button>
@@ -536,8 +536,8 @@ export default function Auth() {
             {/* Liga (registro) */}
             {mode === 'register' && (
               <div className="space-y-3 pt-1">
-                <p className="text-sm font-medium text-stone-700">
-                  {t('auth.leagueSection')} <span className="text-stone-400 font-normal text-xs">{t('auth.leagueOptional')}</span>
+                <p className="text-sm font-medium text-ink/80">
+                  {t('auth.leagueSection')} <span className="text-ink/50 font-normal text-xs">{t('auth.leagueOptional')}</span>
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {[['none','👋', t('auth.laterBtn')],['join','🔗', t('auth.joinBtn')],['create','👑', t('auth.createBtn')]].map(([val, icon, label]) => (
@@ -545,8 +545,8 @@ export default function Auth() {
                       key={val} type="button" onClick={() => setLeagueMode(val)}
                       className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                         leagueMode === val
-                          ? 'bg-amber-50 border-amber-300 text-amber-700'
-                          : 'bg-stone-50 border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700'
+                          ? 'bg-terracotta/10 border-terracotta/40 text-terracotta-700'
+                          : 'bg-cream border-ink/20 text-ink/60 hover:border-ink/30 hover:text-ink/80'
                       }`}
                     >
                       <span className="text-base">{icon}</span>
@@ -556,14 +556,14 @@ export default function Auth() {
                 </div>
                 {leagueMode === 'create' && (
                   <div>
-                    <label className="block text-xs text-stone-500 mb-1.5">{t('auth.leagueNameLabel')}</label>
+                    <label className="block text-xs text-ink/60 mb-1.5">{t('auth.leagueNameLabel')}</label>
                     <input
                       type="text" className="input"
                       placeholder={t('auth.leagueNamePlaceholder')}
                       value={leagueName} onChange={e => setLeagueName(e.target.value)}
                       maxLength={40} required
                     />
-                    <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1.5">
+                    <p className="text-xs text-terracotta-600 mt-1.5 flex items-center gap-1.5">
                       <span>💳</span>
                       {t('auth.leaguePriceNote', { price: LEAGUE_PRICE_LABEL })}
                     </p>
@@ -571,7 +571,7 @@ export default function Auth() {
                 )}
                 {leagueMode === 'join' && (
                   <div>
-                    <label className="block text-xs text-stone-500 mb-1.5">{t('auth.inviteCodeLabel')}</label>
+                    <label className="block text-xs text-ink/60 mb-1.5">{t('auth.inviteCodeLabel')}</label>
                     <input
                       type="text"
                       className="input uppercase tracking-widest font-mono text-center text-lg"
@@ -582,7 +582,7 @@ export default function Auth() {
                   </div>
                 )}
                 {leagueMode === 'none' && (
-                  <p className="text-xs text-stone-400 text-center">
+                  <p className="text-xs text-ink/50 text-center">
                     {t('auth.laterHint')}
                   </p>
                 )}
@@ -605,20 +605,20 @@ export default function Auth() {
               {mode === 'login' ? t('auth.loginBtn') : t('auth.registerBtn')}
             </button>
 
-            <p className="text-center text-stone-400 text-xs pt-1">
+            <p className="text-center text-ink/50 text-xs pt-1">
               {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
               <button
                 type="button"
                 onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
-                className="text-amber-600 hover:text-amber-500 hover:underline underline-offset-2 font-semibold"
+                className="text-terracotta-600 hover:text-terracotta hover:underline underline-offset-2 font-semibold"
               >
                 {mode === 'login' ? t('auth.toRegister') : t('auth.toLogin')}
               </button>
             </p>
             {mode === 'register' && (
-              <p className="text-center text-stone-400 text-xs">
+              <p className="text-center text-ink/50 text-xs">
                 {t('auth.privacyText')}{' '}
-                <Link to="/privacidad" className="text-stone-500 hover:text-stone-700 underline underline-offset-2">
+                <Link to="/privacidad" className="text-ink/60 hover:text-ink/80 underline underline-offset-2">
                   {t('auth.privacyLink')}
                 </Link>
               </p>

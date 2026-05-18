@@ -73,15 +73,15 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 sm:px-4 py-4 sm:py-8 bg-stone-900/40 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 sm:px-4 py-4 sm:py-8 bg-ink/40 backdrop-blur-sm overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="card w-full max-w-md animate-slide-up max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] flex flex-col">
-        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 border-b border-stone-200 flex-shrink-0">
-          <h2 className="font-semibold text-stone-900 text-lg">{t('league.title')}</h2>
+        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 border-b border-ink/20 flex-shrink-0">
+          <h2 className="font-semibold text-ink text-lg">{t('league.title')}</h2>
           <button
             onClick={onClose}
-            className="text-stone-500 hover:text-stone-900 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-stone-100 active:bg-stone-200 transition-colors -mr-2"
+            className="text-ink/60 hover:text-ink w-10 h-10 flex items-center justify-center rounded-lg hover:bg-paper active:bg-paper-200 transition-colors -mr-2"
             aria-label={t('common.close')}
           >
             ✕
@@ -89,13 +89,13 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-stone-100 mx-5 mt-5 rounded-xl">
+        <div className="flex gap-1 p-1 bg-paper mx-5 mt-5 rounded-xl">
           {[['join', t('league.joinTab')], ['create', t('league.createTab')]].map(([tabKey, label]) => (
             <button
               key={tabKey}
               onClick={() => switchTab(tabKey)}
               className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                tab === tabKey ? 'bg-amber-500 text-stone-950' : 'text-stone-500 hover:text-stone-700'
+                tab === tabKey ? 'bg-terracotta text-ink' : 'text-ink/60 hover:text-ink/80'
               }`}
             >
               {label}
@@ -107,7 +107,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
           <form onSubmit={handleSubmit} className="space-y-4">
               {tab === 'join' ? (
                 <>
-                  <p className="text-stone-500 text-sm">
+                  <p className="text-ink/60 text-sm">
                     {t('league.joinHint')}
                   </p>
                   <input
@@ -123,7 +123,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
                 </>
               ) : (
                 <>
-                  <p className="text-stone-500 text-sm">
+                  <p className="text-ink/60 text-sm">
                     {t('league.createHint')}
                   </p>
                   <input
@@ -155,7 +155,7 @@ export default function LeagueModal({ onClose, onPaymentRequested, onFounderCrea
               </button>
 
               {tab === 'create' && (
-                <p className="text-center text-stone-400 text-xs">
+                <p className="text-center text-ink/50 text-xs">
                   {isFounder
                     ? t('league.founderNote')
                     : t('league.priceNote', { price: LEAGUE_PRICE_LABEL })}
