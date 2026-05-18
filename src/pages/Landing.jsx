@@ -54,6 +54,35 @@ const ROUTE_ORDER = [
   'Philadelphia', 'NY/NJ', 'Boston', 'Toronto',
 ]
 
+// City → Wikipedia page title for the venue. We fetch the lead image from
+// Wikipedia's REST summary API on mount and cache in localStorage. URL
+// encoding handles the few stadium names with special chars (&, ').
+const STADIUMS = {
+  'NY/NJ':         { wiki: 'MetLife_Stadium',          name: 'MetLife Stadium',          cap: '82.500' },
+  'Los Angeles':   { wiki: 'SoFi_Stadium',             name: 'SoFi Stadium',             cap: '70.000' },
+  'Dallas':        { wiki: 'AT%26T_Stadium',           name: 'AT&T Stadium',             cap: '80.000' },
+  'Atlanta':       { wiki: 'Mercedes-Benz_Stadium',    name: 'Mercedes-Benz Stadium',    cap: '71.000' },
+  'Houston':       { wiki: 'NRG_Stadium',              name: 'NRG Stadium',              cap: '72.220' },
+  'Kansas City':   { wiki: 'Arrowhead_Stadium',        name: 'Arrowhead Stadium',        cap: '76.416' },
+  'Philadelphia':  { wiki: 'Lincoln_Financial_Field',  name: 'Lincoln Financial Field',  cap: '69.796' },
+  'Boston':        { wiki: 'Gillette_Stadium',         name: 'Gillette Stadium',         cap: '64.628' },
+  'Miami':         { wiki: 'Hard_Rock_Stadium',        name: 'Hard Rock Stadium',        cap: '64.767' },
+  'Seattle':       { wiki: 'Lumen_Field',              name: 'Lumen Field',              cap: '68.740' },
+  'San Francisco': { wiki: "Levi%27s_Stadium",         name: "Levi's Stadium",           cap: '68.500' },
+  'Toronto':       { wiki: 'BMO_Field',                name: 'BMO Field',                cap: '30.000' },
+  'Vancouver':     { wiki: 'BC_Place',                 name: 'BC Place',                 cap: '54.500' },
+  'Mexico City':   { wiki: 'Estadio_Azteca',           name: 'Estadio Azteca',           cap: '87.000' },
+  'Guadalajara':   { wiki: 'Estadio_Akron',            name: 'Estadio Akron',            cap: '49.850' },
+  'Monterrey':     { wiki: 'Estadio_BBVA',             name: 'Estadio BBVA',             cap: '53.500' },
+}
+
+// Bumps a Wikipedia thumbnail URL up to ~640px-wide for a sharper tooltip
+// image. Wikipedia's thumb server accepts any /<N>px-Filename.ext suffix.
+function upscaleThumb(src) {
+  if (!src) return src
+  return src.replace(/\/(\d+)px-/, '/640px-')
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Real-time company leaderboard (top 8 by average points per member).
 // Mirrors the calculation used in src/pages/Clasificacion.jsx so the
@@ -119,6 +148,45 @@ export default function Landing() {
   const ballRef    = useRef(null)
   const mapRef     = useRef(null)
   const mapBuilt   = useRef(false)
+
+  // Stadium images keyed by city name. Prefetched on mount from Wikipedia's
+  // REST summary API, then cached in localStorage for a week. We render the
+  // tooltip immediately on hover; the <img> loads progressively once the
+  // src URL arrives, so first hover before fetch shows the textual card.
+  const [stadiumImgs, setStadiumImgs] = useState({})
+  const [hovered, setHovered]         = useState(null) // { name, x, y } | null
+
+  useEffect(() => {
+    let cancelled = false
+    async function fetchOne(city, info) {
+      const cacheKey = `porra-stadium-img:${info.wiki}`
+      try {
+        const raw = localStorage.getItem(cacheKey)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (parsed && parsed.exp > Date.now() && parsed.src) {
+            setStadiumImgs(prev => ({ ...prev, [city]: parsed.src }))
+            return
+          }
+        }
+      } catch {}
+      try {
+        const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${info.wiki}`)
+        if (!r.ok || cancelled) return
+        const j = await r.json()
+        const src = upscaleThumb(j?.thumbnail?.source) || j?.originalimage?.source
+        if (!src || cancelled) return
+        setStadiumImgs(prev => ({ ...prev, [city]: src }))
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            src, exp: Date.now() + 7 * 24 * 3600 * 1000,
+          }))
+        } catch {}
+      } catch {}
+    }
+    Object.entries(STADIUMS).forEach(([city, info]) => fetchOne(city, info))
+    return () => { cancelled = true }
+  }, [])
 
   // Reveal-on-scroll observer (translates `.reveal` → `.reveal.in`).
   useEffect(() => {
@@ -260,11 +328,31 @@ export default function Landing() {
             const node = document.createElementNS('http://www.w3.org/2000/svg', 'g')
             node.setAttribute('class', 'city')
             node.setAttribute('data-idx', i)
+            node.setAttribute('data-name', c.name)
+            // The transparent hit area is 14px radius so hovering the pin
+            // is forgiving — the visible pin is only 4px.
             node.innerHTML = `
               <circle class="ring" cx="${c.x}" cy="${c.y}" r="5" fill="none" stroke="${color}" stroke-width="1.2" style="--d:${(i * 0.18).toFixed(2)}s"/>
-              <circle class="pin" cx="${c.x}" cy="${c.y}" r="4" fill="${color}" stroke="#F4ECD6" stroke-width="1.2"/>
-              <text class="lbl" x="${c.x + 8}" y="${c.y + 4}">${c.name}${c.final ? ' ★' : ''}</text>
+              <circle class="hit"  cx="${c.x}" cy="${c.y}" r="14" fill="transparent" pointer-events="all"/>
+              <circle class="pin"  cx="${c.x}" cy="${c.y}" r="4" fill="${color}" stroke="#F4ECD6" stroke-width="1.2" pointer-events="none"/>
+              <text class="lbl" x="${c.x + 8}" y="${c.y + 4}" pointer-events="none">${c.name}${c.final ? ' ★' : ''}</text>
             `
+            const show = () => {
+              const hit = node.querySelector('.hit')
+              if (!hit) return
+              const r = hit.getBoundingClientRect()
+              setHovered({
+                name: c.name,
+                x: r.left + r.width / 2,
+                y: r.top  + r.height / 2,
+              })
+            }
+            const hide = () => setHovered(h => (h && h.name === c.name ? null : h))
+            node.addEventListener('pointerenter', show)
+            node.addEventListener('pointerleave', hide)
+            node.addEventListener('focus', show)
+            node.addEventListener('blur', hide)
+            node.setAttribute('tabindex', '0')
             g.appendChild(node)
           })
         }
@@ -432,6 +520,35 @@ export default function Landing() {
 
       {/* Fixed parallax ball overlay */}
       <div className="ln-ball-fix" ref={ballRef} aria-hidden="true" />
+
+      {/* Stadium hover tooltip — fixed-positioned, follows the hovered pin */}
+      {hovered && (() => {
+        const stadium = STADIUMS[hovered.name]
+        if (!stadium) return null
+        const W = 260
+        // Flip horizontally so the card doesn't overflow the viewport edge.
+        const flipX = hovered.x + W + 24 > window.innerWidth
+        const left = flipX ? hovered.x - W - 18 : hovered.x + 18
+        const top  = Math.max(12, Math.min(window.innerHeight - 220, hovered.y - 110))
+        const img  = stadiumImgs[hovered.name]
+        return (
+          <div className="ln-stadium-tip" style={{ left, top, width: W }}>
+            <div className="ln-stadium-img">
+              {img
+                ? <img src={img} alt={stadium.name} loading="lazy" />
+                : <div className="ln-stadium-img-fallback">{stadium.name}</div>}
+              <div className="ln-stadium-badge">{hovered.name}</div>
+            </div>
+            <div className="ln-stadium-meta">
+              <div className="ln-stadium-name">{stadium.name}</div>
+              <div className="ln-stadium-cap">
+                <span>{t('landing.stadium.cap')}</span>
+                <span>{stadium.cap}</span>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── ATLAS / MAP ───────────────────────────────────────────────── */}
       <section className="ln-atlas" id="landing-atlas">
@@ -696,7 +813,8 @@ const LANDING_CSS = `
 .landing-root .ln-cover-meta span{display:flex;gap:14px;align-items:center}
 .landing-root .ln-dot{width:6px;height:6px;background:var(--terracotta);border-radius:50%}
 
-.landing-root .ln-hero-title{font-size:clamp(56px,9vw,160px);color:var(--ink);margin:0}
+.landing-root .ln-hero-title{font-size:clamp(56px,9vw,160px);line-height:1.08;color:var(--ink);margin:0}
+.landing-root .ln-hero-title span,.landing-root .ln-hero-title em{display:inline-block;padding-bottom:.08em}
 .landing-root .ln-hero-title em{font-style:italic;color:var(--terracotta);font-family:"Instrument Serif",serif;font-weight:400;letter-spacing:0}
 .landing-root .ln-hero-kicker{display:inline-block;background:var(--ink);color:var(--cream);padding:6px 12px;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:24px}
 .landing-root .ln-hero-lead{font-size:19px;line-height:1.55;color:#234;max-width:520px;margin:32px 0 28px}
@@ -756,7 +874,23 @@ const LANDING_CSS = `
 .landing-root .city.in .pin{transform:scale(1)}
 .landing-root .city .lbl{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;fill:var(--ink);opacity:0;transition:opacity .4s}
 .landing-root .city.in .lbl{opacity:1}
+.landing-root .city:hover .pin{transform:scale(1.4)}
+.landing-root .city:focus{outline:none}
+.landing-root .city:focus .pin{transform:scale(1.4);filter:drop-shadow(0 0 4px var(--terracotta))}
 .landing-root .route{fill:none;stroke:var(--terracotta);stroke-width:1.8;stroke-dasharray:4 4;stroke-dashoffset:0;opacity:0;transition:opacity .6s}
+
+/* Stadium tooltip — fixed-positioned editorial card next to the hovered pin */
+.landing-root .ln-stadium-tip{position:fixed;z-index:60;background:var(--cream);border:1px solid var(--line-2);box-shadow:0 24px 60px rgba(14,42,24,.22);pointer-events:none;animation:ln-tipIn .22s ease-out}
+@keyframes ln-tipIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.landing-root .ln-stadium-img{position:relative;aspect-ratio:16/10;background:var(--paper);overflow:hidden;border-bottom:1px solid var(--line-2)}
+.landing-root .ln-stadium-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;filter:saturate(.92) contrast(1.02)}
+.landing-root .ln-stadium-img-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-family:"Instrument Serif",serif;font-style:italic;font-size:18px;color:var(--ink);background:repeating-linear-gradient(45deg,var(--paper) 0 8px, var(--cream-2) 8px 16px)}
+.landing-root .ln-stadium-badge{position:absolute;left:10px;top:10px;background:var(--ink);color:var(--cream);font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;padding:4px 8px}
+.landing-root .ln-stadium-meta{padding:12px 14px 14px}
+.landing-root .ln-stadium-name{font-family:"Instrument Serif",serif;font-size:20px;line-height:1.1;color:var(--ink)}
+.landing-root .ln-stadium-cap{display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#666}
+.landing-root .ln-stadium-cap span:last-child{color:var(--ink);font-weight:500}
+@media (max-width:600px){.landing-root .ln-stadium-tip{display:none}}
 .landing-root .ln-map-canvas.in .route{opacity:.85;animation:ln-dash 30s linear infinite}
 @keyframes ln-dash{to{stroke-dashoffset:-400}}
 

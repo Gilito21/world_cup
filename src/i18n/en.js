@@ -97,6 +97,9 @@ export default {
       f3: 'in Mexico',
       f4: 'in Canada',
     },
+    stadium: {
+      cap: 'Capacity',
+    },
     cl: {
       us: 'United States · 11',
       mx: 'Mexico · 3',
