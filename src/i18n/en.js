@@ -97,6 +97,15 @@ export default {
       f3: 'in Mexico',
       f4: 'in Canada',
     },
+    countdown: {
+      title: 'Countdown',
+      target: '1st match · Jun 11',
+      days: 'days',
+      hours: 'hours',
+      minutes: 'min',
+      seconds: 'sec',
+      started: 'The World Cup has kicked off!',
+    },
     stadium: {
       cap: 'Capacity',
     },

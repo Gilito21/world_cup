@@ -86,6 +86,36 @@ function stadiumImgEndpoint(wikiTitle) {
     + `&titles=${wikiTitle}&origin=*`
 }
 
+// Fallback for the countdown if the matches table can't be reached.
+// Opening match: Mexico vs South Africa, 11 Jun 2026 at Estadio Azteca.
+const WORLD_CUP_FALLBACK_TS = new Date('2026-06-11T18:00:00Z').getTime()
+
+// Pulls the earliest scheduled match from Supabase so the landing
+// countdown automatically tracks any schedule edits. Falls back to the
+// hard-coded date above on first paint and on query failure.
+function useFirstMatchKickoff() {
+  const [ts, setTs] = useState(WORLD_CUP_FALLBACK_TS)
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const { data } = await sq(
+        supabase.from('matches')
+          .select('match_date')
+          .order('match_date', { ascending: true })
+          .limit(1)
+      )
+      if (cancelled) return
+      const dateStr = data?.[0]?.match_date
+      if (dateStr) {
+        const parsed = new Date(dateStr).getTime()
+        if (!Number.isNaN(parsed)) setTs(parsed)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+  return ts
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Real-time company leaderboard (top 8 by average points per member).
 // Mirrors the calculation used in src/pages/Clasificacion.jsx so the
@@ -144,10 +174,53 @@ function useTopCompanies(limit = 8) {
   return { rows, state }
 }
 
+// Live countdown to the first World Cup match. Ticks every second; when
+// the target is reached, swaps to a single "kick-off" cell.
+function LandingCountdown({ target, t }) {
+  const [left, setLeft] = useState(() => Math.max(0, target - Date.now()))
+  useEffect(() => {
+    setLeft(Math.max(0, target - Date.now()))
+    const id = setInterval(() => setLeft(Math.max(0, target - Date.now())), 1000)
+    return () => clearInterval(id)
+  }, [target])
+
+  if (left === 0) {
+    return (
+      <div className="ln-countdown-body started">
+        <span className="ln-countdown-started">{t('landing.countdown.started')}</span>
+      </div>
+    )
+  }
+
+  const d = Math.floor(left / 86400000)
+  const h = Math.floor((left % 86400000) / 3600000)
+  const m = Math.floor((left %  3600000) /   60000)
+  const s = Math.floor((left %    60000) /    1000)
+
+  const cells = [
+    [d, t('landing.countdown.days')],
+    [h, t('landing.countdown.hours')],
+    [m, t('landing.countdown.minutes')],
+    [s, t('landing.countdown.seconds')],
+  ]
+
+  return (
+    <div className="ln-countdown-body">
+      {cells.map(([n, lbl], i) => (
+        <div className="ln-countdown-cell" key={i}>
+          <span className="ln-countdown-n">{String(n).padStart(2, '0')}</span>
+          <span className="ln-countdown-lbl">{lbl}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 export default function Landing() {
   const { t, lang } = useLang()
   const { rows: topCompanies, state: companiesState } = useTopCompanies(8)
+  const firstMatchTs = useFirstMatchKickoff()
   const ballRef    = useRef(null)
   const mapRef     = useRef(null)
   const mapBuilt   = useRef(false)
@@ -471,7 +544,17 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Right column: real-time company leaderboard */}
+          {/* Right column: countdown + real-time company leaderboard */}
+          <div className="ln-right-stack">
+
+          <div className="ln-countdown-card reveal">
+            <div className="ln-stripe ln-stripe-sm">
+              <span>▶ {t('landing.countdown.title')}</span>
+              <span>{t('landing.countdown.target')}</span>
+            </div>
+            <LandingCountdown target={firstMatchTs} t={t} />
+          </div>
+
           <div className="ln-feature-card reveal" id="landing-ranking">
             <div className="ln-stripe">
               <span>▶ {t('landing.live.title')}</span>
@@ -520,6 +603,8 @@ export default function Landing() {
               <span>{t('landing.live.footnote')}</span>
               <Link to="/auth" className="ln-live-cta">{t('landing.live.cta')} →</Link>
             </div>
+          </div>
+
           </div>
         </div>
       </section>
@@ -838,6 +923,21 @@ const LANDING_CSS = `
 .landing-root .ln-hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px}
 .landing-root .ln-hero-byline{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#666;padding-top:18px;border-top:1px solid var(--line)}
 .landing-root .ln-hero-byline strong{color:var(--ink);font-weight:600}
+
+/* RIGHT-COLUMN STACK (countdown + ranking) */
+.landing-root .ln-right-stack{display:flex;flex-direction:column;gap:18px}
+
+/* COUNTDOWN CARD */
+.landing-root .ln-countdown-card{position:relative;background:var(--paper);border:1px solid var(--line-2);overflow:hidden}
+.landing-root .ln-stripe-sm{padding:10px 22px;font-size:10px}
+.landing-root .ln-countdown-body{display:grid;grid-template-columns:repeat(4,1fr);padding:18px 22px}
+.landing-root .ln-countdown-cell{display:flex;flex-direction:column;align-items:flex-start;gap:6px;position:relative;padding-right:12px}
+.landing-root .ln-countdown-cell+.ln-countdown-cell{padding-left:12px;border-left:1px dashed var(--line)}
+.landing-root .ln-countdown-n{font-family:"Boldonse",sans-serif;font-size:40px;line-height:.9;color:var(--ink);font-variant-numeric:tabular-nums}
+.landing-root .ln-countdown-lbl{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#666}
+.landing-root .ln-countdown-body.started{display:block;text-align:center;padding:22px}
+.landing-root .ln-countdown-started{font-family:"Instrument Serif",serif;font-style:italic;font-size:22px;color:var(--terracotta)}
+@media (max-width:520px){.landing-root .ln-countdown-n{font-size:32px}}
 
 /* FEATURE CARD = real-time company leaderboard */
 .landing-root .ln-feature-card{position:relative;background:var(--paper);border:1px solid var(--line-2);overflow:hidden;display:flex;flex-direction:column}
