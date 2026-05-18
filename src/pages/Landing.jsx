@@ -76,11 +76,14 @@ const STADIUMS = {
   'Monterrey':     { wiki: 'Estadio_BBVA',             name: 'Estadio BBVA',             cap: '53.500' },
 }
 
-// Bumps a Wikipedia thumbnail URL up to ~640px-wide for a sharper tooltip
-// image. Wikipedia's thumb server accepts any /<N>px-Filename.ext suffix.
-function upscaleThumb(src) {
-  if (!src) return src
-  return src.replace(/\/(\d+)px-/, '/640px-')
+// Returns a pre-sized 640px thumbnail URL for a Wikipedia page via the
+// MediaWiki action API. Going through `pithumbsize` is more reliable than
+// post-processing a REST-summary thumbnail URL, which sometimes ends up
+// pointing at a size the thumb server refuses to render.
+function stadiumImgEndpoint(wikiTitle) {
+  return `https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2`
+    + `&prop=pageimages&piprop=thumbnail&pithumbsize=640`
+    + `&titles=${wikiTitle}&origin=*`
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -154,12 +157,15 @@ export default function Landing() {
   // tooltip immediately on hover; the <img> loads progressively once the
   // src URL arrives, so first hover before fetch shows the textual card.
   const [stadiumImgs, setStadiumImgs] = useState({})
+  const [imgFailed, setImgFailed]     = useState({}) // city -> true if <img> failed to load
   const [hovered, setHovered]         = useState(null) // { name, x, y } | null
 
   useEffect(() => {
     let cancelled = false
     async function fetchOne(city, info) {
-      const cacheKey = `porra-stadium-img:${info.wiki}`
+      // Bumped cache key (v2) so any stale URLs from the previous
+      // REST-summary endpoint are invalidated for existing users.
+      const cacheKey = `porra-stadium-img-v2:${info.wiki}`
       try {
         const raw = localStorage.getItem(cacheKey)
         if (raw) {
@@ -171,10 +177,10 @@ export default function Landing() {
         }
       } catch {}
       try {
-        const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${info.wiki}`)
+        const r = await fetch(stadiumImgEndpoint(info.wiki))
         if (!r.ok || cancelled) return
         const j = await r.json()
-        const src = upscaleThumb(j?.thumbnail?.source) || j?.originalimage?.source
+        const src = j?.query?.pages?.[0]?.thumbnail?.source
         if (!src || cancelled) return
         setStadiumImgs(prev => ({ ...prev, [city]: src }))
         try {
@@ -530,12 +536,19 @@ export default function Landing() {
         const flipX = hovered.x + W + 24 > window.innerWidth
         const left = flipX ? hovered.x - W - 18 : hovered.x + 18
         const top  = Math.max(12, Math.min(window.innerHeight - 220, hovered.y - 110))
-        const img  = stadiumImgs[hovered.name]
+        const img    = stadiumImgs[hovered.name]
+        const failed = imgFailed[hovered.name]
         return (
           <div className="ln-stadium-tip" style={{ left, top, width: W }}>
             <div className="ln-stadium-img">
-              {img
-                ? <img src={img} alt={stadium.name} loading="lazy" />
+              {img && !failed
+                ? <img
+                    src={img}
+                    alt={stadium.name}
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={() => setImgFailed(prev => ({ ...prev, [hovered.name]: true }))}
+                  />
                 : <div className="ln-stadium-img-fallback">{stadium.name}</div>}
               <div className="ln-stadium-badge">{hovered.name}</div>
             </div>
