@@ -696,7 +696,8 @@ const LANDING_CSS = `
 .landing-root .ln-cover-meta span{display:flex;gap:14px;align-items:center}
 .landing-root .ln-dot{width:6px;height:6px;background:var(--terracotta);border-radius:50%}
 
-.landing-root .ln-hero-title{font-size:clamp(56px,9vw,160px);color:var(--ink);margin:0}
+.landing-root .ln-hero-title{font-size:clamp(56px,9vw,160px);line-height:1.08;color:var(--ink);margin:0}
+.landing-root .ln-hero-title span,.landing-root .ln-hero-title em{display:inline-block;padding-bottom:.08em}
 .landing-root .ln-hero-title em{font-style:italic;color:var(--terracotta);font-family:"Instrument Serif",serif;font-weight:400;letter-spacing:0}
 .landing-root .ln-hero-kicker{display:inline-block;background:var(--ink);color:var(--cream);padding:6px 12px;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:24px}
 .landing-root .ln-hero-lead{font-size:19px;line-height:1.55;color:#234;max-width:520px;margin:32px 0 28px}
