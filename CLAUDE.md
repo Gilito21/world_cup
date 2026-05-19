@@ -6,6 +6,7 @@
 - Antes de acciones con impacto externo (aplicar migraciones, deploys de edge functions, push, scripts de email, commits), confirma. Ediciones locales reversibles, adelante sin preguntar.
 - Idioma: español o inglés, lo que encaje. Conciso. Cierre de turno en 1–2 frases.
 - Mi email: **jpelaez@bluebullpartners.com** — úsalo para `--preview` y pruebas.
+- **Rama de trabajo: siempre `main`.** Desarrollar y commitear directamente en `main` salvo que yo pida otra rama explícitamente.
 
 ## Flujo de emails
 
