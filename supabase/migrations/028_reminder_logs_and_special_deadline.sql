@@ -1,24 +1,36 @@
 -- ============================================================
--- 028 — reminder_logs + deadline check para extras
+-- 028 — reminder_logs hardening + deadline check para extras
+--       + match_consensus_by_league_v1
 --
--- Dos cosas:
+-- Tres cosas:
 --
--- 1) Tabla `reminder_logs` que el edge function `send-reminder`
---    ya leía/escribía pero que nunca tuvo migración. Si en prod
---    fue creada a mano, el `CREATE TABLE IF NOT EXISTS` la deja
---    intacta; si no, esto la deja al fin versionada.
+-- 1) `reminder_logs` ya existe en prod (creada vía MCP en una rama
+--    de email rebrand que nunca trajo migración al repo). Schema OK,
+--    pero la policy de SELECT (`admin_can_read_own_reminders`) sólo
+--    deja ver al admin las filas que él mismo envió. El edge function
+--    `send-reminder` lee con el JWT del caller para chequear el
+--    cooldown de 24h → si admin A envió ayer y admin B reintenta hoy,
+--    B no ve la fila de A y bypasea el cooldown.
+--    Reemplazamos la policy por una que deje ver a cualquier admin
+--    de la liga (y al propio target, por transparencia).
 --
--- 2) Trigger BEFORE INSERT/UPDATE en `special_predictions` que
---    rechaza escrituras de usuarios autenticados pasada la hora
---    de cierre (1h antes del primer partido). La UI ya lo bloquea
---    en `Extras.jsx`, pero la API de Supabase es accesible con la
---    anon key y un JWT, así que sin trigger un usuario puede saltarse
---    el lock vía REST/SDK. Mismo patrón defensivo que `predictions`
---    (migraciones 004/006/027). Service-role y triggers internos
---    (auth.uid() IS NULL) saltan el check.
+-- 2) `special_predictions` no tiene trigger BEFORE INSERT/UPDATE de
+--    deadline. La UI bloquea (Extras.jsx:478) pero la API REST de
+--    Supabase es accesible con la anon key y un JWT → un usuario
+--    podía editar extras tras el cierre. Añadimos el trigger con el
+--    mismo escape para auth.uid() IS NULL que mig. 027.
+--
+-- 3) `match_consensus_v1()` agregaba SIEMPRE sobre todas las
+--    predicciones (globales + cualquier liga). Para usuarios en una
+--    liga `per_league`, el "consenso sugerido" reflejaba el universo
+--    global, no la opinión de su liga. Añadimos
+--    `match_consensus_by_league_v1(p_league_id uuid)` con la misma
+--    forma pero filtrando por league_id; el frontend la usará cuando
+--    el modo de liga sea per_league. Sigue exigiendo ≥3 votantes
+--    dentro del scope.
 -- ============================================================
 
--- ─── 1. reminder_logs ────────────────────────────────────────────────────
+-- ─── 1. reminder_logs: estructura + RLS coherente ────────────────────────
 CREATE TABLE IF NOT EXISTS public.reminder_logs (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   league_id       UUID NOT NULL REFERENCES public.leagues(id)   ON DELETE CASCADE,
@@ -32,9 +44,13 @@ CREATE INDEX IF NOT EXISTS idx_reminder_logs_lookup
 
 ALTER TABLE public.reminder_logs ENABLE ROW LEVEL SECURITY;
 
--- El cooldown se consulta desde el edge function con el JWT del admin;
--- damos lectura a admins de la liga y al propio target_user_id.
-DROP POLICY IF EXISTS "reminder_logs_lectura" ON public.reminder_logs;
+-- Limpieza de policies obsoletas creadas fuera del repo.
+DROP POLICY IF EXISTS "admin_can_read_own_reminders" ON public.reminder_logs;
+DROP POLICY IF EXISTS "admin_can_insert_reminders"   ON public.reminder_logs;
+-- Y de las nuevas, para que la migración sea idempotente si la reaplico.
+DROP POLICY IF EXISTS "reminder_logs_lectura"        ON public.reminder_logs;
+DROP POLICY IF EXISTS "reminder_logs_insercion"      ON public.reminder_logs;
+
 CREATE POLICY "reminder_logs_lectura"
   ON public.reminder_logs FOR SELECT
   USING (
@@ -47,8 +63,6 @@ CREATE POLICY "reminder_logs_lectura"
     )
   );
 
--- INSERT solo desde admin de la liga (service_role bypasea RLS).
-DROP POLICY IF EXISTS "reminder_logs_insercion" ON public.reminder_logs;
 CREATE POLICY "reminder_logs_insercion"
   ON public.reminder_logs FOR INSERT
   WITH CHECK (
@@ -71,8 +85,8 @@ AS $$
 DECLARE
   v_first_match TIMESTAMPTZ;
 BEGIN
-  -- Mismo escape hatch que predictions: triggers internos y service_role
-  -- (auth.uid() IS NULL) no quedan atrapados por el cierre.
+  -- Triggers internos y service_role (auth.uid() IS NULL) no quedan
+  -- atrapados por el cierre. Mismo patrón que mig. 027.
   IF auth.uid() IS NULL THEN
     RETURN NEW;
   END IF;
@@ -102,3 +116,53 @@ CREATE TRIGGER trg_special_pred_deadline_update
   BEFORE UPDATE ON public.special_predictions
   FOR EACH ROW
   EXECUTE FUNCTION public.check_special_prediction_deadline();
+
+-- ─── 3. Consensus filtrado por liga ──────────────────────────────────────
+-- Misma forma que match_consensus_v1 pero filtrando predicciones por
+-- league_id. Para predicciones globales el frontend sigue llamando a
+-- match_consensus_v1.
+CREATE OR REPLACE FUNCTION public.match_consensus_by_league_v1(p_league_id UUID)
+RETURNS TABLE (
+  match_id      UUID,
+  home_score    INTEGER,
+  away_score    INTEGER,
+  vote_count    BIGINT,
+  total_voters  BIGINT
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  WITH dedup AS (
+    SELECT DISTINCT ON (user_id, match_id)
+      user_id, match_id, home_score, away_score
+    FROM public.predictions
+    WHERE home_score IS NOT NULL
+      AND away_score IS NOT NULL
+      AND league_id  = p_league_id
+    ORDER BY user_id, match_id, updated_at DESC
+  ),
+  counts AS (
+    SELECT
+      match_id,
+      home_score,
+      away_score,
+      COUNT(*) AS vote_count,
+      SUM(COUNT(*)) OVER (PARTITION BY match_id) AS total_voters
+    FROM dedup
+    GROUP BY match_id, home_score, away_score
+  ),
+  per_match AS (
+    SELECT DISTINCT ON (match_id)
+      match_id, home_score, away_score, vote_count, total_voters
+    FROM counts
+    ORDER BY match_id, vote_count DESC, home_score DESC, away_score DESC
+  )
+  SELECT match_id, home_score, away_score, vote_count, total_voters
+  FROM per_match
+  WHERE total_voters >= 3;
+$$;
+
+-- Permisos: los authenticated users la invocan vía PostgREST.
+GRANT EXECUTE ON FUNCTION public.match_consensus_by_league_v1(UUID) TO authenticated;
