@@ -43,6 +43,7 @@ const FROM_NAME    = process.env.FROM_NAME  ?? 'Porra Mundial 2026'
 
 const BLUEBULL_LEAGUE_ID = '43d8d693-7bb1-48f0-85c4-765754eedf05'
 const MUNDIAL_START      = new Date('2026-06-11T19:00:00Z') // 21:00 CET
+const IMAGE_URL          = 'https://porradeempresas.com/mourinho-here-we-go.jpg'
 
 const args = new Set(process.argv.slice(2))
 const previewArgIdx = process.argv.indexOf('--preview')
@@ -56,19 +57,29 @@ const daysLeft = Math.max(0, Math.ceil((MUNDIAL_START.getTime() - Date.now()) / 
 // ─── Email builder ────────────────────────────────────────────────────────────
 
 function buildEmail({ username }) {
-  const subject   = 'Las alineaciones ya están. Tu porra, no.'
-  const preheader = `Faltan ${daysLeft} días para el Mundial 2026 y tu pronóstico sigue vacío. Aprovecha estos días para afinar la cábala.`
+  const subject   = 'Tenemos «Here we go» antes que tu porra.'
+  const preheader = `Mourinho vuelve al Madrid antes que tú envías tus pronósticos. Faltan ${daysLeft} días para el Mundial.`
 
   const content = `
+<!-- Imagen de cabecera · Mourinho "Here we go" (hosteada en porradeempresas.com) -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 26px;border-collapse:collapse;">
+  <tr><td align="center">
+    <img src="${IMAGE_URL}" width="360" height="480" alt="Mourinho · Here we go" style="display:block;width:100%;max-width:360px;height:auto;border:1px solid ${BRAND.ink};outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;">
+  </td></tr>
+  <tr><td align="center" style="padding:10px 0 0;">
+    <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;">Fabrizio Romano &middot; rumor confirmado &middot; tu porra no</div>
+  </td></tr>
+</table>
+
 ${brandKicker(`Cuenta atrás · ${daysLeft} días`)}
-${brandHeadline('Las alineaciones ya están. Tu porra, no.')}
+${brandHeadline('Tenemos «Here we go» antes que tus pronósticos.')}
 
 <p style="margin:0 0 16px;font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-size:18px;line-height:1.5;color:${BRAND.ink};font-style:italic;">
-  Las federaciones van soltando convocatorias. Los analistas afilan sus cábalas. Las casas de apuestas cierran cuotas. Y tú, <strong style="font-style:normal;font-family:Inter,sans-serif;">${escHtml(username)}</strong>, todavía no has enviado tu pronóstico.
+  Si Fabrizio Romano cantara el fichaje más improbable del año, llegaría a Twitter antes que tu porra a esta app. Y mira que Mourinho volver al Madrid es difícil, <strong style="font-style:normal;font-family:Inter,sans-serif;">${escHtml(username)}</strong>.
 </p>
 
 <p style="margin:0 0 24px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${BRAND.ink};">
-  En poco más de tres semanas arranca el Mundial 2026 — México, Canadá y Estados Unidos. Una vez pite el árbitro del primer partido, los marcadores del torneo entero se cierran y no hay segunda oportunidad. Estos días previos son el momento dulce: estudias la fase de grupos, miras quién está en forma, juegas con los resultados y dejas tu porra cerrada antes de que empiece el ruido.
+  Las federaciones van soltando convocatorias. Los analistas afilan sus cábalas. Las casas de apuestas cierran cuotas. En poco más de tres semanas arranca el Mundial 2026 — México, Canadá y Estados Unidos — y una vez pite el árbitro del primer partido, los marcadores del torneo entero se cierran. Estos días previos son el momento dulce: estudias la fase de grupos, juegas con los resultados y dejas tu porra cerrada antes de que empiece el ruido.
 </p>
 
 <div style="margin:0 0 26px;">
