@@ -19,6 +19,11 @@ function isIos() {
 }
 
 // ── Banner de "nueva versión disponible" ───────────────────────────────────
+// Guardamos el intervalId a nivel de módulo porque `onRegisteredSW` no
+// devuelve un cleanup y el SW persiste entre montajes. Si se reinicializara
+// (HMR, remount), evitamos acumular timers.
+let swUpdateInterval = null
+
 function UpdateBanner() {
   const { t } = useLang()
   const {
@@ -26,9 +31,10 @@ function UpdateBanner() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
-      // Comprueba si hay una versión nueva cada hora.
       if (!registration) return
-      setInterval(() => { registration.update().catch(() => {}) }, 60 * 60 * 1000)
+      if (swUpdateInterval) clearInterval(swUpdateInterval)
+      // Comprueba si hay una versión nueva cada hora.
+      swUpdateInterval = setInterval(() => { registration.update().catch(() => {}) }, 60 * 60 * 1000)
     },
   })
 
@@ -137,8 +143,8 @@ function InstallBanner() {
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-ink">{t('pwa.iosTitle')}</p>
             <p className="text-xs text-ink/60 mt-0.5">
-              Toca <span className="inline-block px-1 font-mono">⎙</span> Compartir y luego{' '}
-              <span className="font-semibold">«Añadir a pantalla de inicio»</span>.
+              <span className="inline-block px-1 font-mono">⎙</span> {t('pwa.iosHintShare')} →{' '}
+              <span className="font-semibold">«{t('pwa.iosHintAction')}»</span>
             </p>
             <button onClick={dismiss} className="text-ink/60 hover:text-ink/80 text-xs mt-2">
               {t('pwa.iosClose')}

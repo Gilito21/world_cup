@@ -218,6 +218,9 @@ export default function Clasificacion() {
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'predictions' },
         reloadCurrent)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'special_predictions' },
+        reloadCurrent)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -298,9 +301,16 @@ export default function Clasificacion() {
       const memberIds   = members.map(m => m.user_id)
       const modeByUser  = Object.fromEntries(members.map(m => [m.user_id, m.prediction_mode ?? 'global']))
 
-      const [{ data: profiles }, { data: leaguePreds }] = await Promise.all([
+      const [{ data: profiles }, { data: leaguePreds }, { data: leagueSpecials }] = await Promise.all([
         sq(supabase.from('profiles').select('id, username, avatar_url, company').in('id', memberIds)),
-        sq(supabase.from('predictions').select('user_id, points_earned')
+        sq(supabase.from('predictions').select('user_id, league_id, points_earned')
+          .or(`league_id.eq.${activeLeague.id},league_id.is.null`)
+          .in('user_id', memberIds)),
+        // Las extras puntúan igual que los partidos, según el prediction_mode del
+        // miembro. Si no las sumamos aquí, un usuario per_league perdería sus
+        // puntos de extras en el ranking de su liga (sólo se reflejan en
+        // profiles.total_points para los globales, ver migración 026).
+        sq(supabase.from('special_predictions').select('user_id, league_id, points_earned')
           .or(`league_id.eq.${activeLeague.id},league_id.is.null`)
           .in('user_id', memberIds)),
       ])
@@ -316,6 +326,12 @@ export default function Clasificacion() {
         statsMap[p.user_id].total++
         if (p.points_earned === 3)      statsMap[p.user_id].exact++
         else if (p.points_earned === 1) statsMap[p.user_id].correct++
+      })
+      ;(leagueSpecials ?? []).forEach(sp => {
+        const mode     = modeByUser[sp.user_id] ?? 'global'
+        const expected = mode === 'per_league' ? activeLeague.id : null
+        if (sp.league_id !== expected) return
+        pointsMap[sp.user_id] = (pointsMap[sp.user_id] ?? 0) + (sp.points_earned ?? 0)
       })
 
       const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))

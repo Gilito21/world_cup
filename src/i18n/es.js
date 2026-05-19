@@ -615,6 +615,8 @@ export default {
     install: 'Instalar',
     notNow: 'Ahora no',
     iosTitle: 'Instala la app en tu iPhone',
+    iosHintShare: 'Compartir',
+    iosHintAction: 'Añadir a pantalla de inicio',
     iosClose: 'Cerrar',
   },
 

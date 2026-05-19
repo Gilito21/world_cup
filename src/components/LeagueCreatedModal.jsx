@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLang } from '../contexts/LangContext'
 import { appUrl } from '../lib/appUrl'
@@ -8,11 +8,14 @@ function CopyButton({ text, label }) {
   const { t } = useLang()
   const displayLabel = label ?? t('common.copy')
   const [copied, setCopied] = useState(false)
+  const resetTimer = useRef(null)
+  useEffect(() => () => { if (resetTimer.current) clearTimeout(resetTimer.current) }, [])
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(text)
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      if (resetTimer.current) clearTimeout(resetTimer.current)
+      resetTimer.current = setTimeout(() => setCopied(false), 2000)
     } catch {/* clipboard blocked */}
   }
   return (
@@ -192,12 +195,15 @@ export default function LeagueCreatedModal({ league, onClose }) {
   useScrollLock()
   const { t } = useLang()
   const [shareStatus, setShareStatus] = useState('idle')
+  const shareResetTimer = useRef(null)
 
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
+
+  useEffect(() => () => { if (shareResetTimer.current) clearTimeout(shareResetTimer.current) }, [])
 
   const inviteLink = `${appUrl()}/join/${league.invite_code}`
   const appName  = t('common.appName')
@@ -213,7 +219,8 @@ export default function LeagueCreatedModal({ league, onClose }) {
       try {
         await navigator.clipboard.writeText(`${shareText}\n${inviteLink}`)
         setShareStatus('copied')
-        setTimeout(() => setShareStatus('idle'), 2500)
+        if (shareResetTimer.current) clearTimeout(shareResetTimer.current)
+        shareResetTimer.current = setTimeout(() => setShareStatus('idle'), 2500)
       } catch { /* blocked */ }
     }
   }
