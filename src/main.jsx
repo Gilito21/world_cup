@@ -5,7 +5,10 @@ import App from './App.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { LangProvider } from './contexts/LangContext.jsx'
 import PWAPrompts from './components/PWAPrompts.jsx'
+import { initSentry } from './lib/sentry.js'
 import './index.css'
+
+initSentry()
 
 // When Chrome restores a page from bfcache (back/forward navigation),
 // React state is frozen at whatever it was when the page was frozen.

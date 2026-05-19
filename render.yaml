@@ -12,6 +12,9 @@ services:
         sync: false
       - key: VITE_STRIPE_PUBLISHABLE_KEY
         sync: false
+      # Optional. Si está vacía, Sentry no se carga ni se incluye en el bundle.
+      - key: VITE_SENTRY_DSN
+        sync: false
     headers:
       # Assets have content-hash names — safe to cache forever.
       - path: /assets/*
