@@ -761,18 +761,23 @@ export default function Pronosticos() {
   // Pull-to-refresh: force a network round-trip, bypass match/pred caches.
   usePullRefresh(useCallback(() => load({ force: true }), [load]))
 
-  // ── Global consensus (most-picked score per match across all users) ─────────
-  // Single RPC call returns one row per match with ≥3 voters. Aggregates
-  // run via SECURITY DEFINER on the server; only the top score per match
-  // is exposed to the client. We cache the result in dataCache so revisits
-  // show the placeholder hints instantly while a fresh copy refreshes in
-  // the background.
+  // ── Consensus (most-picked score per match) ─────────────────────────────────
+  // En modo global: RPC `match_consensus_v1()` agrega sobre todos los usuarios.
+  // En modo per_league: RPC `match_consensus_by_league_v1(league_id)` filtra
+  // a los miembros de la liga (≥3 votantes dentro de la liga). Cacheamos por
+  // clave de scope para que un swap de liga no muestre datos del scope previo.
   useEffect(() => {
-    const cached = getCache('consensus:global')
+    const isPerLeague = predictionMode === 'per_league' && !!activeLeague?.id
+    const cacheKey    = isPerLeague ? `consensus:league:${activeLeague.id}` : 'consensus:global'
+    const cached = getCache(cacheKey)
     if (cached) setConsensus(cached)
+    else        setConsensus({})
     let cancelled = false
     ;(async () => {
-      const { data } = await sq(supabase.rpc('match_consensus_v1'))
+      const rpc = isPerLeague
+        ? supabase.rpc('match_consensus_by_league_v1', { p_league_id: activeLeague.id })
+        : supabase.rpc('match_consensus_v1')
+      const { data } = await sq(rpc)
       if (cancelled || !data) return
       const map = {}
       for (const row of data) {
@@ -784,10 +789,10 @@ export default function Pronosticos() {
         }
       }
       setConsensus(map)
-      setCache('consensus:global', map)
+      setCache(cacheKey, map)
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [predictionMode, activeLeague?.id])
 
   // ── Cascade: group predictions → predicted knockout teams ───────────────────
   const predictedOverlay = useMemo(() => {

@@ -25,7 +25,9 @@ const APP_URL      = (process.env.APP_URL ?? 'https://porradeempresas.com').repl
 const FROM_EMAIL   = process.env.FROM_EMAIL ?? 'noreply@porradeempresas.com'
 const FROM_NAME    = process.env.FROM_NAME  ?? 'Porra Empresas'
 
-const MUNDIAL_START = new Date('2026-06-11T21:00:00Z')
+// Kickoff oficial: 11 jun 2026, 21:00 hora española (CEST, UTC+2) = 19:00 UTC.
+// Mantener sincronizado con scripts/send-mundial-nudge.js y scripts/send-daily-digest.js.
+const MUNDIAL_START = new Date('2026-06-11T19:00:00Z')
 
 // ─── Email pre-Mundial ────────────────────────────────────────────────────────
 

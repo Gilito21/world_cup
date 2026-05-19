@@ -39,7 +39,12 @@ const FROM_NAME    = process.env.FROM_NAME  ?? 'Porra Empresas'
 // Ventana del Mundial. Solo enviamos digests dentro de este rango.
 // El primer email útil sería el 12-jun (sobre los partidos del 11), y el
 // último el 20-jul (sobre la final del 19).
-const MUNDIAL_START = new Date('2026-06-11T00:00:00Z')
+//
+// MUNDIAL_START usa la hora real del kickoff (11 jun 2026, 21:00 hora
+// española = 19:00 UTC). Si dispara el cron de digest antes de esa hora,
+// no hay partido "de ayer" que comentar todavía. Mantener sincronizado con
+// scripts/send-reminders.js y scripts/send-mundial-nudge.js.
+const MUNDIAL_START = new Date('2026-06-11T19:00:00Z')
 const MUNDIAL_END   = new Date('2026-07-20T23:59:59Z')
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
