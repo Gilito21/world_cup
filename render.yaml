@@ -22,6 +22,31 @@ services:
       - path: /*
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
+      # Security headers — apply to every response served by Render.
+      # HSTS: fuerza HTTPS durante un año, incluye subdominios y permite preload.
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains; preload
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      # No queremos ser embebidos en iframes externos (clickjacking).
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      # Bloquea APIs sensibles que no usamos; ajustar si añadimos cámara/mic/geo.
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com")
+      # CSP en modo Report-Only: nada se bloquea todavía. Tras una semana de
+      # navegación real, mover a Content-Security-Policy (enforcing) si no hay
+      # violaciones en consola.
+      - path: /*
+        name: Content-Security-Policy-Report-Only
+        value: "default-src 'self'; script-src 'self' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
     routes:
       - type: rewrite
         source: /*
