@@ -16,10 +16,22 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
-const CORS = {
-  'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+const ALLOWED_ORIGINS = new Set([
+  'https://porradeempresas.com',
+  'https://www.porradeempresas.com',
+  'http://localhost:5173',
+  'http://localhost:4173',
+])
+
+function corsFor(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin')
+  const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.porradeempresas.com'
+  return {
+    'Access-Control-Allow-Origin':  allow,
+    'Vary':                         'Origin',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  }
 }
 
 const FROM_EMAIL  = 'porra@porradeempresas.com'
@@ -121,13 +133,6 @@ function brandShell({ title, preheader = '', content, footerNote, appUrl = APP_U
 </body></html>`
 }
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...CORS },
-  })
-}
-
 async function sendEmail(apiKey: string, to: string, toName: string, leagueName: string, senderName: string) {
   const subject = `Recordatorio · envía tu pronóstico para ${leagueName}`
   const content = `
@@ -186,7 +191,13 @@ ${brandButton({ href: `${APP_URL}/pronosticos`, label: 'Enviar pronóstico' })}`
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
+  const cors = corsFor(req)
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...cors },
+  })
+
+  if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
   if (req.method !== 'POST')   return json({ error: 'method_not_allowed' }, 405)
 
   const BREVO_KEY = Deno.env.get('BREVO_API_KEY')

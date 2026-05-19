@@ -7,10 +7,22 @@
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-const CORS = {
-  'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+const ALLOWED_ORIGINS = new Set([
+  'https://porradeempresas.com',
+  'https://www.porradeempresas.com',
+  'http://localhost:5173',
+  'http://localhost:4173',
+])
+
+function corsFor(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin')
+  const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.porradeempresas.com'
+  return {
+    'Access-Control-Allow-Origin':  allow,
+    'Vary':                         'Origin',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  }
 }
 
 const ADMIN_EMAIL  = 'jpelaez@bluebullpartners.com'
@@ -18,15 +30,14 @@ const FROM_EMAIL   = 'porra@porradeempresas.com'
 const FROM_NAME    = 'Porra Mundial 2026'
 const BREVO_API    = 'https://api.brevo.com/v3/smtp/email'
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...CORS },
-  })
-}
-
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
+  const cors = corsFor(req)
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...cors },
+  })
+
+  if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
   if (req.method !== 'POST')   return json({ error: 'method_not_allowed' }, 405)
 
   const BREVO_KEY = Deno.env.get('BREVO_API_KEY')
