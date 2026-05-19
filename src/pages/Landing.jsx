@@ -360,7 +360,12 @@ export default function Landing() {
 
         // Graticule
         const grat = document.getElementById('landing-graticule')
-        if (grat) grat.innerHTML = `<path d="${pathGen(d3.geoGraticule().step([15, 15])())}"/>`
+        if (grat) {
+          grat.replaceChildren()
+          const gPath = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+          gPath.setAttribute('d', pathGen(d3.geoGraticule().step([15, 15])()))
+          grat.appendChild(gPath)
+        }
 
         // Real country outlines
         const landGroup = document.getElementById('landing-na-land')
@@ -402,21 +407,28 @@ export default function Landing() {
         })
         const g = document.getElementById('landing-cities')
         if (g) {
-          g.innerHTML = ''
+          g.replaceChildren()
+          const SVG_NS = 'http://www.w3.org/2000/svg'
+          const setAttrs = (el, attrs) => {
+            for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
+          }
           projected.forEach((c, i) => {
             const color = c.final ? '#C8552B' : '#0E2A18'
-            const node = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-            node.setAttribute('class', 'city')
-            node.setAttribute('data-idx', i)
-            node.setAttribute('data-name', c.name)
+            const node = document.createElementNS(SVG_NS, 'g')
+            setAttrs(node, { class: 'city', 'data-idx': i, 'data-name': c.name })
             // The transparent hit area is 14px radius so hovering the pin
             // is forgiving — the visible pin is only 4px.
-            node.innerHTML = `
-              <circle class="ring" cx="${c.x}" cy="${c.y}" r="5" fill="none" stroke="${color}" stroke-width="1.2" style="--d:${(i * 0.18).toFixed(2)}s"/>
-              <circle class="hit"  cx="${c.x}" cy="${c.y}" r="14" fill="transparent" pointer-events="all"/>
-              <circle class="pin"  cx="${c.x}" cy="${c.y}" r="4" fill="${color}" stroke="#F4ECD6" stroke-width="1.2" pointer-events="none"/>
-              <text class="lbl" x="${c.x + 8}" y="${c.y + 4}" pointer-events="none">${c.name}${c.final ? ' ★' : ''}</text>
-            `
+            const ring = document.createElementNS(SVG_NS, 'circle')
+            setAttrs(ring, { class: 'ring', cx: c.x, cy: c.y, r: 5, fill: 'none', stroke: color, 'stroke-width': 1.2 })
+            ring.style.setProperty('--d', `${(i * 0.18).toFixed(2)}s`)
+            const hit = document.createElementNS(SVG_NS, 'circle')
+            setAttrs(hit, { class: 'hit', cx: c.x, cy: c.y, r: 14, fill: 'transparent', 'pointer-events': 'all' })
+            const pin = document.createElementNS(SVG_NS, 'circle')
+            setAttrs(pin, { class: 'pin', cx: c.x, cy: c.y, r: 4, fill: color, stroke: '#F4ECD6', 'stroke-width': 1.2, 'pointer-events': 'none' })
+            const lbl = document.createElementNS(SVG_NS, 'text')
+            setAttrs(lbl, { class: 'lbl', x: c.x + 8, y: c.y + 4, 'pointer-events': 'none' })
+            lbl.textContent = `${c.name}${c.final ? ' ★' : ''}`
+            node.append(ring, hit, pin, lbl)
             const show = () => {
               const hit = node.querySelector('.hit')
               if (!hit) return
