@@ -65,7 +65,7 @@ export function LeagueProvider({ children }) {
       const { data } = await sq(
         supabase
           .from('league_members')
-          .select('role, prediction_mode, leagues(id, name, invite_code, created_by)')
+          .select('role, prediction_mode, leagues(id, name, invite_code, created_by, entry_fee, prize_rules)')
           .eq('user_id', user.id)
       )
       console.log(`[porra:league] loadLeagues network done in ${Date.now() - t0}ms —`, data ? `${data.length} rows` : 'TIMEOUT/null')

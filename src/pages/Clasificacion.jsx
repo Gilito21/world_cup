@@ -8,6 +8,7 @@ import { useLang } from '../contexts/LangContext'
 import usePullRefresh from '../lib/usePullRefresh'
 import LeagueModal from '../components/LeagueModal'
 import LeagueFeed from '../components/LeagueFeed'
+import PrizePotCard from '../components/PrizePotCard'
 import Spinner from '../components/Spinner'
 import { StandingsSkeleton } from '../components/Skeleton'
 import { EditorialBand } from '../components/Editorial'
@@ -630,6 +631,9 @@ export default function Clasificacion() {
                   <p className="text-ink/50 text-sm -mt-2">
                     {t('clasificacion.nParticipantsLeague', { name: activeLeague?.name, n: leagueStandings.length, s: leagueStandings.length !== 1 ? 's' : '' })}
                   </p>
+                  {activeLeague && (activeLeague.entry_fee || activeLeague.prize_rules?.length > 0) && (
+                    <PrizePotCard activeLeague={activeLeague} memberCount={leagueStandings.length} />
+                  )}
                   <IndividualTable standings={leagueStandings} showStats />
                   {activeLeague && <LeagueFeed leagueId={activeLeague.id} />}
                   <p className="text-center text-ink/50 text-xs">
