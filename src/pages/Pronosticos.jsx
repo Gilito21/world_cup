@@ -1085,7 +1085,7 @@ export default function Pronosticos() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {showConfirm && (
         <ConfirmModal
           onConfirm={handleSubmit}
@@ -1097,12 +1097,8 @@ export default function Pronosticos() {
 
       {/* Page header */}
       <div>
-        <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('pronosticos.chapter')}</span>
-            <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('pronosticos.title')}</h2>
-        <p className="font-serif italic text-ink/70 text-sm mt-1">
-          {t('pronosticos.subtitle')}
-        </p>
-            <EditorialBand items={['PORRA', '104 PARTIDOS', '16 SEDES', 'EDICIÓN 2026']} />
+        <span className="ed-mono text-terracotta text-[10px] block mb-1">// {t('pronosticos.chapter')}</span>
+        <h2 className="font-display text-base sm:text-lg text-ink leading-none">{t('pronosticos.title')}</h2>
       </div>
 
       {/* No-league gate: banner replacing the submit panel */}

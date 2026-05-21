@@ -713,32 +713,16 @@ export default function Extras() {
     <div className="space-y-3 sm:space-y-4">
 
       {/* ── Hero ──────────────────────────────────────────────── */}
-      <section className="card p-3 sm:p-5">
-        <div className="flex items-start gap-2.5 sm:gap-3">
-          <span className="text-xl sm:text-3xl">🎲</span>
-          <div className="flex-1 min-w-0">
-            <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('extras.chapter')}</span>
-            <h1 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('extras.title')}</h1>
-            <p className="text-[11px] sm:text-sm text-ink/60 mt-0.5">
-              {t('extras.subtitle')}
-            </p>
-            <EditorialBand items={['BONUS', 'PREGUNTAS EXTRA', 'EDICIÓN 2026']} />
-          </div>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <span className="ed-mono text-terracotta text-[10px] block mb-1">// {t('extras.chapter')}</span>
+          <h1 className="font-display text-base sm:text-lg text-ink leading-none">{t('extras.title')}</h1>
         </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-ink/60">{t('extras.deadlineLabel')}</span>
-            {cutoffTime
-              ? <CutoffCountdown cutoffTime={cutoffTime} />
-              : <span className="text-ink/50">—</span>}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-ink/60">{t('extras.maxPtsLabel')}</span>
-            <span className="font-bold text-ink">+{totalPoints}</span>
-          </div>
+        <div className="flex items-center gap-4 text-xs text-ink/60 flex-shrink-0">
+          <span>{t('extras.deadlineLabel')} {cutoffTime ? <CutoffCountdown cutoffTime={cutoffTime} /> : '—'}</span>
+          <span className="font-bold text-ink">+{totalPoints} pts</span>
         </div>
-      </section>
+      </div>
 
       {/* ── Submit panel ──────────────────────────────────────── */}
       <SubmitPanel

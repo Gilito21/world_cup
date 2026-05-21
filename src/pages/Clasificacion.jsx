@@ -564,20 +564,16 @@ export default function Clasificacion() {
   // ── Main render ───────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex items-start justify-between gap-3">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('clasificacion.chapter')}</span>
-            <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('clasificacion.title')}</h2>
-          <p className="font-serif italic text-ink/70 text-sm mt-1">
-            {t('clasificacion.subtitle')}
-          </p>
-            <EditorialBand items={['RANKING', '104 PARTIDOS', 'EDICIÓN 2026']} />
+          <span className="ed-mono text-terracotta text-[10px] block mb-1">// {t('clasificacion.chapter')}</span>
+          <h2 className="font-display text-base sm:text-lg text-ink leading-none">{t('clasificacion.title')}</h2>
         </div>
         {tab === 'league' && activeLeague?.role === 'admin' && (
-          <div className="flex-shrink-0 card p-2.5 sm:p-3 text-center min-w-[110px] sm:min-w-[140px]">
-            <p className="text-[10px] sm:text-xs text-ink/60 mb-0.5 sm:mb-1">{t('league.leagueCodeLabel')}</p>
-            <p className="font-mono font-bold text-ink tracking-widest text-sm sm:text-lg">{activeLeague.invite_code}</p>
+          <div className="flex-shrink-0 card px-2.5 py-1.5 text-center">
+            <p className="text-[10px] text-ink/50">{t('league.leagueCodeLabel')}</p>
+            <p className="font-mono font-bold text-ink tracking-widest text-sm">{activeLeague.invite_code}</p>
           </div>
         )}
       </div>
