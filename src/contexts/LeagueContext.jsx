@@ -28,6 +28,10 @@ export function LeagueProvider({ children }) {
   const [leagues, setLeagues]           = useState([])
   const [activeLeague, setActiveLeagueState] = useState(null)
   const [loading, setLoading]           = useState(true)
+  // True once leagues have been confirmed for the current user (cache or network).
+  // Stays false during the window where auth has resolved but leagues haven't
+  // loaded yet — prevents consumers from running with stale activeLeague=null.
+  const [ready, setReady]               = useState(false)
   const loadingRef = useRef(true)
 
   useEffect(() => { loadingRef.current = loading }, [loading])
@@ -36,6 +40,7 @@ export function LeagueProvider({ children }) {
     if (!user) {
       console.log('[porra:league] loadLeagues → no user, skip')
       setLeagues([]); setActiveLeagueState(null); setLoading(false); return
+      // Note: don't setReady(true) here — no-user state is not "ready for this user"
     }
 
     // Desbloquear la UI con datos en cache antes de ir a la red
@@ -50,6 +55,7 @@ export function LeagueProvider({ children }) {
         return saved ?? cachedList[0] ?? null
       })
       setLoading(false)
+      setReady(true)  // leagues confirmed from cache — unblock consumers immediately
     } else {
       console.log('[porra:league] loadLeagues → cache MISS, waiting for network…')
     }
@@ -79,10 +85,12 @@ export function LeagueProvider({ children }) {
       })
     } finally {
       setLoading(false)
+      setReady(true)  // leagues confirmed from network (or timed out — unblock either way)
     }
   }, [user?.id])
 
   useEffect(() => {
+    setReady(false)  // reset for new user before leagues load
     setLoading(true)
     loadLeagues()
   }, [loadLeagues])
@@ -194,6 +202,7 @@ export function LeagueProvider({ children }) {
       leagues,
       activeLeague,
       loading,
+      leaguesReady: ready,
       setActiveLeague,
       onLeagueCreated,
       joinLeague,

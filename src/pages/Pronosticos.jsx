@@ -622,7 +622,7 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
 
 export default function Pronosticos() {
   const { user }                  = useAuth()
-  const { activeLeague, leagues, loading: leagueLoading, onLeagueCreated } = useLeague()
+  const { activeLeague, leagues, loading: leagueLoading, leaguesReady, onLeagueCreated } = useLeague()
   const { t, dateLocale }         = useLang()
   const predictionMode = activeLeague?.prediction_mode ?? 'global'
 
@@ -656,7 +656,7 @@ export default function Pronosticos() {
 
   // ── Data loading ────────────────────────────────────────────────────────────
   const load = useCallback(async ({ force = false } = {}) => {
-    if (leagueLoading) { console.log('[porra:load] skipped — leagueLoading=true'); return }
+    if (!leaguesReady) { console.log('[porra:load] skipped — leaguesReady=false'); return }
     const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
     const predCacheKey = `preds:${user.id}:${leagueKey}`
     const subCacheKey  = `sub:${user.id}:${leagueKey}`
@@ -759,7 +759,7 @@ export default function Pronosticos() {
       setLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, activeLeague?.id, predictionMode, leagueLoading])
+  }, [user?.id, activeLeague?.id, predictionMode, leaguesReady])
 
   useEffect(() => { load() }, [load])
 

@@ -427,7 +427,7 @@ function QuestionCard({ question, answer, draft, onDraft, onSelect, onSave, lock
 // ─── Página principal ──────────────────────────────────────────────────────
 export default function Extras() {
   const { user }         = useAuth()
-  const { activeLeague, leagues, loading: leagueLoading, onLeagueCreated } = useLeague()
+  const { activeLeague, leagues, loading: leagueLoading, leaguesReady, onLeagueCreated } = useLeague()
   const { t, dateLocale } = useLang()
   const predictionMode   = activeLeague?.prediction_mode ?? 'global'
   const leagueIdForPred  = predictionMode === 'per_league' ? activeLeague?.id ?? null : null
@@ -455,8 +455,8 @@ export default function Extras() {
 
   // ── Fetch all data ──────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
-    if (!user || leagueLoading) {
-      console.log('[porra:extras] fetchAll → skip (user:', !!user, 'leagueLoading:', leagueLoading, ')')
+    if (!user || !leaguesReady) {
+      console.log('[porra:extras] fetchAll → skip (user:', !!user, 'leaguesReady:', leaguesReady, ')')
       return
     }
     console.log('[porra:extras] fetchAll START — leagueKey:', leagueKey)
@@ -545,7 +545,7 @@ export default function Extras() {
     } finally {
       setLoading(false)
     }
-  }, [user?.id, leagueIdForPred, leagueLoading])
+  }, [user?.id, leagueIdForPred, leaguesReady])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
