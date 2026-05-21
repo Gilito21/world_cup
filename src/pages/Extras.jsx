@@ -216,16 +216,16 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
             key={opt.value}
             onClick={() => !locked && onSelect(opt.value)}
             disabled={locked}
-            className={`relative rounded-none sm:rounded-none border-2 p-3 sm:p-5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${
+            className={`relative rounded-none sm:rounded-none border-2 p-2.5 sm:p-3.5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${
               isActive
                 ? 'border-ink bg-paper shadow-md shadow-ink/15'
                 : 'border-ink/20 bg-paper hover:border-ink/30'
             } ${locked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
           >
-            <div className="flex flex-col items-center gap-1.5 sm:gap-2">
-              <EmojiImg emoji={opt.emoji} alt={opt.label} className="w-12 h-12 sm:w-20 sm:h-20" />
+            <div className="flex flex-col items-center gap-1 sm:gap-1.5">
+              <EmojiImg emoji={opt.emoji} alt={opt.label} className="w-9 h-9 sm:w-12 sm:h-12" />
               <div className="text-center min-w-0 w-full">
-                <div className={`font-bold text-sm sm:text-lg truncate ${isActive ? 'text-ink font-bold' : 'text-ink/80'}`}>
+                <div className={`font-bold text-xs sm:text-sm truncate ${isActive ? 'text-ink font-bold' : 'text-ink/80'}`}>
                   {opt.label}
                 </div>
                 {opt.team && (
