@@ -466,34 +466,32 @@ export default function Clasificacion() {
       <>
         {myEntry && (
           <div
-            className="card p-3 sm:p-4 border-ink/30 bg-paper cursor-pointer hover:border-ink/50 transition-colors"
+            className="card px-3 py-2.5 border-ink/30 bg-paper cursor-pointer hover:border-ink/50 transition-colors flex items-center gap-2.5"
             onClick={() => setSelectedProfile(myEntry)}
           >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                <Avatar url={myEntry.avatar_url} username={myEntry.username} size="lg" isMe />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-semibold text-ink truncate">{myEntry.username}</span>
-                    <span className="text-[10px] sm:text-xs text-ink/80 bg-cream border border-ink/20 px-1.5 rounded">{t('common.you')}</span>
-                    {myEntry.role === 'admin' && (
-                      <span className="text-[10px] sm:text-xs text-ink/80 bg-cream border border-ink/20 px-1.5 rounded">👑</span>
-                    )}
-                  </div>
-                  <div className="text-xs sm:text-sm text-ink/50">{t('clasificacion.positionLabel', { n: myEntry.position })}</div>
-                </div>
+            <Avatar url={myEntry.avatar_url} username={myEntry.username} size="md" isMe />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-semibold text-sm text-ink truncate">{myEntry.username}</span>
+                <span className="text-[10px] text-ink/70 bg-cream border border-ink/20 px-1 rounded">{t('common.you')}</span>
+                {myEntry.role === 'admin' && <span className="text-xs">👑</span>}
               </div>
-              <div className="text-right flex-shrink-0">
-                <div className="text-xl sm:text-2xl font-bold text-ink">{myEntry.league_points}</div>
-                <div className="text-[10px] sm:text-xs text-ink/60">{t('common.pts')}</div>
+              <div className="text-[11px] text-ink/40 mt-0.5 flex items-center gap-2">
+                <span>{t('clasificacion.positionLabel', { n: myEntry.position })}</span>
+                {showStats && (
+                  <>
+                    <span className="text-ink/20">·</span>
+                    <span className="text-ink/60">{myLeagueStats.exact} {t('clasificacion.statExact').toLowerCase()}</span>
+                    <span className="text-ink/20">·</span>
+                    <span className="text-blue-400">{myLeagueStats.correct} {t('clasificacion.statCorrect').toLowerCase()}</span>
+                  </>
+                )}
               </div>
             </div>
-            {showStats && (
-              <div className="flex gap-2 mt-3">
-                <StatBadge label={t('clasificacion.statExact')}   value={myLeagueStats.exact}   color="text-ink" />
-                <StatBadge label={t('clasificacion.statCorrect')} value={myLeagueStats.correct} color="text-blue-400" />
-              </div>
-            )}
+            <div className="text-right flex-shrink-0">
+              <span className="text-xl font-bold text-ink">{myEntry.league_points}</span>
+              <span className="text-[10px] text-ink/50 ml-0.5">{t('common.pts')}</span>
+            </div>
           </div>
         )}
 
