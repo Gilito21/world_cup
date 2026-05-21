@@ -1,6 +1,6 @@
 import { getTriggerInfo } from '../utils/prizeRules'
 
-export default function PrizePotCard({ activeLeague, memberCount }) {
+export default function PrizePotCard({ activeLeague, memberCount, prizeResults = [] }) {
   const entryFee   = activeLeague?.entry_fee
   const prizeRules = Array.isArray(activeLeague?.prize_rules) ? activeLeague.prize_rules : []
 
@@ -9,9 +9,10 @@ export default function PrizePotCard({ activeLeague, memberCount }) {
   const totalPot = entryFee && memberCount > 0 ? entryFee * memberCount : null
   const totalPct = prizeRules.reduce((s, r) => s + (Number(r.pct) || 0), 0)
 
+  const resultByRule = Object.fromEntries(prizeResults.map(r => [r.rule_id, r]))
+
   return (
     <div className="card p-4 sm:p-5">
-      {/* Header row */}
       <div className="flex items-center justify-between mb-3 gap-2">
         <div className="flex items-center gap-2">
           <span className="text-xl">💰</span>
@@ -28,18 +29,29 @@ export default function PrizePotCard({ activeLeague, memberCount }) {
       </div>
 
       {prizeRules.length > 0 && (
-        <div className="space-y-1.5 pt-3 border-t border-ink/15">
+        <div className="space-y-2 pt-3 border-t border-ink/15">
           {prizeRules.map((rule, i) => {
             const info   = getTriggerInfo(rule.trigger)
             const amount = totalPot ? Math.round(totalPot * Number(rule.pct) / 100) : null
+            const result = resultByRule[rule.id]
             return (
-              <div key={rule.id ?? i} className="flex items-center gap-2.5">
-                <span className="text-base w-6 text-center flex-shrink-0 leading-none">{info.emoji}</span>
-                <span className="text-sm text-ink flex-1 truncate">{rule.label}</span>
-                <span className="text-xs font-bold text-ink/60 tabular-nums flex-shrink-0">{rule.pct}%</span>
-                {amount != null && (
-                  <span className="text-xs font-bold text-ink tabular-nums flex-shrink-0 w-14 text-right">€{amount}</span>
-                )}
+              <div key={rule.id ?? i} className="flex items-start gap-2.5">
+                <span className="text-base w-6 text-center flex-shrink-0 leading-none mt-0.5">{info.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm text-ink">{rule.label}</span>
+                  {result?.winner_username && (
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[11px] font-semibold text-emerald-700">→ {result.winner_username}</span>
+                      {result.locked && <span className="text-[10px] text-ink/40">🔒</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-shrink-0 text-right">
+                  <span className="text-xs font-bold text-ink/60 tabular-nums">{rule.pct}%</span>
+                  {amount != null && (
+                    <p className="text-xs font-bold text-ink tabular-nums">€{amount}</p>
+                  )}
+                </div>
               </div>
             )
           })}

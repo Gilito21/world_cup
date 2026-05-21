@@ -188,6 +188,7 @@ export default function Clasificacion() {
   const [loadError, setLoadError]       = useState('')
   const [showModal, setShowModal]       = useState(false)
   const [selectedProfile, setSelectedProfile] = useState(null)
+  const [prizeResults, setPrizeResults] = useState([])
 
   useEffect(() => { if (tab === 'global')    loadGlobal()    }, [tab])
   useEffect(() => { if (tab === 'league')    loadLeague()    }, [tab, activeLeague?.id])
@@ -364,6 +365,23 @@ export default function Clasificacion() {
       if (me) setMyLeagueStats(myStats)
       setCache(cacheKey, result)         // standings públicas
       setCache(myStatsKey, myStats)      // stats personales (clave user-scoped)
+
+      // Cargar resultados de premios si la liga tiene bote configurado
+      if (activeLeague.entry_fee || activeLeague.prize_rules?.length > 0) {
+        const { data: prizeData } = await supabase
+          .from('league_prize_results')
+          .select('rule_id, winner_id, locked')
+          .eq('league_id', activeLeague.id)
+        if (prizeData?.length) {
+          const usernameById = Object.fromEntries(result.map(r => [r.id, r.username]))
+          setPrizeResults(prizeData.map(r => ({
+            ...r,
+            winner_username: usernameById[r.winner_id] ?? null,
+          })))
+        } else {
+          setPrizeResults([])
+        }
+      }
     } finally {
       setLoading(false)
     }
@@ -632,7 +650,7 @@ export default function Clasificacion() {
                     {t('clasificacion.nParticipantsLeague', { name: activeLeague?.name, n: leagueStandings.length, s: leagueStandings.length !== 1 ? 's' : '' })}
                   </p>
                   {activeLeague && (activeLeague.entry_fee || activeLeague.prize_rules?.length > 0) && (
-                    <PrizePotCard activeLeague={activeLeague} memberCount={leagueStandings.length} />
+                    <PrizePotCard activeLeague={activeLeague} memberCount={leagueStandings.length} prizeResults={prizeResults} />
                   )}
                   <IndividualTable standings={leagueStandings} showStats />
                   {activeLeague && <LeagueFeed leagueId={activeLeague.id} />}

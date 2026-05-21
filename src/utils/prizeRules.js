@@ -34,10 +34,6 @@ export const TRIGGER_GROUPS = [
       { value: 'predicted_winner',    emoji: '🏆', label: 'Predijo el campeón del mundial' },
       { value: 'predicted_topscorer', emoji: '⚡', label: 'Predijo el máximo goleador' },
       { value: 'most_submitted',      emoji: '📝', label: 'Más pronósticos enviados en total' },
-      { value: 'early_bird',          emoji: '🐦', label: 'Primero en enviar todos los pronósticos' },
-      { value: 'best_bracket',        emoji: '🎖️', label: 'Mejor bracket de eliminatorias' },
-      { value: 'biggest_surprise',    emoji: '😱', label: 'Predijo la mayor sorpresa del torneo' },
-      { value: 'most_streak',         emoji: '🔥', label: 'Racha más larga de aciertos consecutivos' },
     ],
   },
   {
