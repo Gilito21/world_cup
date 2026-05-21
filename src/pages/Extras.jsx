@@ -11,6 +11,42 @@ import PaymentModal from '../components/PaymentModal'
 import LeagueCreatedModal from '../components/LeagueCreatedModal'
 import { EditorialBand } from '../components/Editorial'
 
+// ── Questions cache (localStorage, 2 h) — static per tournament ───────────
+const QS_LS_KEY = 'porra-extras-questions'
+const QS_TTL    = 2 * 60 * 60 * 1000
+function readCachedQuestions() {
+  try {
+    const raw = localStorage.getItem(QS_LS_KEY)
+    if (!raw) return null
+    const { data, at } = JSON.parse(raw)
+    return data && Date.now() - at < QS_TTL ? data : null
+  } catch { return null }
+}
+function writeCachedQuestions(qs) {
+  try { localStorage.setItem(QS_LS_KEY, JSON.stringify({ data: qs, at: Date.now() })) } catch {}
+}
+
+// ── Personalized predictions cache (localStorage, 5 min) ──────────────────
+const PREDS_TTL = 5 * 60 * 1000
+function predsCacheKey(userId, leagueKey) { return `porra-extras-preds:${userId}:${leagueKey}` }
+function readCachedExtrasPreds(userId, leagueKey) {
+  try {
+    const raw = localStorage.getItem(predsCacheKey(userId, leagueKey))
+    if (!raw) return null
+    const { data, at } = JSON.parse(raw)
+    return data && Date.now() - at < PREDS_TTL ? data : null
+  } catch { return null }
+}
+function writeCachedExtrasPreds(userId, leagueKey, data) {
+  try { localStorage.setItem(predsCacheKey(userId, leagueKey), JSON.stringify({ data, at: Date.now() })) } catch {}
+}
+
+function cutoffFromMatches(matches) {
+  if (!matches?.length) return null
+  const first = matches.find(m => m.stage === 'group') ?? matches[0]
+  return first ? new Date(first.match_date).getTime() - 60 * 60 * 1000 : null
+}
+
 // Twemoji CDN URL for any emoji string (works on all browsers/OS)
 function emojiSrc(emoji) {
   const pts = [...emoji].map(c => c.codePointAt(0).toString(16)).join('-')
@@ -395,15 +431,19 @@ export default function Extras() {
   const { t, dateLocale } = useLang()
   const predictionMode   = activeLeague?.prediction_mode ?? 'global'
   const leagueIdForPred  = predictionMode === 'per_league' ? activeLeague?.id ?? null : null
+  const leagueKey        = leagueIdForPred ?? 'global'
 
-  const [questions,    setQuestions]    = useState([])
-  // Respuestas locales (borrador). Se escriben en BD solo al enviar.
-  const [answers,      setAnswers]      = useState({})  // { [key]: { answer_choice, answer_player, answer_number } }
-  const [textDrafts,   setTextDrafts]   = useState({})  // valores de los inputs de texto
-  const [loading,      setLoading]      = useState(true)
-  const [cutoffTime,   setCutoffTime]   = useState(null)
-  const [isSubmitted,  setIsSubmitted]  = useState(false)
-  const [submittedAt,  setSubmittedAt]  = useState(null)
+  // Serve from cache so the page renders instantly on nav/refresh
+  const cachedQsAtMount    = readCachedQuestions()
+  const cachedPredsAtMount = user ? readCachedExtrasPreds(user.id, leagueKey) : null
+
+  const [questions,    setQuestions]    = useState(() => cachedQsAtMount ?? [])
+  const [answers,      setAnswers]      = useState(() => cachedPredsAtMount?.answers ?? {})
+  const [textDrafts,   setTextDrafts]   = useState(() => cachedPredsAtMount?.textDrafts ?? {})
+  const [loading,      setLoading]      = useState(() => !(cachedQsAtMount?.length > 0))
+  const [cutoffTime,   setCutoffTime]   = useState(() => cutoffFromMatches(getMatchCache()))
+  const [isSubmitted,  setIsSubmitted]  = useState(() => cachedPredsAtMount?.isSubmitted ?? false)
+  const [submittedAt,  setSubmittedAt]  = useState(() => cachedPredsAtMount?.submittedAt ?? null)
   const [submitting,   setSubmitting]   = useState(false)
   const [showConfirm,  setShowConfirm]  = useState(false)
   const [error,        setError]        = useState('')
@@ -415,18 +455,45 @@ export default function Extras() {
 
   // ── Fetch all data ──────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
-    if (!user || leagueLoading) return
-    setLoading(true)
+    if (!user || leagueLoading) {
+      console.log('[porra:extras] fetchAll → skip (user:', !!user, 'leagueLoading:', leagueLoading, ')')
+      return
+    }
+    console.log('[porra:extras] fetchAll START — leagueKey:', leagueKey)
     setError('')
+
+    // Serve from cache immediately (avoids skeleton on nav/refresh)
+    const cachedQs    = readCachedQuestions()
+    const cachedPreds = readCachedExtrasPreds(user.id, leagueKey)
+    if (cachedQs) {
+      console.log('[porra:extras] questions cache HIT', cachedQs.length)
+      setQuestions(cachedQs)
+    } else {
+      console.log('[porra:extras] questions cache MISS, waiting for network…')
+    }
+    if (cachedPreds) {
+      console.log('[porra:extras] preds cache HIT')
+      setAnswers(cachedPreds.answers)
+      setTextDrafts(cachedPreds.textDrafts)
+      setIsSubmitted(cachedPreds.isSubmitted)
+      setSubmittedAt(cachedPreds.submittedAt)
+    } else {
+      console.log('[porra:extras] preds cache MISS, waiting for network…')
+    }
+    if (cachedQs?.length > 0) setLoading(false) else setLoading(true)
+
+    const cachedMatches = getMatchCache()
+    if (cachedMatches?.length) setCutoffTime(cutoffFromMatches(cachedMatches))
+
+    const t0 = Date.now()
     try {
-      const cachedMatches  = getMatchCache()
       const matchesPromise = cachedMatches
         ? Promise.resolve({ data: cachedMatches })
         : sq(supabase.from('matches').select('match_date, stage').order('match_date'))
 
-      const qPromise = sq(
-        supabase.from('special_questions').select('*').order('display_order')
-      )
+      const qPromise = cachedQs
+        ? Promise.resolve({ data: cachedQs })
+        : sq(supabase.from('special_questions').select('*').order('display_order'))
 
       const predQuery = leagueIdForPred
         ? supabase.from('special_predictions').select('*').eq('user_id', user.id).eq('league_id', leagueIdForPred)
@@ -439,14 +506,17 @@ export default function Extras() {
       const [matchRes, qRes, pRes, subRes] = await Promise.all([
         matchesPromise, qPromise, sq(predQuery), sq(subQuery),
       ])
+      console.log(`[porra:extras] network done in ${Date.now() - t0}ms — qs:${qRes?.data?.length} preds:${pRes?.data?.length} sub:${subRes?.data ? 'yes' : 'no'}`)
 
-      if (matchRes?.data?.length) {
-        if (!cachedMatches) setMatchCache(matchRes.data)
-        const firstGroup = matchRes.data.find(m => m.stage === 'group') ?? matchRes.data[0]
-        if (firstGroup) setCutoffTime(new Date(firstGroup.match_date).getTime() - 60 * 60 * 1000)
+      if (matchRes?.data?.length && !cachedMatches) {
+        setMatchCache(matchRes.data)
+        setCutoffTime(cutoffFromMatches(matchRes.data))
       }
 
-      if (qRes?.data) setQuestions(qRes.data)
+      if (qRes?.data && !cachedQs) {
+        setQuestions(qRes.data)
+        writeCachedQuestions(qRes.data)
+      }
 
       if (pRes?.data) {
         const answerMap     = {}
@@ -460,13 +530,17 @@ export default function Extras() {
           if (p.answer_player != null) initialDrafts[p.question_key] = p.answer_player
           if (p.answer_number != null) initialDrafts[p.question_key] = String(p.answer_number)
         })
+        const nowSubmitted = !!(subRes?.data)
         setAnswers(answerMap)
         setTextDrafts(initialDrafts)
-      }
-
-      if (subRes?.data) {
-        setIsSubmitted(true)
-        setSubmittedAt(subRes.data.submitted_at)
+        setIsSubmitted(nowSubmitted)
+        setSubmittedAt(subRes?.data?.submitted_at ?? null)
+        writeCachedExtrasPreds(user.id, leagueKey, {
+          answers: answerMap,
+          textDrafts: initialDrafts,
+          isSubmitted: nowSubmitted,
+          submittedAt: subRes?.data?.submitted_at ?? null,
+        })
       }
     } finally {
       setLoading(false)
@@ -560,6 +634,12 @@ export default function Extras() {
       setIsSubmitted(true)
       setSubmittedAt(now)
       setShowConfirm(false)
+      writeCachedExtrasPreds(user.id, leagueKey, {
+        answers,
+        textDrafts,
+        isSubmitted: true,
+        submittedAt: now,
+      })
     } catch (e) {
       setError(e.message ?? t('extras.errSend'))
     } finally {

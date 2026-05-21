@@ -181,7 +181,17 @@ export function AuthProvider({ children }) {
       localStorage.removeItem(PROFILE_CACHE_KEY)
       localStorage.removeItem('porra-pending-league-create')
       localStorage.removeItem('porra-invite-code')
-      if (user?.id) localStorage.removeItem(`porra-leagues-cache:${user.id}`)
+      if (user?.id) {
+        localStorage.removeItem(`porra-leagues-cache:${user.id}`)
+        // Clear user-scoped extras predictions cache
+        const prefix = `porra-extras-preds:${user.id}:`
+        const toRemove = []
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i)
+          if (k?.startsWith(prefix)) toRemove.push(k)
+        }
+        toRemove.forEach(k => localStorage.removeItem(k))
+      }
     } catch {}
     invalidateCache()
     setMatchCache(null)
