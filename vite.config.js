@@ -35,10 +35,24 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
-        // No precache la respuesta de Supabase: solo el shell estático.
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // No precache JS chunks: they have content-hash names and change on every build.
+        // Precaching them causes bad-precaching-response 404s when Render replaces old
+        // files with newly-hashed ones (old SW still holds the previous filename in its
+        // manifest and tries to re-fetch it). StaleWhileRevalidate below covers them
+        // at runtime without failing hard on stale filenames.
+        globPatterns: ['**/*.{css,html,svg,png,ico,woff2}'],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            // Hashed JS chunks: serve from cache instantly, refresh in background.
+            // Stale entries are harmless (they just get replaced on next navigation).
+            urlPattern: /\/assets\/.*\.js(\?.*)?$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'js-chunks',
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            },
+          },
           {
             // Fuentes de Google (CSS + woff2)
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
