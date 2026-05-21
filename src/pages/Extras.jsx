@@ -480,7 +480,7 @@ export default function Extras() {
     } else {
       console.log('[porra:extras] preds cache MISS, waiting for network…')
     }
-    if (cachedQs?.length > 0) setLoading(false) else setLoading(true)
+    setLoading(!(cachedQs?.length > 0))
 
     const cachedMatches = getMatchCache()
     if (cachedMatches?.length) setCutoffTime(cutoffFromMatches(cachedMatches))
