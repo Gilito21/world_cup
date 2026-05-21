@@ -15,9 +15,12 @@ export const TIMEOUT_ERROR = { message: 'Request timeout', code: 'TIMEOUT' }
 
 // Wraps a Supabase query with a safety timeout. Returns a proper error on timeout
 // so callers can distinguish "timed out" from "success with null data".
-// 8s is long enough for slow networks but short enough that a hung query
-// (e.g. after the tab was throttled by Chrome) doesn't keep the UI in a spinner.
-export function sq(query, ms = 8000) {
+// 15s: when the access token is expired, Supabase JS queues all queries until the
+// refresh network call completes (~8s). With 8s we were timing out before the
+// refresh finished; 15s gives the refresh time to complete and the query to execute.
+// The UI is never blocked waiting for this (caches serve data instantly), so the
+// longer timeout only affects background refresh quality, not perceived performance.
+export function sq(query, ms = 15000) {
   return Promise.race([
     query,
     new Promise(resolve => setTimeout(() => resolve({ data: null, error: TIMEOUT_ERROR }), ms)),
