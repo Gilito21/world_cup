@@ -106,9 +106,9 @@ function CutoffCountdown({ cutoffTime }) {
   )
 }
 
-// ─── Panel de envío ────────────────────────────────────────────────────────
-function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submittedAt, onSubmit, submitting }) {
-  const { t, dateLocale } = useLang()
+// ─── Progress pill (inline, mirrors Pronósticos) ──────────────────────────
+function ProgressPill({ answeredCount, totalCount, cutoffTime, isSubmitted, onSubmit, submitting }) {
+  const { t } = useLang()
   const [, force] = useState(0)
   useEffect(() => {
     if (!cutoffTime) return
@@ -120,84 +120,55 @@ function SubmitPanel({ answeredCount, totalCount, cutoffTime, isSubmitted, submi
   const isComplete   = answeredCount === totalCount && totalCount > 0
   const canSubmit    = isComplete && !isPastCutoff && !isSubmitted
   const pct          = totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0
+  const remaining    = totalCount - answeredCount
 
   if (isSubmitted) {
     return (
-      <div className="card p-3 sm:p-4 bg-green-50/80 border-green-200 flex items-center gap-3">
-        <span className="text-2xl sm:text-3xl flex-shrink-0">✅</span>
-        <div className="min-w-0">
-          <p className="font-bold text-green-700 text-sm sm:text-base">{t('extras.submitted')}</p>
-          <p className="text-[11px] sm:text-xs text-green-600 mt-0.5">
-            {submittedAt
-              ? new Date(submittedAt).toLocaleDateString(dateLocale, {
-                  day: 'numeric', month: 'short',
-                  hour: '2-digit', minute: '2-digit',
-                })
-              : ''}
-            {' · '}{t('extras.submittedDesc', { n: totalCount })}
-          </p>
-        </div>
-      </div>
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-grass-500/15 border border-grass-500/30 text-grass-600 text-xs font-bold whitespace-nowrap flex-shrink-0">
+        <span aria-hidden="true">✅</span>
+        <span className="hidden sm:inline">{t('extras.submitted')}</span>
+      </span>
+    )
+  }
+
+  if (isPastCutoff) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 text-red-600 text-xs font-bold whitespace-nowrap flex-shrink-0">
+        <span aria-hidden="true">🔒</span>
+        <span>{t('extras.closedLabel')}</span>
+      </span>
     )
   }
 
   return (
-    <div className="card p-3 sm:p-4 space-y-2.5 sm:space-y-3">
-      {/* Progress bar */}
-      <div>
-        <div className="flex items-center justify-between text-[11px] sm:text-xs mb-1.5 gap-2">
-          <span className="text-ink/60 font-medium">{t('extras.progressLabel')}</span>
-          <span className={`font-bold tabular-nums flex-shrink-0 ${isComplete ? 'text-green-500' : 'text-ink/70'}`}>
-            {answeredCount} / {totalCount}
-          </span>
-        </div>
-        <div className="h-2.5 bg-paper rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${isComplete ? 'bg-grass-500' : 'bg-ink/70'}`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-
-      {cutoffTime && !isPastCutoff && (
-        <p className="text-xs text-ink/50 flex items-center gap-1.5 flex-wrap">
-          <span>{t('extras.cutoffNote')}</span>
-          <CutoffCountdown cutoffTime={cutoffTime} />
-        </p>
+    <button
+      type="button"
+      onClick={onSubmit}
+      disabled={!canSubmit || submitting}
+      title={canSubmit ? t('extras.submitBtn') : t('extras.pendingBtn', { n: remaining !== 1 ? 'n' : '', count: remaining, s: remaining !== 1 ? 's' : '' })}
+      className={`relative inline-flex items-center gap-2 px-3 py-2 text-xs font-bold whitespace-nowrap overflow-hidden border transition-colors flex-shrink-0 ${
+        canSubmit
+          ? 'bg-ink hover:bg-terracotta border-ink hover:border-terracotta text-cream cursor-pointer'
+          : 'bg-paper border-ink/25 text-ink/80 cursor-default'
+      }`}
+    >
+      {!canSubmit && (
+        <span
+          className="absolute inset-y-0 left-0 bg-ink/10 transition-all duration-500"
+          style={{ width: `${pct}%` }}
+          aria-hidden="true"
+        />
       )}
-
-      {isPastCutoff && (
-        <div className="rounded-none bg-red-50 border border-red-200 px-4 py-3 space-y-1">
-          <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
-            <span>🔒</span>{t('extras.closedMsg')}
-          </p>
-          <p className="text-xs text-red-500">
-            {answeredCount > 0
-              ? t('extras.missedDeadlinePartial', { n: answeredCount, total: totalCount })
-              : t('extras.missedDeadline')}
-          </p>
-        </div>
-      )}
-
-      {!isPastCutoff && (
-        <button
-          onClick={onSubmit}
-          disabled={!canSubmit || submitting}
-          className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-3"
-        >
-          {submitting ? <Spinner size="sm" /> : <span>🎲</span>}
-          {isComplete
+      <span className="relative flex items-center gap-1.5">
+        {submitting ? <Spinner size="sm" /> : <span aria-hidden="true">🎲</span>}
+        <span className="tabular-nums">{answeredCount} / {totalCount}</span>
+        <span className="hidden sm:inline">
+          {canSubmit
             ? t('extras.submitBtn')
-            : t('extras.pendingBtn', { n: totalCount - answeredCount !== 1 ? 'n' : '', count: totalCount - answeredCount, s: totalCount - answeredCount !== 1 ? 's' : '' })}
-        </button>
-      )}
-
-      {!isComplete && !isPastCutoff && (
-        <p className="text-xs text-center text-ink/50">
-          {t('extras.allRequired')}
-        </p>
-      )}
-    </div>
+            : t('extras.pendingBtn', { n: remaining !== 1 ? 'n' : '', count: remaining, s: remaining !== 1 ? 's' : '' })}
+        </span>
+      </span>
+    </button>
   )
 }
 
@@ -718,22 +689,22 @@ export default function Extras() {
           <span className="ed-mono text-terracotta text-[10px] block mb-1">// {t('extras.chapter')}</span>
           <h1 className="font-display text-base sm:text-lg text-ink leading-none">{t('extras.title')}</h1>
         </div>
-        <div className="flex items-center gap-4 text-xs text-ink/60 flex-shrink-0">
-          <span>{t('extras.deadlineLabel')} {cutoffTime ? <CutoffCountdown cutoffTime={cutoffTime} /> : '—'}</span>
-          <span className="font-bold text-ink">+{totalPoints} pts</span>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {cutoffTime && (
+            <span className="text-xs text-ink/60 hidden sm:inline">
+              {t('extras.deadlineLabel')} <CutoffCountdown cutoffTime={cutoffTime} />
+            </span>
+          )}
+          <ProgressPill
+            answeredCount={answeredCount}
+            totalCount={questions.length}
+            cutoffTime={cutoffTime}
+            isSubmitted={isSubmitted}
+            onSubmit={() => setShowConfirm(true)}
+            submitting={submitting}
+          />
         </div>
       </div>
-
-      {/* ── Submit panel ──────────────────────────────────────── */}
-      <SubmitPanel
-        answeredCount={answeredCount}
-        totalCount={questions.length}
-        cutoffTime={cutoffTime}
-        isSubmitted={isSubmitted}
-        submittedAt={submittedAt}
-        onSubmit={() => setShowConfirm(true)}
-        submitting={submitting}
-      />
 
       {/* ── Error ─────────────────────────────────────────────── */}
       {error && (
