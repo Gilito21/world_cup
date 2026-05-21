@@ -689,9 +689,8 @@ export default function Pronosticos() {
         setSubmittedAt(null)
       }
 
-      const hasMatches    = matches.length > 0 || !!getMatchCache()
-      const hasCachedView = hasMatches && getCache(predCacheKey)
-      if (!hasCachedView) setLoading(true)
+      const hasMatches = matches.length > 0 || !!getMatchCache()
+      if (!hasMatches) setLoading(true)
     }
 
     try {
