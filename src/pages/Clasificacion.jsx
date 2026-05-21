@@ -14,6 +14,20 @@ import { StandingsSkeleton } from '../components/Skeleton'
 import { EditorialBand } from '../components/Editorial'
 
 const MEDALS = ['🥇', '🥈', '🥉']
+const STANDINGS_LS_TTL = 10 * 60 * 1000 // 10 min
+
+function readLsStandings(leagueId) {
+  try {
+    const raw = localStorage.getItem(`porra-lb:${leagueId}`)
+    if (!raw) return null
+    const { d, ts } = JSON.parse(raw)
+    return Date.now() - ts < STANDINGS_LS_TTL ? d : null
+  } catch { return null }
+}
+
+function writeLsStandings(leagueId, data) {
+  try { localStorage.setItem(`porra-lb:${leagueId}`, JSON.stringify({ d: data, ts: Date.now() })) } catch {}
+}
 
 // ─── STAT BADGE ──────────────────────────────────────────────────────────────
 
@@ -273,11 +287,13 @@ export default function Clasificacion() {
     // por la auditoría de bugs cross-user).
     const cacheKey   = `lb:league:${activeLeague.id}`
     const myStatsKey = `lb:league:${activeLeague.id}:my:${user.id}`
-    const cached       = getCache(cacheKey)
+    const cached       = getCache(cacheKey) ?? readLsStandings(activeLeague.id)
     const cachedMyStats = getCache(myStatsKey)
     if (cached) {
       setLeagueStandings(cached)
-      setMyLeagueStats(cachedMyStats ?? { exact: 0, correct: 0, total: 0 })
+      setCache(cacheKey, cached)
+      const myRow = cached.find(r => r.id === user.id)
+      setMyLeagueStats(cachedMyStats ?? myRow?.stats ?? { exact: 0, correct: 0 })
     } else {
       setLoading(true)
     }
@@ -362,8 +378,9 @@ export default function Clasificacion() {
       const me = result.find(r => r.id === user.id)
       const myStats = me?.stats ?? { exact: 0, correct: 0, total: 0 }
       if (me) setMyLeagueStats(myStats)
-      setCache(cacheKey, result)         // standings públicas
-      setCache(myStatsKey, myStats)      // stats personales (clave user-scoped)
+      setCache(cacheKey, result)
+      setCache(myStatsKey, myStats)
+      writeLsStandings(activeLeague.id, result)
 
       // Cargar resultados de premios si la liga tiene bote configurado
       if (activeLeague.entry_fee || activeLeague.prize_rules?.length > 0) {
@@ -475,7 +492,6 @@ export default function Clasificacion() {
               <div className="flex gap-2 mt-3">
                 <StatBadge label={t('clasificacion.statExact')}   value={myLeagueStats.exact}   color="text-ink" />
                 <StatBadge label={t('clasificacion.statCorrect')} value={myLeagueStats.correct} color="text-blue-400" />
-                <StatBadge label={t('clasificacion.statTotal')}   value={myLeagueStats.total}   color="text-ink/80" />
               </div>
             )}
           </div>
@@ -488,12 +504,11 @@ export default function Clasificacion() {
           </div>
         ) : (
           <div className="card overflow-hidden">
-            <div className="grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-ink/20 text-[11px] sm:text-xs font-semibold text-ink/60 uppercase tracking-wider">
+            <div className="grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(2,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-ink/20 text-[11px] sm:text-xs font-semibold text-ink/60 uppercase tracking-wider">
               <div>#</div>
               <div>{t('clasificacion.colPlayer')}</div>
               <div className="hidden sm:block text-center">{t('clasificacion.colExact')}</div>
               <div className="hidden sm:block text-center">{t('clasificacion.colCorrect')}</div>
-              <div className="hidden sm:block text-center">{t('clasificacion.colTotal')}</div>
               <div className="text-right">{t('clasificacion.colPts')}</div>
             </div>
             <div className="divide-y divide-ink/20">
@@ -504,7 +519,7 @@ export default function Clasificacion() {
                   <div
                     key={entry.id}
                     onClick={() => setSelectedProfile(entry)}
-                    className={`grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(3,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3.5 items-center transition-colors cursor-pointer ${
+                    className={`grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[3rem_1fr_repeat(2,5rem)_5rem] gap-2 px-3 sm:px-4 py-2.5 sm:py-3.5 items-center transition-colors cursor-pointer ${
                       isMe ? 'bg-paper-200 hover:bg-paper active:bg-cream' : 'hover:bg-paper/60 active:bg-paper'
                     }`}
                   >
@@ -531,9 +546,6 @@ export default function Clasificacion() {
                     </div>
                     <div className="hidden sm:block text-center text-blue-400 font-medium text-sm">
                       {entry.stats.correct}
-                    </div>
-                    <div className="hidden sm:block text-center text-ink/50 text-sm">
-                      {entry.stats.total}
                     </div>
                     <div className="text-right">
                       <span className={`text-lg font-bold ${isTop ? 'text-ink' : 'text-ink'}`}>
