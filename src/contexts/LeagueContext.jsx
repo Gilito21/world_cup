@@ -5,6 +5,18 @@ import { useLang } from './LangContext'
 
 const LeagueContext = createContext({})
 
+function readCachedLeagues(userId) {
+  try {
+    const raw = localStorage.getItem(`porra-leagues-cache:${userId}`)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch { return null }
+}
+
+function writeCachedLeagues(userId, list) {
+  try { localStorage.setItem(`porra-leagues-cache:${userId}`, JSON.stringify(list)) } catch {}
+}
+
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
@@ -23,6 +35,19 @@ export function LeagueProvider({ children }) {
   const loadLeagues = useCallback(async () => {
     if (!user) { setLeagues([]); setActiveLeagueState(null); setLoading(false); return }
 
+    // Desbloquear la UI con datos en cache antes de ir a la red
+    const cachedList = readCachedLeagues(user.id)
+    if (cachedList) {
+      setLeagues(cachedList)
+      const savedId = localStorage.getItem(`porra-league-${user.id}`)
+      const saved   = cachedList.find(l => l.id === savedId)
+      setActiveLeagueState(prev => {
+        if (prev && cachedList.find(l => l.id === prev.id)) return cachedList.find(l => l.id === prev.id)
+        return saved ?? cachedList[0] ?? null
+      })
+      setLoading(false)
+    }
+
     try {
       const { data } = await sq(
         supabase
@@ -36,6 +61,7 @@ export function LeagueProvider({ children }) {
 
       const list = data.map(m => ({ ...m.leagues, role: m.role, prediction_mode: m.prediction_mode ?? 'global' }))
       setLeagues(list)
+      writeCachedLeagues(user.id, list)
 
       const savedId = localStorage.getItem(`porra-league-${user.id}`)
       const saved   = list.find(l => l.id === savedId)

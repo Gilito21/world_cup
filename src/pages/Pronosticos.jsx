@@ -279,8 +279,8 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
   const home        = draft?.home ?? ''
   const away        = draft?.away ?? ''
   const tiebreaker  = draft?.tiebreaker ?? null
-  const setHome     = val => onDraftChange(match.id, val, away)
-  const setAway     = val => onDraftChange(match.id, home, val)
+  const setHome     = val => onDraftChange(match.id, val, away === '' ? 0 : away)
+  const setAway     = val => onDraftChange(match.id, home === '' ? 0 : home, val)
   const isKnockout  = match.stage !== 'group'
   const isDraw      = home !== '' && away !== '' && Number(home) === Number(away)
 

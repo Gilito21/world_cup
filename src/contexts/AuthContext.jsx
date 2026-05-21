@@ -50,8 +50,6 @@ export function AuthProvider({ children }) {
       userIdRef.current = nextId
       setUser(session?.user ?? null)
       if (session?.user) {
-        const cached = readCachedProfile(session.user.id)
-        if (cached) { setProfile(cached); setLoading(false) }
         fetchProfile(session.user.id)
       } else setLoading(false)
     }).catch(() => {
@@ -105,12 +103,15 @@ export function AuthProvider({ children }) {
     // Evita fetches concurrentes (e.g. getSession + onAuthStateChange a la vez)
     if (fetchingRef.current) return
     fetchingRef.current = true
+    // Desbloquear la UI inmediatamente si hay datos en cache, sin esperar la red.
+    // Esto cubre el path donde onAuthStateChange (SIGNED_IN) se dispara antes
+    // de que resuelva getSession() y no tendría acceso al cache de otro modo.
+    const cached = readCachedProfile(userId)
+    if (cached) { setProfile(cached); setLoading(false) }
     try {
       const { data } = await sq(
         supabase.from('profiles').select('*').eq('id', userId).single()
       )
-      // Solo actualizamos profile si llegan datos reales — nunca lo
-      // reseteamos a null en timeouts/errores.
       if (data) { setProfile(data); writeCachedProfile(data) }
     } finally {
       fetchingRef.current = false
@@ -156,6 +157,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem(PROFILE_CACHE_KEY)
       localStorage.removeItem('porra-pending-league-create')
       localStorage.removeItem('porra-invite-code')
+      if (user?.id) localStorage.removeItem(`porra-leagues-cache:${user.id}`)
     } catch {}
     invalidateCache()
     setMatchCache(null)
