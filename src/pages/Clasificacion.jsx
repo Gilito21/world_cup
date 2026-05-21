@@ -645,12 +645,14 @@ export default function Clasificacion() {
                       ))}
                     </div>
                   )}
-                  <p className="text-ink/50 text-sm -mt-2">
-                    {t('clasificacion.nParticipantsLeague', { name: activeLeague?.name, n: leagueStandings.length, s: leagueStandings.length !== 1 ? 's' : '' })}
-                  </p>
-                  {activeLeague && (activeLeague.entry_fee || activeLeague.prize_rules?.length > 0) && (
-                    <PrizePotCard activeLeague={activeLeague} memberCount={leagueStandings.length} prizeResults={prizeResults} />
-                  )}
+                  <div className="flex items-center justify-between gap-2 -mt-2">
+                    <p className="text-ink/50 text-sm">
+                      {t('clasificacion.nParticipantsLeague', { name: activeLeague?.name, n: leagueStandings.length, s: leagueStandings.length !== 1 ? 's' : '' })}
+                    </p>
+                    {activeLeague && (activeLeague.entry_fee || activeLeague.prize_rules?.length > 0) && (
+                      <PrizePotCard activeLeague={activeLeague} memberCount={leagueStandings.length} prizeResults={prizeResults} />
+                    )}
+                  </div>
                   <IndividualTable standings={leagueStandings} showStats />
                   {activeLeague && <LeagueFeed leagueId={activeLeague.id} />}
                   <p className="text-center text-ink/50 text-xs">
