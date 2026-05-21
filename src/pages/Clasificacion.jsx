@@ -160,11 +160,10 @@ function ProfileModal({ profile, currentUserId, onClose }) {
           {loading ? (
             <div className="flex justify-center py-4"><Spinner size="sm" /></div>
           ) : (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <StatBadge label={t('clasificacion.statPoints')}  value={stats.points}  color="text-ink" />
               <StatBadge label={t('clasificacion.statExact')}   value={stats.exact}   color="text-ink" />
               <StatBadge label={t('clasificacion.statCorrect')} value={stats.correct} color="text-blue-400" />
-              <StatBadge label={t('clasificacion.statTotal')}   value={stats.total}   color="text-ink/70" />
             </div>
           )}
         </div>
