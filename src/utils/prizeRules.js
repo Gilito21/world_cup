@@ -36,16 +36,9 @@ export const TRIGGER_GROUPS = [
       { value: 'most_submitted',      emoji: '📝', label: 'Más pronósticos enviados en total' },
     ],
   },
-  {
-    group: 'custom',
-    label: 'Personalizado',
-    options: [
-      { value: 'custom', emoji: '✏️', label: 'Premio personalizado' },
-    ],
-  },
 ]
 
 const ALL_TRIGGERS = TRIGGER_GROUPS.flatMap(g => g.options)
 export function getTriggerInfo(value) {
-  return ALL_TRIGGERS.find(t => t.value === value) ?? { value: 'custom', emoji: '✏️', label: 'Premio personalizado' }
+  return ALL_TRIGGERS.find(t => t.value === value) ?? { value, emoji: '🏆', label: value }
 }
