@@ -44,11 +44,13 @@ export default function ReportButton({ username, userEmail }) {
       {/* Botón flotante */}
       <button
         onClick={handleOpen}
-        className="fixed bottom-20 sm:bottom-5 right-3 sm:right-4 z-40 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-paper border border-ink/20 shadow-md text-ink/50 hover:text-ink/80 hover:border-ink/30 hover:shadow-lg transition-all duration-150 text-xs font-medium"
+        className="fixed bottom-20 sm:bottom-5 right-3 sm:right-4 z-40 flex items-center px-2.5 py-1.5 rounded-full bg-paper border border-ink/20 shadow-md text-ink/50 hover:text-ink/80 hover:border-ink/30 hover:shadow-lg transition-all duration-200 text-xs font-medium group"
         aria-label={t('report.btnLabel')}
       >
         <span className="text-sm leading-none">⚠️</span>
-        <span className="hidden sm:inline">{t('report.btnLabel')}</span>
+        <span className="overflow-hidden max-w-0 group-hover:max-w-[8rem] transition-all duration-200 whitespace-nowrap">
+          <span className="pl-1.5">{t('report.btnLabel')}</span>
+        </span>
       </button>
 
       {/* Modal */}
