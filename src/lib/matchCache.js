@@ -20,24 +20,35 @@ let cached = null
 let cachedAt = 0
 
 export function getMatchCache() {
-  if (cached && Date.now() - cachedAt < TTL) return cached
+  if (cached && Date.now() - cachedAt < TTL) {
+    console.log('[porra:matches] getMatchCache → in-memory hit', cached.length, 'matches')
+    return cached
+  }
   // In-memory miss (e.g. page refresh) — try localStorage
   try {
     const raw = localStorage.getItem(LS_KEY)
     if (raw) {
       const { data, at } = JSON.parse(raw)
+      const ageMin = Math.round((Date.now() - at) / 60000)
       if (data && Date.now() - at < TTL) {
+        console.log(`[porra:matches] getMatchCache → localStorage hit (${data.length} matches, ${ageMin}min old)`)
         cached = data
         cachedAt = at
         return cached
       }
+      console.log(`[porra:matches] getMatchCache → localStorage EXPIRED (${ageMin}min old)`)
+    } else {
+      console.log('[porra:matches] getMatchCache → localStorage MISS (no data)')
     }
-  } catch {}
+  } catch (e) {
+    console.warn('[porra:matches] getMatchCache localStorage read error', e)
+  }
   return null
 }
 
 export function setMatchCache(matches) {
   if (!Array.isArray(matches)) {
+    console.log('[porra:matches] setMatchCache → CLEARED')
     cached = matches
     cachedAt = 0
     try { localStorage.removeItem(LS_KEY) } catch {}
@@ -46,5 +57,6 @@ export function setMatchCache(matches) {
   // slice() para no mutar el array que pasó el caller.
   cached   = matches.slice().sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
   cachedAt = Date.now()
+  console.log('[porra:matches] setMatchCache → stored', cached.length, 'matches to memory + localStorage')
   try { localStorage.setItem(LS_KEY, JSON.stringify({ data: cached, at: cachedAt })) } catch {}
 }

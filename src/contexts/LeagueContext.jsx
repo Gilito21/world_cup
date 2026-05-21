@@ -33,11 +33,15 @@ export function LeagueProvider({ children }) {
   useEffect(() => { loadingRef.current = loading }, [loading])
 
   const loadLeagues = useCallback(async () => {
-    if (!user) { setLeagues([]); setActiveLeagueState(null); setLoading(false); return }
+    if (!user) {
+      console.log('[porra:league] loadLeagues → no user, skip')
+      setLeagues([]); setActiveLeagueState(null); setLoading(false); return
+    }
 
     // Desbloquear la UI con datos en cache antes de ir a la red
     const cachedList = readCachedLeagues(user.id)
     if (cachedList) {
+      console.log('[porra:league] loadLeagues → cache HIT', cachedList.length, 'leagues')
       setLeagues(cachedList)
       const savedId = localStorage.getItem(`porra-league-${user.id}`)
       const saved   = cachedList.find(l => l.id === savedId)
@@ -46,8 +50,11 @@ export function LeagueProvider({ children }) {
         return saved ?? cachedList[0] ?? null
       })
       setLoading(false)
+    } else {
+      console.log('[porra:league] loadLeagues → cache MISS, waiting for network…')
     }
 
+    const t0 = Date.now()
     try {
       const { data } = await sq(
         supabase
@@ -55,6 +62,7 @@ export function LeagueProvider({ children }) {
           .select('role, prediction_mode, leagues(id, name, invite_code, created_by)')
           .eq('user_id', user.id)
       )
+      console.log(`[porra:league] loadLeagues network done in ${Date.now() - t0}ms —`, data ? `${data.length} rows` : 'TIMEOUT/null')
 
       // On timeout data is null — keep whatever was already loaded rather than wiping leagues
       if (!data) return

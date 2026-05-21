@@ -656,16 +656,18 @@ export default function Pronosticos() {
 
   // ── Data loading ────────────────────────────────────────────────────────────
   const load = useCallback(async ({ force = false } = {}) => {
-    if (leagueLoading) return
+    if (leagueLoading) { console.log('[porra:load] skipped — leagueLoading=true'); return }
     const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'
     const predCacheKey = `preds:${user.id}:${leagueKey}`
     const subCacheKey  = `sub:${user.id}:${leagueKey}`
+    console.log(`[porra:load] START — mode=${predictionMode} leagueKey=${leagueKey} force=${force}`)
 
     // Initial path: hydrate from caches so the UI is instant.
     // Force path (pull-to-refresh): keep current UI, just refetch.
     if (!force) {
       const cachedPreds = getCache(predCacheKey)
       const cachedSub   = getCache(subCacheKey)
+      console.log('[porra:load] predCache:', cachedPreds ? `HIT (${Object.keys(cachedPreds).length} preds)` : 'MISS')
       if (cachedPreds) {
         setPredictions(cachedPreds)
         const initialDrafts = {}
@@ -690,9 +692,11 @@ export default function Pronosticos() {
       }
 
       const hasMatches = matches.length > 0 || !!getMatchCache()
+      console.log('[porra:load] hasMatches:', hasMatches, `(state=${matches.length}, cache=${!!getMatchCache()})`)
       if (!hasMatches) setLoading(true)
     }
 
+    const t0 = Date.now()
     try {
       const predQuery = (predictionMode === 'per_league' && activeLeague)
         ? supabase.from('predictions').select('*').eq('user_id', user.id).eq('league_id', activeLeague.id)
@@ -703,6 +707,7 @@ export default function Pronosticos() {
         : supabase.from('prediction_submissions').select('submitted_at').eq('user_id', user.id).is('league_id', null).eq('source', 'matches').maybeSingle()
 
       const cachedMatches = !force ? getMatchCache() : null
+      console.log('[porra:load] matchCache for query:', cachedMatches ? `HIT (${cachedMatches.length} matches, skipping network)` : 'MISS → fetching from DB')
       const [
         { data: matchData },
         { data: predData },
@@ -714,6 +719,7 @@ export default function Pronosticos() {
         sq(predQuery),
         sq(subQuery),
       ])
+      console.log(`[porra:load] network done in ${Date.now() - t0}ms — matches:${matchData?.length ?? 'TIMEOUT'} preds:${predData?.length ?? 'TIMEOUT'} sub:${subData !== undefined ? (subData ? 'submitted' : 'none') : 'TIMEOUT'}`)
 
       if (matchData) {
         setMatchCache(matchData)
@@ -814,15 +820,20 @@ export default function Pronosticos() {
     const existing = predictions[matchId]
     const leagueId = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : null
     const payload  = { user_id: user.id, match_id: matchId, home_score: home, away_score: away, league_id: leagueId, tiebreaker: tiebreaker ?? null }
+    const op = existing ? 'UPDATE' : 'INSERT'
+    console.log(`[porra:save] ${op} matchId=${matchId} score=${home}-${away} league=${leagueId ?? 'global'}`)
 
+    const t0 = Date.now()
     const { data, error: err } = existing
       ? await supabase.from('predictions').update(payload).eq('id', existing.id).select().single()
       : await supabase.from('predictions').insert(payload).select().single()
 
     if (err) {
+      console.error(`[porra:save] ${op} FAILED in ${Date.now() - t0}ms`, err)
       setError(t('pronosticos.errSaveDraft'))
       return false
     }
+    console.log(`[porra:save] ${op} OK in ${Date.now() - t0}ms → id=${data.id} score=${data.home_score}-${data.away_score}`)
     setPredictions(p => {
       const next = { ...p, [matchId]: data }
       const leagueKey = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : 'global'

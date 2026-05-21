@@ -38,12 +38,15 @@ export function AuthProvider({ children }) {
     // Timeout de seguridad: si Supabase no responde en 15s, desbloquear la UI
     const timeout = setTimeout(() => setLoading(false), 15000)
 
+    console.log('[porra:auth] init — calling getSession()')
     supabase.auth.getSession().then(({ data: { session } }) => {
       clearTimeout(timeout)
       const nextId = session?.user?.id ?? null
+      console.log('[porra:auth] getSession resolved — user:', nextId ?? 'none', '| userIdRef was:', userIdRef.current ?? 'none')
       if (userIdRef.current === nextId) {
         // Ya nos enteramos antes por onAuthStateChange (Supabase dispara
         // SIGNED_IN restaurando la sesión de localStorage casi al instante).
+        console.log('[porra:auth] getSession early-return (already handled by onAuthStateChange)')
         if (!session?.user) setLoading(false)
         return
       }
@@ -51,13 +54,18 @@ export function AuthProvider({ children }) {
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchProfile(session.user.id)
-      } else setLoading(false)
-    }).catch(() => {
+      } else {
+        console.log('[porra:auth] getSession → no session, loading=false')
+        setLoading(false)
+      }
+    }).catch((e) => {
+      console.error('[porra:auth] getSession ERROR', e)
       clearTimeout(timeout)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[porra:auth] onAuthStateChange event:', event, '| user:', session?.user?.id ?? 'none')
       // INITIAL_SESSION duplicates what getSession() already handles above
       if (event === 'INITIAL_SESSION') return
       // TOKEN_REFRESHED solo renueva el JWT — el user es el mismo.
@@ -70,14 +78,19 @@ export function AuthProvider({ children }) {
       // sea el mismo que ya teníamos. Si el id coincide no refetcheamos —
       // eso es lo que provocaba que cada return de pestaña tardase 8s y se
       // viera spinner / "no estás en ninguna liga".
-      if (userIdRef.current === nextId) return
+      if (userIdRef.current === nextId) {
+        console.log('[porra:auth] onAuthStateChange skipped (same userId)')
+        return
+      }
 
       userIdRef.current = nextId
       setUser(nextUser)
 
       if (nextUser) {
+        console.log('[porra:auth] onAuthStateChange → fetchProfile for', nextId)
         await fetchProfile(nextUser.id)
       } else {
+        console.log('[porra:auth] onAuthStateChange → signed out')
         setProfile(null)
         setLoading(false)
       }
@@ -101,17 +114,28 @@ export function AuthProvider({ children }) {
 
   async function fetchProfile(userId) {
     // Evita fetches concurrentes (e.g. getSession + onAuthStateChange a la vez)
-    if (fetchingRef.current) return
+    if (fetchingRef.current) {
+      console.log('[porra:auth] fetchProfile skipped (already in-flight)')
+      return
+    }
     fetchingRef.current = true
     // Desbloquear la UI inmediatamente si hay datos en cache, sin esperar la red.
     // Esto cubre el path donde onAuthStateChange (SIGNED_IN) se dispara antes
     // de que resuelva getSession() y no tendría acceso al cache de otro modo.
     const cached = readCachedProfile(userId)
-    if (cached) { setProfile(cached); setLoading(false) }
+    if (cached) {
+      console.log('[porra:auth] fetchProfile → profile cache HIT → loading=false')
+      setProfile(cached)
+      setLoading(false)
+    } else {
+      console.log('[porra:auth] fetchProfile → profile cache MISS, waiting for network…')
+    }
+    const t0 = Date.now()
     try {
       const { data } = await sq(
         supabase.from('profiles').select('*').eq('id', userId).single()
       )
+      console.log(`[porra:auth] fetchProfile network done in ${Date.now() - t0}ms —`, data ? 'OK' : 'TIMEOUT/null')
       if (data) { setProfile(data); writeCachedProfile(data) }
     } finally {
       fetchingRef.current = false
