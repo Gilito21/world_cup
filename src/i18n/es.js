@@ -536,7 +536,7 @@ export default {
     companyPlaceholder: 'ej. Accenture, EY, McKinsey…',
     notificationsSection: 'Notificaciones',
     remindersTitle: 'Recordatorios por email',
-    remindersDesc: 'Recibe un aviso cuando un partido empiece en menos de 2 horas y no hayas pronosticado.',
+    remindersDesc: 'Recibe avisos del Mundial.',
     statsSection: 'Estadísticas',
     statPredictions: 'Pronósticos',
     statExact: 'Exactos',

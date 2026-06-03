@@ -1,9 +1,13 @@
 /**
  * send-reminders.js
  * Envía recordatorios pre-Mundial a usuarios que aún no han enviado
- * sus pronósticos: 2 días antes y 1 día antes del inicio del torneo.
+ * sus pronósticos: 5 días, 2 días y 1 día antes del inicio del torneo.
  *
  * Ejecutar como cron job en Render cada 30 minutos.
+ *
+ * Uso:
+ *   node scripts/send-reminders.js                              (modo cron)
+ *   node scripts/send-reminders.js --preview <email> [--type 5_days|2_days|1_day]
  *
  * Variables de entorno requeridas:
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -31,14 +35,35 @@ const MUNDIAL_START = new Date('2026-06-11T19:00:00Z')
 
 // ─── Email pre-Mundial ────────────────────────────────────────────────────────
 
+const REMINDER_COPY = {
+  '5_days': {
+    diasTxt:  '5 días',
+    subjVerb: 'Quedan',
+    kicker:   'Aviso · 5 días',
+    headline: 'Quedan cinco días para el pitido inicial.',
+  },
+  '2_days': {
+    diasTxt:  '2 días',
+    subjVerb: 'Quedan',
+    kicker:   'Aviso · 48 horas',
+    headline: 'Te quedan dos días para entrar a la porra.',
+  },
+  '1_day': {
+    diasTxt:  '1 día',
+    subjVerb: 'Queda',
+    kicker:   'Aviso · 24 horas',
+    headline: 'Mañana pita el árbitro.',
+  },
+}
+
 function buildEmail({ username, hoursLeft, type }) {
-  const diasTxt = type === '2_days' ? '2 días' : '1 día'
-  const subject = `Queda ${diasTxt} para el Mundial · envía tu pronóstico`
+  const copy    = REMINDER_COPY[type]
+  const subject = `${copy.subjVerb} ${copy.diasTxt} para el Mundial · envía tu pronóstico`
   const horas   = Math.round(hoursLeft)
 
   const content = `
-${brandKicker(type === '2_days' ? 'Aviso · 48 horas' : 'Aviso · 24 horas')}
-${brandHeadline(type === '2_days' ? 'Te quedan dos días para entrar a la porra.' : 'Mañana pita el árbitro.')}
+${brandKicker(copy.kicker)}
+${brandHeadline(copy.headline)}
 <p style="margin:0 0 22px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${BRAND.ink};">
   Hola <strong>${escHtml(username)}</strong>, todavía no has enviado tu pronóstico para el Mundial 2026. Una vez arranque el primer partido se cierran los marcadores del torneo entero — no hay segunda oportunidad.
 </p>
@@ -90,15 +115,35 @@ async function main() {
   const start = Date.now()
   console.log(`[${new Date().toISOString()}] Comprobando recordatorios pre-Mundial...`)
 
+  if (!BREVO_KEY) { console.error('Falta BREVO_API_KEY'); process.exit(1) }
+
+  const previewIdx = process.argv.indexOf('--preview')
+  const previewTo  = previewIdx >= 0 ? process.argv[previewIdx + 1] : null
+  const typeIdx    = process.argv.indexOf('--type')
+  const previewType = typeIdx >= 0 ? process.argv[typeIdx + 1] : '5_days'
+
+  if (previewTo) {
+    if (!REMINDER_COPY[previewType]) {
+      console.error(`Tipo inválido: ${previewType}. Usa 5_days | 2_days | 1_day.`)
+      process.exit(1)
+    }
+    const hoursLeft = (MUNDIAL_START.getTime() - Date.now()) / 3_600_000
+    const { subject, html } = buildEmail({ username: 'Jaime', hoursLeft, type: previewType })
+    await sendEmail(previewTo, `[Draft · ${previewType}] ${subject}`, html)
+    console.log(`Preview enviado a ${previewTo} (tipo ${previewType}).`)
+    console.log(`  Subject: ${subject}`)
+    return
+  }
+
   if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Faltan vars de Supabase'); process.exit(1) }
-  if (!BREVO_KEY)                     { console.error('Falta BREVO_API_KEY');      process.exit(1) }
 
   const hoursLeft = (MUNDIAL_START.getTime() - Date.now()) / 3_600_000
 
-  // Detectar ventana (±1h alrededor de 48h y 24h antes)
+  // Detectar ventana (±1h alrededor de 120h, 48h y 24h antes)
   let reminderType = null
-  if (hoursLeft >= 47 && hoursLeft < 49) reminderType = '2_days'
-  if (hoursLeft >= 23 && hoursLeft < 25) reminderType = '1_day'
+  if (hoursLeft >= 119 && hoursLeft < 121) reminderType = '5_days'
+  if (hoursLeft >= 47  && hoursLeft < 49)  reminderType = '2_days'
+  if (hoursLeft >= 23  && hoursLeft < 25)  reminderType = '1_day'
 
   if (!reminderType) {
     console.log(`Fuera de ventana (${Math.round(hoursLeft)}h restantes). Nada que enviar.`)

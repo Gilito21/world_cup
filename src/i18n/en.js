@@ -527,7 +527,7 @@ export default {
     companyPlaceholder: 'e.g. Accenture, EY, McKinsey…',
     notificationsSection: 'Notifications',
     remindersTitle: 'Email reminders',
-    remindersDesc: "Get an alert when a match is less than 2 hours away and you haven't predicted it yet.",
+    remindersDesc: 'Get World Cup reminders.',
     statsSection: 'Stats',
     statPredictions: 'Predictions',
     statExact: 'Exact',
