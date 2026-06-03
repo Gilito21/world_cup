@@ -233,7 +233,13 @@ export default function Auth() {
         .or(orFilter)
         .not('company', 'is', null)
         .limit(8)
-      const unique = [...new Set((data ?? []).map(p => p.company).filter(Boolean))]
+      const byLower = new Map()
+      for (const p of data ?? []) {
+        if (!p.company) continue
+        const k = p.company.toLowerCase()
+        if (!byLower.has(k)) byLower.set(k, p.company)
+      }
+      const unique = [...byLower.values()]
       setCompanySuggestions(unique)
       setShowCompanySug(unique.length > 0)
       setCompanyHighlight(-1)

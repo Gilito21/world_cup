@@ -424,12 +424,15 @@ export default function Clasificacion() {
 
       const companyMap = {}
       for (const p of profiles) {
-        if (!companyMap[p.company]) companyMap[p.company] = []
-        companyMap[p.company].push(p)
+        const key = p.company.toLowerCase()
+        if (!companyMap[key]) companyMap[key] = { displayCounts: {}, members: [] }
+        companyMap[key].members.push(p)
+        companyMap[key].displayCounts[p.company] = (companyMap[key].displayCounts[p.company] ?? 0) + 1
       }
 
-      const result = Object.entries(companyMap)
-        .map(([name, members]) => {
+      const result = Object.values(companyMap)
+        .map(({ displayCounts, members }) => {
+          const name    = Object.entries(displayCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0]
           const sorted  = [...members].sort((a, b) => (b.total_points ?? 0) - (a.total_points ?? 0))
           const avg     = members.reduce((s, m) => s + (m.total_points ?? 0), 0) / members.length
           const hasMe   = members.some(m => m.id === user.id)
