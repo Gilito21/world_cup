@@ -1,13 +1,13 @@
 /**
  * send-reminders.js
  * Envía recordatorios pre-Mundial a usuarios que aún no han enviado
- * sus pronósticos: 5 días, 2 días y 1 día antes del inicio del torneo.
+ * sus pronósticos: 7 días, 2 días y 1 día antes del inicio del torneo.
  *
  * Ejecutar como cron job en Render cada 30 minutos.
  *
  * Uso:
  *   node scripts/send-reminders.js                              (modo cron)
- *   node scripts/send-reminders.js --preview <email> [--type 5_days|2_days|1_day]
+ *   node scripts/send-reminders.js --preview <email> [--type 7_days|2_days|1_day]
  *
  * Variables de entorno requeridas:
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -36,11 +36,11 @@ const MUNDIAL_START = new Date('2026-06-11T19:00:00Z')
 // ─── Email pre-Mundial ────────────────────────────────────────────────────────
 
 const REMINDER_COPY = {
-  '5_days': {
-    diasTxt:  '5 días',
+  '7_days': {
+    diasTxt:  '7 días',
     subjVerb: 'Quedan',
-    kicker:   'Aviso · 5 días',
-    headline: 'Quedan cinco días para el pitido inicial.',
+    kicker:   'Aviso · 7 días',
+    headline: 'Quedan siete días para el pitido inicial.',
   },
   '2_days': {
     diasTxt:  '2 días',
@@ -120,11 +120,11 @@ async function main() {
   const previewIdx = process.argv.indexOf('--preview')
   const previewTo  = previewIdx >= 0 ? process.argv[previewIdx + 1] : null
   const typeIdx    = process.argv.indexOf('--type')
-  const previewType = typeIdx >= 0 ? process.argv[typeIdx + 1] : '5_days'
+  const previewType = typeIdx >= 0 ? process.argv[typeIdx + 1] : '7_days'
 
   if (previewTo) {
     if (!REMINDER_COPY[previewType]) {
-      console.error(`Tipo inválido: ${previewType}. Usa 5_days | 2_days | 1_day.`)
+      console.error(`Tipo inválido: ${previewType}. Usa 7_days | 2_days | 1_day.`)
       process.exit(1)
     }
     const hoursLeft = (MUNDIAL_START.getTime() - Date.now()) / 3_600_000
@@ -139,9 +139,9 @@ async function main() {
 
   const hoursLeft = (MUNDIAL_START.getTime() - Date.now()) / 3_600_000
 
-  // Detectar ventana (±1h alrededor de 120h, 48h y 24h antes)
+  // Detectar ventana (±1h alrededor de 168h, 48h y 24h antes)
   let reminderType = null
-  if (hoursLeft >= 119 && hoursLeft < 121) reminderType = '5_days'
+  if (hoursLeft >= 167 && hoursLeft < 169) reminderType = '7_days'
   if (hoursLeft >= 47  && hoursLeft < 49)  reminderType = '2_days'
   if (hoursLeft >= 23  && hoursLeft < 25)  reminderType = '1_day'
 
