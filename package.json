@@ -9,6 +9,7 @@
     "seed-matches": "node scripts/seed-matches.js",
     "update-results": "node scripts/update-results.js",
     "send-reminders": "node scripts/send-reminders.js",
+    "send-league-intent-reminders": "node scripts/send-league-intent-reminders.js",
     "send-daily-digest": "node scripts/send-daily-digest.js",
     "send-brand-samples": "node scripts/send-brand-samples.js",
     "build-auth-templates": "node scripts/build-auth-templates.js",
