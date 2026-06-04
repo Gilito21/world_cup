@@ -59,7 +59,7 @@ const REMINDER_COPY = {
 function buildEmail({ username, hoursLeft, type }) {
   const copy    = REMINDER_COPY[type]
   const subject = `${copy.subjVerb} ${copy.diasTxt} para el Mundial · envía tu pronóstico`
-  const horas   = Math.round(hoursLeft)
+  const [diasNum, diasWord] = copy.diasTxt.split(' ')
 
   const content = `
 ${brandKicker(copy.kicker)}
@@ -69,7 +69,7 @@ ${brandHeadline(copy.headline)}
 </p>
 
 <div style="margin:0 0 24px;">
-  ${brandStatTile({ kicker: 'Tiempo restante', value: `${horas} <span style="font-size:18px;opacity:.7;">h</span>`, sub: 'Hasta el pitido inicial · 11 jun 2026, 21:00 CET' })}
+  ${brandStatTile({ kicker: 'Tiempo restante', value: `${diasNum} <span style="font-size:18px;opacity:.7;">${diasWord}</span>`, sub: 'Hasta el pitido inicial · 11 jun 2026, 21:00 CET' })}
 </div>
 
 ${brandButton({ href: `${APP_URL}/auth`, label: 'Entrar y pronosticar' })}
@@ -80,7 +80,7 @@ ${brandButton({ href: `${APP_URL}/auth`, label: 'Entrar y pronosticar' })}
 
   const html = brandShell({
     title: subject,
-    preheader: `Quedan ${horas} horas para el pitido inicial — entra antes de que cierren los marcadores.`,
+    preheader: `${copy.subjVerb} ${copy.diasTxt} para el pitido inicial — entra antes de que cierren los marcadores.`,
     content,
     footerNote: `Recibes este email porque tienes los recordatorios activados. Puedes desactivarlos en tu perfil: ${APP_URL}/perfil`,
     appUrl: APP_URL,
