@@ -5,7 +5,8 @@
  * Solo si el último intent fue hace más de 24h. Una sola vez por
  * usuario (tracking en `league_intent_reminders`).
  *
- * Ejecutar como cron job en Render cada 30 minutos.
+ * Ejecutar via GitHub Actions cada hora
+ * (.github/workflows/send-league-intent-reminders.yml).
  *
  * Uso:
  *   node scripts/send-league-intent-reminders.js
