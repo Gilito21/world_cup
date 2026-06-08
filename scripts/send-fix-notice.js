@@ -1,19 +1,33 @@
 /**
  * send-fix-notice.js
- * Aviso puntual a un usuario de que la incidencia del envío de
- * pronósticos extra ya está resuelta. Usa la marca editorial común.
+ * Plantilla reutilizable para avisar a un usuario de que la incidencia
+ * que reportó ya está resuelta. Usa la marca editorial común a todos los
+ * correos del proyecto.
+ *
+ * Pensado como "precedente" para cuando llegan más errores: rellenas los
+ * flags con el caso concreto y lo mandas, sin tocar el código.
  *
  * Uso:
- *   node scripts/send-fix-notice.js --dry-run            # solo renderiza (no envía)
- *   node scripts/send-fix-notice.js --preview tu@email   # envía a otro destinatario (prueba)
- *   node scripts/send-fix-notice.js --send               # envía al destinatario real
+ *   # 1) Renderiza sin enviar (escribe el HTML en /tmp para revisarlo)
+ *   node scripts/send-fix-notice.js --dry-run \
+ *     --to inpastor8@gmail.com --name "Iñigo" \
+ *     --subject "Ya puedes enviar tus extra 🎲" \
+ *     --headline "Ya está arreglado, Iñigo." \
+ *     --message "Nos avisaste de que no te dejaba enviar las preguntas extra. Ya está solucionado." \
+ *     --cta-path /extras --cta-label "Completar mis extras"
+ *
+ *   # 2) Preview real a tu propio correo antes de mandarlo al usuario
+ *   node scripts/send-fix-notice.js --preview jpelaez@bluebullpartners.com  ...mismos flags...
+ *
+ *   # 3) Envío real al usuario (--to)
+ *   node scripts/send-fix-notice.js --send  ...mismos flags...
  *
  * Variables de entorno: BREVO_API_KEY, FROM_EMAIL, FROM_NAME, APP_URL
  */
 
 import { config } from 'dotenv'
 import { writeFileSync } from 'node:fs'
-import { brandShell, brandButton, brandHeadline, brandKicker, brandFeatureRow, BRAND } from './_brand-email.js'
+import { brandShell, brandButton, brandHeadline, brandKicker, BRAND } from './_brand-email.js'
 config()
 
 const BREVO_KEY  = process.env.BREVO_API_KEY
@@ -21,54 +35,69 @@ const APP_URL    = (process.env.APP_URL ?? 'https://www.porradeempresas.com').re
 const FROM_EMAIL = process.env.FROM_EMAIL ?? 'porra@porradeempresas.com'
 const FROM_NAME  = process.env.FROM_NAME  ?? 'Porra Mundial 2026'
 
-// Destinatario real
-const TARGET = { email: 'inpastor8@gmail.com', name: 'Iñigo' }
-
-const args      = process.argv.slice(2)
+// ── Parseo de flags ───────────────────────────────────────────────────────
+const args = process.argv.slice(2)
+function flag(name, fallback = null) {
+  const i = args.indexOf(`--${name}`)
+  return i !== -1 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : fallback
+}
 const isDryRun  = args.includes('--dry-run')
-const previewIx = args.indexOf('--preview')
-const previewTo = previewIx !== -1 ? args[previewIx + 1] : null
+const isSend    = args.includes('--send')
+const previewTo = flag('preview')
 
-const recipient = previewTo ? { email: previewTo, name: 'Iñigo' } : TARGET
+// Contenido del aviso (con defaults sensatos para el caso de los extras).
+const to        = flag('to')
+const name      = flag('name', '')
+const greeting  = name ? `, ${name}` : ''
+const subject   = flag('subject', `Tu incidencia ya está resuelta${greeting} ✅`)
+const headline  = flag('headline', `Ya está arreglado${greeting}.`)
+const message   = flag('message', 'Nos avisaste de un problema y ya está solucionado. Entra de nuevo y debería ir todo bien.')
+const ctaLabel  = flag('cta-label', 'Volver a la porra')
+const ctaPath   = flag('cta-path', '/')
+const kicker    = flag('kicker', 'Incidencia resuelta')
 
-const SUBJECT = 'Iñigo, ya puedes enviar tus pronósticos extra 🎲'
+const recipient = previewTo
+  ? { email: previewTo, name: name || 'Preview' }
+  : (to ? { email: to, name } : null)
 
 const content = `
-${brandKicker('Incidencia resuelta')}
-${brandHeadline('Ya está arreglado, Iñigo.')}
-<p style="margin:0 0 18px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${BRAND.ink};">
-  Nos avisaste de que no te dejaba <strong>enviar las preguntas extra</strong>. Ya lo hemos solucionado: entra de nuevo y podrás mandarlas sin líos.
+${brandKicker(kicker)}
+${brandHeadline(headline)}
+<p style="margin:0 0 26px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${BRAND.ink};">
+  ${message}
 </p>
-<p style="margin:0 0 24px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:${BRAND.ink};opacity:.78;">
-  De paso lo hemos mejorado un poco. Échale un ojo:
-</p>
-${brandFeatureRow({ icon: '💾', title: 'Se guarda solo', body: 'Cada respuesta se guarda según la escribes. Ya no hace falta pulsar “Guardar” en cada pregunta.' })}
-${brandFeatureRow({ icon: '✏️', title: 'Editable hasta el cierre', body: 'Puedes cambiar tus respuestas hasta 1 hora antes del primer partido, por si te lo repiensas.' })}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:28px 0 4px;">
-  ${brandButton({ href: `${APP_URL}/extras`, label: 'Completar mis extras' })}
-</td></tr></table>
+${brandButton({ href: `${APP_URL}${ctaPath}`, label: ctaLabel })}
 `
 
 const html = brandShell({
-  title: 'Ya puedes enviar tus pronósticos extra',
-  preheader: 'Arreglado el problema con el envío de las preguntas extra.',
+  title: subject,
+  preheader: 'Tu incidencia ya está resuelta.',
   content,
   appUrl: APP_URL,
 })
 
+// ── Salidas ───────────────────────────────────────────────────────────────
 if (isDryRun) {
   const out = '/tmp/fix-notice-preview.html'
   writeFileSync(out, html)
-  console.log(`[dry-run] No se envía nada.`)
-  console.log(`[dry-run] Destinatario real: ${TARGET.name} <${TARGET.email}>`)
-  console.log(`[dry-run] Asunto: ${SUBJECT}`)
+  console.log('[dry-run] No se envía nada.')
+  console.log(`[dry-run] Destinatario real (--to): ${to ?? '(sin definir)'}`)
+  console.log(`[dry-run] Asunto: ${subject}`)
   console.log(`[dry-run] HTML escrito en: ${out}`)
   process.exit(0)
 }
 
+if (!previewTo && !isSend) {
+  console.error('Nada que hacer. Usa --dry-run, --preview <email> o --send.')
+  process.exit(1)
+}
+if (!recipient) {
+  console.error('Falta destinatario: pasa --to <email> (o --preview <email> para prueba).')
+  process.exit(1)
+}
 if (!BREVO_KEY) { console.error('Falta BREVO_API_KEY'); process.exit(1) }
 
-console.log(`Enviando a ${recipient.name} <${recipient.email}>${previewTo ? ' (PREVIEW)' : ''}...`)
+console.log(`Enviando a ${recipient.name || '?'} <${recipient.email}>${previewTo ? ' (PREVIEW)' : ''}...`)
 
 const res = await fetch('https://api.brevo.com/v3/smtp/email', {
   method: 'POST',
@@ -76,7 +105,7 @@ const res = await fetch('https://api.brevo.com/v3/smtp/email', {
   body: JSON.stringify({
     sender:      { name: FROM_NAME, email: FROM_EMAIL },
     to:          [{ email: recipient.email, name: recipient.name }],
-    subject:     SUBJECT,
+    subject,
     htmlContent: html,
   }),
 })
