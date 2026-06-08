@@ -66,7 +66,7 @@ function dayKey(d) {
 
 // ─── Email builder ────────────────────────────────────────────────────────────
 
-function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints, position, totalUsers }) {
+export function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints, position, totalUsers }) {
   const yesterdayStr = fmtDateHumanES(new Date(Date.now() - 86400_000))
   const todayStr     = fmtDateHumanES(new Date())
 
@@ -158,6 +158,33 @@ ${brandButton({ href: APP_URL, label: 'Ver clasificación' })}
   return { subject, html }
 }
 
+// ─── Preview / muestra ─────────────────────────────────────────────────────────
+// Datos de ejemplo para `--preview <email>`: un día de partidos típico con
+// mezcla de acierto exacto (+3), tendencia (+1) y fallo (0), más un par de
+// partidos para hoy. No toca Supabase ni Brevo masivo: solo construye el
+// email y lo manda a la dirección indicada.
+
+export function sampleEmailArgs() {
+  const today = new Date()
+  const at = (h, m) => { const d = new Date(today); d.setHours(h, m, 0, 0); return d.toISOString() }
+  const yesterdayMatches = [
+    { home_team: 'España',    away_team: 'Alemania', home_score: 2, away_score: 1, my_pred: { home_score: 2, away_score: 1 }, points: 3 },
+    { home_team: 'Brasil',    away_team: 'Francia',  home_score: 0, away_score: 0, my_pred: { home_score: 1, away_score: 1 }, points: 1 },
+    { home_team: 'Argentina', away_team: 'México',   home_score: 3, away_score: 1, my_pred: { home_score: 0, away_score: 2 }, points: 0 },
+  ]
+  return {
+    username:         'Jaime',
+    yesterdayMatches,
+    todayMatches:     [
+      { home_team: 'Portugal',   away_team: 'Croacia',   match_date: at(18, 0), stage: 'group' },
+      { home_team: 'Inglaterra', away_team: 'Países Bajos', match_date: at(21, 0), stage: 'group' },
+    ],
+    yesterdayPoints:  yesterdayMatches.reduce((s, m) => s + m.points, 0),
+    position:         7,
+    totalUsers:       142,
+  }
+}
+
 // ─── Paginación helpers ───────────────────────────────────────────────────────
 // listUsers admin API y los selects de PostgREST tienen un tope implícito
 // (1000 filas). Más allá de eso perderíamos silenciosamente usuarios y
@@ -218,8 +245,19 @@ async function main() {
   const todayKey = dayKey(now)
   console.log(`[${now.toISOString()}] Digest diario · ${todayKey}`)
 
+  if (!BREVO_KEY) { console.error('Falta BREVO_API_KEY'); process.exit(1) }
+
+  // --preview <email>: manda una muestra con datos de ejemplo y termina.
+  const previewIdx = process.argv.indexOf('--preview')
+  const previewTo  = previewIdx >= 0 ? process.argv[previewIdx + 1] : null
+  if (previewTo) {
+    const { subject, html } = buildEmail(sampleEmailArgs())
+    await sendEmail(previewTo, `[Draft · daily-digest] ${subject}`, html)
+    console.log(`Preview enviado a ${previewTo}.`)
+    return
+  }
+
   if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Faltan vars de Supabase'); process.exit(1) }
-  if (!BREVO_KEY)                     { console.error('Falta BREVO_API_KEY');      process.exit(1) }
 
   // Fuera de la ventana del torneo no enviamos nada.
   if (now < MUNDIAL_START || now > MUNDIAL_END) {
@@ -356,4 +394,8 @@ async function main() {
   console.log(`✅ ${ok} enviados · ${skipped} omitidos · ${errored} errores · ${elapsed}s`)
 }
 
-main().catch(err => { console.error('Error fatal:', err); process.exit(1) })
+import { pathToFileURL } from 'node:url'
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
+if (invokedDirectly) {
+  main().catch(err => { console.error('Error fatal:', err); process.exit(1) })
+}
