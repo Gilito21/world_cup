@@ -586,8 +586,15 @@ export default function Extras() {
       return next
     })
 
+    // SEGURIDAD ANTI-PÉRDIDA: solo persistimos valores válidos. Si el campo
+    // queda vacío/ inválido, cancelamos el guardado pendiente y NO escribimos
+    // nada → la última respuesta válida sobrevive en BD (igual que Pronósticos,
+    // que tampoco guarda un marcador vacío). Así un borrado accidental no deja
+    // a nadie sin respuesta; al recargar se auto-recupera desde la BD.
     clearTimeout(saveTimers.current[key])
-    saveTimers.current[key] = setTimeout(() => persistAnswer(key, ans), 700)
+    if (hasValue) {
+      saveTimers.current[key] = setTimeout(() => persistAnswer(key, ans), 700)
+    }
   }
 
   async function handleLeaguePaymentSuccess(league) {
