@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { supabase, sq } from '../lib/supabase'
-import { getMatchCache, setMatchCache } from '../lib/matchCache'
+import { getMatchCache, getMatchCacheStale, setMatchCache } from '../lib/matchCache'
 import { getCache, setCache } from '../lib/dataCache'
 import haptics from '../lib/haptics'
 import usePullRefresh from '../lib/usePullRefresh'
@@ -607,14 +607,14 @@ export default function Pronosticos() {
 
   const STAGE_INFO = useMemo(() => buildStageInfo(t), [t])
 
-  const [matches,     setMatches]     = useState(() => getMatchCache() ?? [])
+  const [matches,     setMatches]     = useState(() => getMatchCache() ?? getMatchCacheStale() ?? [])
   const [predictions, setPredictions] = useState({})
   const [drafts,      setDrafts]      = useState({})
   const [consensus,   setConsensus]   = useState({}) // matchId → { home_score, away_score, vote_count, total_voters }
-  // Start as loading only if we have no cached matches at all. When the user
-  // navigates back to this page and we already have data in memory, render it
-  // immediately and refresh in the background — no spinner.
-  const [loading,     setLoading]     = useState(() => !getMatchCache())
+  // Start as loading only if we have no cached matches at all (ni fresca ni
+  // stale). Si hay cualquier versión cacheada la mostramos al instante y
+  // refrescamos en background — nunca pantalla vacía tras un deploy.
+  const [loading,     setLoading]     = useState(() => !(getMatchCache() ?? getMatchCacheStale()))
   const [activeStage, setActiveStage] = useState('group')
   const [error,       setError]       = useState('')
   const [copying,     setCopying]     = useState(false)
@@ -700,14 +700,19 @@ export default function Pronosticos() {
       ])
       console.log(`[porra:load] network done in ${Date.now() - t0}ms — matches:${matchData?.length ?? 'TIMEOUT'} preds:${predData?.length ?? 'TIMEOUT'} sub:${subData !== undefined ? (subData ? 'submitted' : 'none') : 'TIMEOUT'}`)
 
-      if (matchData) {
-        setMatchCache(matchData)
-        setMatches(matchData)
-        const firstGroup = matchData.find(m => m.stage === 'group') ?? matchData[0]
+      // Si la red trae partidos los usamos; si no (timeout por token
+      // refrescándose tras deploy, error de red…) caemos a la última versión
+      // conocida en vez de dejar la página vacía. matchData puede ser [] si la
+      // query "tuvo éxito" pero no devolvió filas → tratamos igual que fallo.
+      const effectiveMatches = matchData?.length ? matchData : getMatchCacheStale()
+      if (matchData?.length) setMatchCache(matchData)
+      if (effectiveMatches?.length) {
+        setMatches(effectiveMatches)
+        const firstGroup = effectiveMatches.find(m => m.stage === 'group') ?? effectiveMatches[0]
         if (firstGroup) {
           setCutoffTime(new Date(firstGroup.match_date).getTime() - 60 * 60 * 1000)
         }
-        const available = [...new Set(matchData.map(m => m.stage))]
+        const available = [...new Set(effectiveMatches.map(m => m.stage))]
         setActiveStage(prev => available.includes(prev) ? prev : (STAGE_ORDER.find(s => available.includes(s)) ?? available[0]))
       }
 

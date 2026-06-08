@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { supabase, sq } from '../lib/supabase'
-import { getMatchCache, setMatchCache } from '../lib/matchCache'
+import { getMatchCache, getMatchCacheStale, setMatchCache } from '../lib/matchCache'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
@@ -444,7 +444,11 @@ export default function Extras() {
     setLoading(!(cachedQs?.length > 0))
 
     const cachedMatches = getMatchCache()
-    if (cachedMatches?.length) setCutoffTime(cutoffFromMatches(cachedMatches))
+    // Para el cutoff vale la última versión conocida (stale) aunque el TTL haya
+    // pasado: así el bloqueo/contador funciona tras un deploy aunque la red
+    // falle. La decisión de saltarse la red sí mira solo la caché fresca.
+    const anyMatches = cachedMatches ?? getMatchCacheStale()
+    if (anyMatches?.length) setCutoffTime(cutoffFromMatches(anyMatches))
 
     const t0 = Date.now()
     try {
@@ -473,6 +477,8 @@ export default function Extras() {
         setMatchCache(matchRes.data)
         setCutoffTime(cutoffFromMatches(matchRes.data))
       }
+      // Si la red no trajo partidos y no había caché fresca, ya dejamos el
+      // cutoff puesto desde la versión stale más arriba — nada que hacer.
 
       if (qRes?.data && !cachedQs) {
         setQuestions(qRes.data)

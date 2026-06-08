@@ -46,6 +46,31 @@ export function getMatchCache() {
   return null
 }
 
+// Lectura "stale": devuelve los partidos cacheados en localStorage SIN
+// comprobar el TTL. Es el fallback cuando la red falla o el token se está
+// refrescando tras un deploy (Supabase encola TODAS las queries —incluida la
+// de partidos, aunque sea pública— detrás del refresco del JWT; si va lento o
+// falla, la query muere por timeout). Como los partidos son prácticamente
+// estáticos, mostrar la última versión conocida es infinitamente mejor que una
+// página vacía. No toca cachedAt para no engañar a getMatchCache(), que es
+// quien decide si saltarse la red.
+export function getMatchCacheStale() {
+  if (cached?.length) return cached
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (raw) {
+      const { data } = JSON.parse(raw)
+      if (Array.isArray(data) && data.length) {
+        console.log(`[porra:matches] getMatchCacheStale → fallback a localStorage (${data.length} matches, TTL ignorado)`)
+        return data
+      }
+    }
+  } catch (e) {
+    console.warn('[porra:matches] getMatchCacheStale read error', e)
+  }
+  return null
+}
+
 export function setMatchCache(matches) {
   if (!Array.isArray(matches)) {
     console.log('[porra:matches] setMatchCache → CLEARED')
