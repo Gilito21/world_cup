@@ -257,7 +257,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
 
 // ─── MATCH CARD ───────────────────────────────────────────────────────────────
 
-function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, submitted, isPastCutoff, onPreview, consensus }) {
+function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, isPastCutoff, onPreview, consensus }) {
   const { t, dateLocale } = useLang()
   const STAGE_INFO = buildStageInfo(t)
   const STATUS_BADGE = useMemo(() => ({
@@ -267,7 +267,9 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
   }), [t])
 
   const isFinished  = match.status === 'finished'
-  const isLocked    = submitted || isPastCutoff || isFinished ||
+  // Enviar ya NO bloquea: se edita hasta el cutoff global (1h antes del primer
+  // partido, vía isPastCutoff) reforzado en BD por check_prediction_global_cutoff.
+  const isLocked    = isPastCutoff || isFinished ||
                       match.status !== 'scheduled' ||
                       Date.now() >= new Date(match.match_date).getTime() - 30 * 60 * 1000
 
@@ -284,7 +286,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
   const isKnockout  = match.stage !== 'group'
   const isDraw      = home !== '' && away !== '' && Number(home) === Number(away)
 
-  const changed = !submitted && home !== '' && away !== '' && (
+  const changed = home !== '' && away !== '' && (
     !prediction ||
     Number(home) !== prediction.home_score ||
     Number(away) !== prediction.away_score ||
@@ -326,19 +328,19 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
   // Schedule auto-save when there are unsaved changes. Knockout draws need a
   // tiebreaker before they're valid — wait for it instead of nagging.
   useEffect(() => {
-    if (isLocked || submitted || isFinished) return
+    if (isLocked || isFinished) return
     if (!changed) return
     if (isKnockout && isDraw && !tiebreaker) return
     clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(triggerSave, 700)
     return () => clearTimeout(saveTimerRef.current)
-  }, [changed, isLocked, submitted, isFinished, isKnockout, isDraw, tiebreaker, triggerSave])
+  }, [changed, isLocked, isFinished, isKnockout, isDraw, tiebreaker, triggerSave])
 
   const badge = STATUS_BADGE[match.status]
 
   return (
     <div className={`card p-3 sm:p-4 transition-all duration-200 ${
-      isFinished ? 'opacity-80' : submitted ? '' : 'hover:border-ink/30 hover:shadow-sm'
+      isFinished ? 'opacity-80' : 'hover:border-ink/30 hover:shadow-sm'
     }`}>
       {/* Header row */}
       <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-3">
@@ -354,7 +356,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
               🔮
             </span>
           )}
-          {match.status === 'scheduled' && !submitted && <Countdown matchDate={match.match_date} />}
+          {match.status === 'scheduled' && <Countdown matchDate={match.match_date} />}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {badge && (
@@ -516,31 +518,8 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
         </div>
       )}
 
-      {/* Submitted lock footer */}
-      {submitted && !isFinished && (
-        <div className="mt-3 pt-3 border-t border-ink/15 text-center text-xs text-ink/50 space-y-0.5">
-          <div className="flex items-center justify-center gap-1">
-            <span>🔒</span>
-            <span>
-              {t('pronosticos.lockNote')}{' '}
-              <span className="font-medium text-ink/70">
-                {(home || prediction?.home_score) ?? '?'} – {(away || prediction?.away_score) ?? '?'}
-              </span>
-            </span>
-          </div>
-          {isKnockout && tiebreaker && isDraw && (
-            <div>
-              {t('pronosticos.advancesNote')}{' '}
-              <span className="font-medium text-ink/70">
-                {tiebreaker === 'home' ? teamName(displayHome) : teamName(displayAway)}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Auto-save status row (only while the card is editable) */}
-      {!submitted && !isLocked && !isFinished && (
+      {!isLocked && !isFinished && (
         <div className="mt-2 pt-2 border-t border-ink/15 flex items-center justify-end gap-1.5 text-xs h-5">
           {saving ? (
             <span className="text-ink/50 flex items-center gap-1.5">
@@ -1208,7 +1187,7 @@ export default function Pronosticos() {
                   >
                     <span>{info.icon}</span>
                     <span>{info.short}</span>
-                    {unfilled > 0 && !isSubmitted && (
+                    {unfilled > 0 && (
                       <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
                         activeStage === stage ? 'bg-cream/20 text-cream' : 'bg-paper-200 text-ink/70'
                       }`}>
@@ -1228,17 +1207,15 @@ export default function Pronosticos() {
                 <span className="text-sm text-ink/50">
                   {t('pronosticos.matchCount', { n: filtered.length, s: filtered.length !== 1 ? 's' : '' })}
                 </span>
-                {!isSubmitted && (
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    unfilledCount(activeStage) === 0
-                      ? 'bg-grass-500/15 text-grass-600 border border-grass-500/30'
-                      : 'bg-paper-200 text-ink/70 border border-ink/20'
-                  }`}>
-                    {unfilledCount(activeStage) === 0
-                      ? t('pronosticos.completeLabel')
-                      : t('pronosticos.unfilledLabel', { n: unfilledCount(activeStage) })}
-                  </span>
-                )}
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  unfilledCount(activeStage) === 0
+                    ? 'bg-grass-500/15 text-grass-600 border border-grass-500/30'
+                    : 'bg-paper-200 text-ink/70 border border-ink/20'
+                }`}>
+                  {unfilledCount(activeStage) === 0
+                    ? t('pronosticos.completeLabel')
+                    : t('pronosticos.unfilledLabel', { n: unfilledCount(activeStage) })}
+                </span>
               </div>
               {matches.length > 0 && (
                 <SubmitPanel
@@ -1320,7 +1297,6 @@ export default function Pronosticos() {
                       onTiebreakerChange={handleTiebreakerChange}
                       predictedHome={predictedOverlay[m.id]?.homeTeam}
                       predictedAway={predictedOverlay[m.id]?.awayTeam}
-                      submitted={isSubmitted}
                       isPastCutoff={isPastCutoff}
                       consensus={consensus[m.id]}
                       onPreview={activeLeague ? () => setPreviewMatch(m) : null}

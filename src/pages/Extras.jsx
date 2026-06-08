@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { supabase, sq } from '../lib/supabase'
 import { getMatchCache, setMatchCache } from '../lib/matchCache'
 import { useAuth } from '../contexts/AuthContext'
@@ -245,35 +245,41 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
   )
 }
 
-// ─── Pregunta tipo "player" ────────────────────────────────────────────────
-function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
+// ─── Indicador de auto-guardado ────────────────────────────────────────────
+function SaveStatus({ status, value }) {
   const { t } = useLang()
-  const trimmed   = (draft ?? '').trim()
-  const isDirty   = trimmed !== (value ?? '')
-  const canSubmit = !!trimmed && isDirty && !locked
+  if (status === 'saving') {
+    return (
+      <p className="text-xs text-ink/50 flex items-center gap-1.5">
+        <Spinner size="sm" /> {t('extras.saving')}
+      </p>
+    )
+  }
+  if (status === 'err') return <p className="text-xs text-red-500">{t('extras.errSaveDraft')}</p>
+  if (value != null && value !== '') {
+    return <p className="text-xs text-green-600">{t('extras.draftSaved', { val: value })}</p>
+  }
+  return null
+}
+
+// ─── Pregunta tipo "player" ────────────────────────────────────────────────
+// Auto-guardado: lo que escribes se persiste solo (debounced en el padre), no
+// hay botón "Guardar". Cuenta para el progreso en cuanto el campo tiene texto.
+function PlayerQuestion({ value, draft, onDraft, locked, status }) {
+  const { t } = useLang()
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={draft ?? ''}
-          onChange={e => onDraft(e.target.value)}
-          disabled={locked}
-          placeholder={t('extras.playerPlaceholder')}
-          className="input flex-1"
-          maxLength={80}
-          enterKeyHint="done"
-          onKeyDown={e => { if (e.key === 'Enter' && canSubmit) onSave() }}
-        />
-        <button
-          onClick={onSave}
-          disabled={!canSubmit}
-          className="btn-primary text-sm px-4"
-        >
-          {value && !isDirty ? '✓' : t('extras.saveBtn')}
-        </button>
-      </div>
+      <input
+        type="text"
+        value={draft ?? ''}
+        onChange={e => onDraft(e.target.value)}
+        disabled={locked}
+        placeholder={t('extras.playerPlaceholder')}
+        className="input w-full"
+        maxLength={80}
+        enterKeyHint="done"
+      />
 
       {!locked && (
         <div>
@@ -284,7 +290,7 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
               return (
                 <button
                   key={s.name}
-                  onClick={() => { onDraft(s.name) }}
+                  onClick={() => onDraft(s.name)}
                   className={`flex items-center gap-1.5 text-xs sm:text-sm px-2.5 py-1.5 rounded-full border transition-colors ${
                     isCurrent
                       ? 'bg-ink border-ink text-cream font-semibold'
@@ -300,47 +306,31 @@ function PlayerQuestion({ value, draft, onDraft, onSave, locked }) {
         </div>
       )}
 
-      {value && !isDirty && (
-        <p className="text-xs text-green-600">{t('extras.draftSaved', { val: value })}</p>
-      )}
+      <SaveStatus status={status} value={value} />
     </div>
   )
 }
 
 // ─── Pregunta tipo "number" ────────────────────────────────────────────────
-function NumberQuestion({ value, draft, onDraft, onSave, locked }) {
+function NumberQuestion({ value, draft, onDraft, locked, status }) {
   const { t } = useLang()
-  const parsed    = draft === '' || draft == null ? null : parseInt(draft, 10)
-  const isValid   = parsed !== null && Number.isFinite(parsed) && parsed >= 0 && parsed <= 9999
-  const isDirty   = parsed !== value
-  const canSubmit = isValid && isDirty && !locked
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2 items-center">
-        <input
-          type="number"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          min="0"
-          max="9999"
-          value={draft ?? ''}
-          onChange={e => onDraft(e.target.value.replace(/\D/g, ''))}
-          onFocus={e => e.target.select()}
-          disabled={locked}
-          placeholder="350"
-          className="input flex-1 text-center text-2xl font-bold tabular-nums max-w-[180px]"
-          enterKeyHint="done"
-          onKeyDown={e => { if (e.key === 'Enter' && canSubmit) onSave() }}
-        />
-        <button
-          onClick={onSave}
-          disabled={!canSubmit}
-          className="btn-primary text-sm px-4"
-        >
-          {value != null && !isDirty ? '✓' : t('extras.saveBtn')}
-        </button>
-      </div>
+      <input
+        type="number"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        min="0"
+        max="9999"
+        value={draft ?? ''}
+        onChange={e => onDraft(e.target.value.replace(/\D/g, ''))}
+        onFocus={e => e.target.select()}
+        disabled={locked}
+        placeholder="350"
+        className="input text-center text-2xl font-bold tabular-nums max-w-[180px]"
+        enterKeyHint="done"
+      />
 
       {!locked && (
         <p className="text-xs text-ink/60 leading-relaxed">
@@ -348,15 +338,13 @@ function NumberQuestion({ value, draft, onDraft, onSave, locked }) {
         </p>
       )}
 
-      {value != null && !isDirty && (
-        <p className="text-xs text-green-600">{t('extras.draftSaved', { val: value })}</p>
-      )}
+      <SaveStatus status={status} value={value} />
     </div>
   )
 }
 
 // ─── Card de una pregunta ──────────────────────────────────────────────────
-function QuestionCard({ question, answer, draft, onDraft, onSelect, onSave, locked }) {
+function QuestionCard({ question, answer, draft, onDraft, onSelect, locked, status }) {
   const value =
     question.kind === 'choice' ? answer?.answer_choice
     : question.kind === 'player' ? answer?.answer_player
@@ -386,10 +374,10 @@ function QuestionCard({ question, answer, draft, onDraft, onSelect, onSave, lock
         <ChoiceQuestion question={question} value={value} onSelect={onSelect} locked={locked} />
       )}
       {question.kind === 'player' && (
-        <PlayerQuestion value={value} draft={draft} onDraft={onDraft} onSave={onSave} locked={locked} />
+        <PlayerQuestion value={value} draft={draft} onDraft={onDraft} locked={locked} status={status} />
       )}
       {question.kind === 'number' && (
-        <NumberQuestion value={value} draft={draft} onDraft={onDraft} onSave={onSave} locked={locked} />
+        <NumberQuestion value={value} draft={draft} onDraft={onDraft} locked={locked} status={status} />
       )}
     </article>
   )
@@ -418,6 +406,8 @@ export default function Extras() {
   const [submitting,   setSubmitting]   = useState(false)
   const [showConfirm,  setShowConfirm]  = useState(false)
   const [error,        setError]        = useState('')
+  const [saveState,    setSaveState]    = useState({}) // question_key → 'saving' | 'ok' | 'err'
+  const saveTimers = useRef({})
 
   // No-league join modal state
   const [showLeagueModal, setShowLeagueModal] = useState(false)
@@ -520,39 +510,78 @@ export default function Extras() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  const locked = isSubmitted || !!(cutoffTime && Date.now() >= cutoffTime)
+  // Enviar ya NO bloquea: se puede seguir editando hasta el cierre. El único
+  // bloqueo duro es el cutoff (1h antes del primer partido), reforzado también
+  // en BD por el trigger check_special_prediction_deadline (mig. 028).
+  const isPastCutoff = !!(cutoffTime && Date.now() >= cutoffTime)
+  const locked       = isPastCutoff
 
-  // ── Handlers de borrador (solo actualizan estado local, sin BD) ─────
+  // Persistimos cada respuestas en BD por separado mediante upsert (el índice
+  // único user_id+league_id+question_key actualiza la fila existente).
+  const persistAnswer = useCallback(async (key, ans) => {
+    if (!user) return
+    setSaveState(s => ({ ...s, [key]: 'saving' }))
+    const row = {
+      user_id:       user.id,
+      league_id:     leagueIdForPred,
+      question_key:  key,
+      answer_choice: ans.answer_choice ?? null,
+      answer_player: ans.answer_player ?? null,
+      answer_number: ans.answer_number ?? null,
+      updated_at:    new Date().toISOString(),
+    }
+    const { error: upErr } = await supabase
+      .from('special_predictions')
+      .upsert([row], { onConflict: 'user_id,league_id,question_key' })
+    setSaveState(s => ({ ...s, [key]: upErr ? 'err' : 'ok' }))
+    if (upErr) setError(t('extras.errSaveDraft'))
+  }, [user?.id, leagueIdForPred, t])
+
+  // Cache local en cada cambio de estado (decoupla la escritura de cache de
+  // los handlers para no arrastrar closures obsoletas).
+  useEffect(() => {
+    if (!user) return
+    writeCachedExtrasPreds(user.id, leagueKey, { answers, textDrafts, isSubmitted, submittedAt })
+  }, [user?.id, leagueKey, answers, textDrafts, isSubmitted, submittedAt])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => () => { Object.values(saveTimers.current).forEach(clearTimeout) }, [])
+
+  // ── Handlers: actualizan estado local y auto-guardan en BD ──────────
   function handleSelectChoice(key, val) {
     if (locked) return
-    setAnswers(prev => ({
-      ...prev,
-      [key]: { answer_choice: val, answer_player: null, answer_number: null },
-    }))
+    const ans = { answer_choice: val, answer_player: null, answer_number: null }
+    setAnswers(prev => ({ ...prev, [key]: ans }))
+    clearTimeout(saveTimers.current[key])
+    persistAnswer(key, ans)
   }
 
-  function handleSaveDraft(key, kind) {
+  // Auto-guardado debounced para preguntas de texto/número: al escribir se
+  // refleja en el progreso y se persiste ~700 ms después de la última pulsación.
+  function handleDraft(key, kind, raw) {
     if (locked) return
-    const d = textDrafts[key] ?? ''
-    if (kind === 'player') {
-      const v = d.trim()
-      if (!v) return
-      setAnswers(prev => ({
-        ...prev,
-        [key]: { answer_choice: null, answer_player: v, answer_number: null },
-      }))
-    } else if (kind === 'number') {
-      const n = parseInt(d, 10)
-      if (!Number.isFinite(n) || n < 0) return
-      setAnswers(prev => ({
-        ...prev,
-        [key]: { answer_choice: null, answer_player: null, answer_number: n },
-      }))
-    }
-  }
+    setTextDrafts(prev => ({ ...prev, [key]: raw }))
 
-  function setTextDraft(key, val) {
-    setTextDrafts(prev => ({ ...prev, [key]: val }))
+    let ans
+    if (kind === 'player') {
+      const v = raw.trim()
+      ans = { answer_choice: null, answer_player: v || null, answer_number: null }
+    } else {
+      const n = parseInt(raw, 10)
+      const valid = raw !== '' && Number.isFinite(n) && n >= 0 && n <= 9999
+      ans = { answer_choice: null, answer_player: null, answer_number: valid ? n : null }
+    }
+    const hasValue = ans.answer_player != null || ans.answer_number != null
+
+    setAnswers(prev => {
+      const next = { ...prev }
+      if (hasValue) next[key] = ans
+      else delete next[key]
+      return next
+    })
+
+    clearTimeout(saveTimers.current[key])
+    saveTimers.current[key] = setTimeout(() => persistAnswer(key, ans), 700)
   }
 
   async function handleLeaguePaymentSuccess(league) {
@@ -605,12 +634,7 @@ export default function Extras() {
       setIsSubmitted(true)
       setSubmittedAt(now)
       setShowConfirm(false)
-      writeCachedExtrasPreds(user.id, leagueKey, {
-        answers,
-        textDrafts,
-        isSubmitted: true,
-        submittedAt: now,
-      })
+      // El cache se reescribe vía el effect que observa answers/isSubmitted.
     } catch (e) {
       setError(e.message ?? t('extras.errSend'))
     } finally {
@@ -721,10 +745,10 @@ export default function Extras() {
             question={q}
             answer={answers[q.key]}
             draft={textDrafts[q.key]}
-            onDraft={v   => setTextDraft(q.key, v)}
+            onDraft={v   => handleDraft(q.key, q.kind, v)}
             onSelect={v  => handleSelectChoice(q.key, v)}
-            onSave={() => handleSaveDraft(q.key, q.kind)}
             locked={locked}
+            status={saveState[q.key]}
           />
         ))}
       </div>
