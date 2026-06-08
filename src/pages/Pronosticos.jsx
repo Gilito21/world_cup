@@ -278,6 +278,14 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
   const hasPredictedTeams = (isTbd(match.home_team) || isTbd(match.away_team)) &&
                             (predictedHome || predictedAway)
 
+  // El consenso global solo tiene sentido si sabemos quiénes juegan. En
+  // eliminatorias eso requiere que el waterfall de mis picks de grupos (o los
+  // resultados reales) haya determinado ambos equipos; si siguen "Por
+  // determinar" (TBD) no mostramos ni el placeholder de consenso ni la
+  // etiqueta — no tiene sentido un marcador sugerido para TBD vs TBD.
+  const teamsKnown    = !isTbd(displayHome) && !isTbd(displayAway)
+  const showConsensus = !!consensus && teamsKnown
+
   const home        = draft?.home ?? ''
   const away        = draft?.away ?? ''
   const tiebreaker  = draft?.tiebreaker ?? null
@@ -423,17 +431,17 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
                   value={home}
                   onChange={setHome}
                   disabled={isLocked}
-                  placeholder={!isLocked && home === '' && consensus ? consensus.home_score : undefined}
+                  placeholder={!isLocked && home === '' && showConsensus ? consensus.home_score : undefined}
                 />
                 <span className="text-ink/50 font-bold text-sm">-</span>
                 <ScoreStepper
                   value={away}
                   onChange={setAway}
                   disabled={isLocked}
-                  placeholder={!isLocked && away === '' && consensus ? consensus.away_score : undefined}
+                  placeholder={!isLocked && away === '' && showConsensus ? consensus.away_score : undefined}
                 />
               </div>
-              {consensus && !isLocked && (home === '' || away === '') && (
+              {showConsensus && !isLocked && (home === '' || away === '') && (
                 <span
                   className="text-[10px] text-ink/50 flex items-center gap-1 leading-none"
                   title={t('pronosticos.consensusTooltip', { n: consensus.total_voters })}
@@ -932,6 +940,12 @@ export default function Pronosticos() {
       if (d && d.home !== '' && d.away !== '') return false  // already filled
       const c = consensus[m.id]
       if (!c) return false
+      // Solo rellenamos partidos cuyos equipos conocemos: en eliminatorias eso
+      // exige que el waterfall de mis picks de grupos haya determinado ambos.
+      // No tiene sentido poner un marcador en un cruce que sigue TBD vs TBD.
+      const dh = isTbd(m.home_team) ? (predictedOverlay[m.id]?.homeTeam ?? m.home_team) : m.home_team
+      const da = isTbd(m.away_team) ? (predictedOverlay[m.id]?.awayTeam ?? m.away_team) : m.away_team
+      if (isTbd(dh) || isTbd(da)) return false
       // Skip knockout matches where consensus is a draw — those need a
       // tiebreaker the user has to pick manually.
       if (m.stage !== 'group' && Number(c.home_score) === Number(c.away_score)) return false
@@ -967,7 +981,7 @@ export default function Pronosticos() {
     haptics.medium()
     setFillStatus({ state: 'done', count: ok, failed })
     fillTimerRef.current = setTimeout(() => setFillStatus({ state: 'idle', count: 0, failed: 0 }), 3500)
-  }, [matches, drafts, consensus, fillStatus.state, isSubmitted, cutoffTime, handleSave])
+  }, [matches, drafts, consensus, predictedOverlay, fillStatus.state, isSubmitted, cutoffTime, handleSave])
 
   // Cancel any pending status-reset timer on unmount so it doesn't fire
   // after the component is gone (and to avoid stale state warnings).
