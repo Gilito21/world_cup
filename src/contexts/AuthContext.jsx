@@ -64,7 +64,15 @@ export function AuthProvider({ children }) {
       setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // OJO: este callback NO debe ser async ni llamar a Supabase directamente.
+    // onAuthStateChange se ejecuta MIENTRAS GoTrue tiene cogido el auth lock;
+    // si dentro hacemos `await fetchProfile()` (que lanza supabase.from(...)),
+    // esa query espera el mismo lock → DEADLOCK hasta el timeout de sq() (15s),
+    // y con ella se cuelgan TODAS las demás queries (leagues, preds). Pasaba en
+    // cada refresh donde SIGNED_IN ganaba la carrera a getSession(). Fix:
+    // callback síncrono + diferir el trabajo con setTimeout(0), que saca
+    // fetchProfile del contexto del lock.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[porra:auth] onAuthStateChange event:', event, '| user:', session?.user?.id ?? 'none')
       // INITIAL_SESSION duplicates what getSession() already handles above
       if (event === 'INITIAL_SESSION') return
@@ -87,8 +95,9 @@ export function AuthProvider({ children }) {
       setUser(nextUser)
 
       if (nextUser) {
-        console.log('[porra:auth] onAuthStateChange → fetchProfile for', nextId)
-        await fetchProfile(nextUser.id)
+        console.log('[porra:auth] onAuthStateChange → fetchProfile (deferred) for', nextId)
+        // Diferido fuera del auth lock — ver comentario sobre el deadlock arriba.
+        setTimeout(() => fetchProfile(nextId), 0)
       } else {
         console.log('[porra:auth] onAuthStateChange → signed out')
         setProfile(null)
