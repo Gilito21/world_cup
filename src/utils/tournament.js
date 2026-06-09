@@ -17,17 +17,14 @@
  *   4. Head-to-head pts (todo: pass h2h flag)
  *   5. Alphabetical tie-breaker (deterministic placeholder)
  *
- * Round of 32 bracket
- * ───────────────────
- *   Groups A–H supply fixed 1st-vs-2nd cross-group matchups (8 matches).
- *   Groups I–L plus the 8 qualifying 3rd-place teams fill the remaining
- *   8 matches (1st or 2nd vs 3rd-place).  Third-place slots are assigned
- *   by the BRACKET_SCENARIOS table keyed on the sorted combination of the
- *   8 qualifying groups (e.g. "ABCDEFGH").  When no explicit scenario exists
- *   the fallback greedy algorithm respects the no-same-group constraint.
- *
- *   NOTE: Replace BRACKET_SCENARIOS with official FIFA WC 2026 scenario
- *   tables once they are published.
+ * Round of 32 bracket (oficial FIFA 2026)
+ * ─────────────────────────────────────────
+ *   Segundos vs segundos (8 duelos fijos):  2A-2B, 2E-2I, 2K-2L, 2D-2G,
+ *                                           1C-2F, 1F-2C, 1H-2J, 1J-2H.
+ *   Primeros vs 3ºs (8 duelos dependientes de qué 3ºs clasifican):
+ *     1E, 1I, 1A, 1L, 1D, 1G, 1B, 1K — cada uno contra un 3er clasificado.
+ *   Terceros: asignados via BRACKET_SCENARIOS (Anexo C reglamento FIFA 2026).
+ *   Fallback greedy cuando no hay escenario explícito.
  */
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
@@ -155,72 +152,85 @@ export function getQualifiers(allStandings) {
 //
 // nextMatch / nextSlot  describe where the winner of each R32 match goes.
 //
-// Bracket structure
-// ─────────────────
-//   Upper half  → SF1:  QF1 (R16_M1/M2) + QF2 (R16_M3/M4)
-//   Lower half  → SF2:  QF3 (R16_M5/M6) + QF4 (R16_M7/M8)
+// Bracket structure oficial FIFA 2026
+// ─────────────────────────────────────
+//   Upper half → SF1: QF1 (R16_M1/M2) + QF3 (R16_M3/M4)
+//   Lower half → SF2: QF2 (R16_M5/M6) + QF4 (R16_M7/M8)
 //
-//   Groups A–H supply fixed 1st-vs-2nd cross-group pairings (R32 M1–M8).
-//   Groups I–L + the 8 3rd-place teams fill R32 M9–M16.
+//   FIFA M73-M80 = R32 M1-M8  (upper half)
+//   FIFA M81-M88 = R32 M9-M16 (lower half)
 
 export const R32_TEMPLATE = [
   // ── Upper half ───────────────────────────────────────────────────────────
-  // QF1 branch
-  { id:'R32_M1',  home:{type:'winner',group:'A'}, away:{type:'runner',group:'B'}, nextMatch:'R16_M1', nextSlot:'home' },
-  { id:'R32_M2',  home:{type:'winner',group:'C'}, away:{type:'runner',group:'D'}, nextMatch:'R16_M1', nextSlot:'away' },
-  { id:'R32_M3',  home:{type:'winner',group:'B'}, away:{type:'runner',group:'A'}, nextMatch:'R16_M2', nextSlot:'home' },
-  { id:'R32_M4',  home:{type:'winner',group:'D'}, away:{type:'runner',group:'C'}, nextMatch:'R16_M2', nextSlot:'away' },
-  // QF2 branch
-  { id:'R32_M5',  home:{type:'winner',group:'E'}, away:{type:'runner',group:'F'}, nextMatch:'R16_M3', nextSlot:'home' },
-  { id:'R32_M6',  home:{type:'winner',group:'G'}, away:{type:'runner',group:'H'}, nextMatch:'R16_M3', nextSlot:'away' },
-  { id:'R32_M7',  home:{type:'winner',group:'F'}, away:{type:'runner',group:'E'}, nextMatch:'R16_M4', nextSlot:'home' },
-  { id:'R32_M8',  home:{type:'winner',group:'H'}, away:{type:'runner',group:'G'}, nextMatch:'R16_M4', nextSlot:'away' },
+  // FIFA M73: 2A vs 2B  → R16_M2 (FIFA M90)
+  { id:'R32_M1',  home:{type:'runner',group:'A'}, away:{type:'runner',group:'B'}, nextMatch:'R16_M2', nextSlot:'home' },
+  // FIFA M74: 1E vs 3º  → R16_M1 (FIFA M89)
+  { id:'R32_M2',  home:{type:'winner',group:'E'}, away:{type:'third',rank:0},     nextMatch:'R16_M1', nextSlot:'home' },
+  // FIFA M75: 1F vs 2C  → R16_M2 (FIFA M90)
+  { id:'R32_M3',  home:{type:'winner',group:'F'}, away:{type:'runner',group:'C'}, nextMatch:'R16_M2', nextSlot:'away' },
+  // FIFA M76: 1C vs 2F  → R16_M3 (FIFA M91)
+  { id:'R32_M4',  home:{type:'winner',group:'C'}, away:{type:'runner',group:'F'}, nextMatch:'R16_M3', nextSlot:'home' },
+  // FIFA M77: 1I vs 3º  → R16_M1 (FIFA M89)
+  { id:'R32_M5',  home:{type:'winner',group:'I'}, away:{type:'third',rank:1},     nextMatch:'R16_M1', nextSlot:'away' },
+  // FIFA M78: 2E vs 2I  → R16_M3 (FIFA M91)
+  { id:'R32_M6',  home:{type:'runner',group:'E'}, away:{type:'runner',group:'I'}, nextMatch:'R16_M3', nextSlot:'away' },
+  // FIFA M79: 1A vs 3º  → R16_M4 (FIFA M92)
+  { id:'R32_M7',  home:{type:'winner',group:'A'}, away:{type:'third',rank:2},     nextMatch:'R16_M4', nextSlot:'home' },
+  // FIFA M80: 1L vs 3º  → R16_M4 (FIFA M92)
+  { id:'R32_M8',  home:{type:'winner',group:'L'}, away:{type:'third',rank:3},     nextMatch:'R16_M4', nextSlot:'away' },
   // ── Lower half ───────────────────────────────────────────────────────────
-  // QF3 branch
-  { id:'R32_M9',  home:{type:'winner',group:'I'}, away:{type:'third',rank:0},     nextMatch:'R16_M5', nextSlot:'home' },
-  { id:'R32_M10', home:{type:'winner',group:'J'}, away:{type:'third',rank:1},     nextMatch:'R16_M5', nextSlot:'away' },
-  { id:'R32_M11', home:{type:'runner',group:'I'}, away:{type:'third',rank:2},     nextMatch:'R16_M6', nextSlot:'home' },
-  { id:'R32_M12', home:{type:'runner',group:'J'}, away:{type:'third',rank:3},     nextMatch:'R16_M6', nextSlot:'away' },
-  // QF4 branch
-  { id:'R32_M13', home:{type:'winner',group:'K'}, away:{type:'third',rank:4},     nextMatch:'R16_M7', nextSlot:'home' },
-  { id:'R32_M14', home:{type:'winner',group:'L'}, away:{type:'third',rank:5},     nextMatch:'R16_M7', nextSlot:'away' },
-  { id:'R32_M15', home:{type:'runner',group:'K'}, away:{type:'third',rank:6},     nextMatch:'R16_M8', nextSlot:'home' },
-  { id:'R32_M16', home:{type:'runner',group:'L'}, away:{type:'third',rank:7},     nextMatch:'R16_M8', nextSlot:'away' },
+  // FIFA M81: 1D vs 3º  → R16_M6 (FIFA M94)
+  { id:'R32_M9',  home:{type:'winner',group:'D'}, away:{type:'third',rank:4},     nextMatch:'R16_M6', nextSlot:'home' },
+  // FIFA M82: 1G vs 3º  → R16_M6 (FIFA M94)
+  { id:'R32_M10', home:{type:'winner',group:'G'}, away:{type:'third',rank:5},     nextMatch:'R16_M6', nextSlot:'away' },
+  // FIFA M83: 2K vs 2L  → R16_M5 (FIFA M93)
+  { id:'R32_M11', home:{type:'runner',group:'K'}, away:{type:'runner',group:'L'}, nextMatch:'R16_M5', nextSlot:'home' },
+  // FIFA M84: 1H vs 2J  → R16_M5 (FIFA M93)
+  { id:'R32_M12', home:{type:'winner',group:'H'}, away:{type:'runner',group:'J'}, nextMatch:'R16_M5', nextSlot:'away' },
+  // FIFA M85: 1B vs 3º  → R16_M8 (FIFA M96)
+  { id:'R32_M13', home:{type:'winner',group:'B'}, away:{type:'third',rank:6},     nextMatch:'R16_M8', nextSlot:'home' },
+  // FIFA M86: 1J vs 2H  → R16_M7 (FIFA M95)
+  { id:'R32_M14', home:{type:'winner',group:'J'}, away:{type:'runner',group:'H'}, nextMatch:'R16_M7', nextSlot:'home' },
+  // FIFA M87: 1K vs 3º  → R16_M8 (FIFA M96)
+  { id:'R32_M15', home:{type:'winner',group:'K'}, away:{type:'third',rank:7},     nextMatch:'R16_M8', nextSlot:'away' },
+  // FIFA M88: 2D vs 2G  → R16_M7 (FIFA M95)
+  { id:'R32_M16', home:{type:'runner',group:'D'}, away:{type:'runner',group:'G'}, nextMatch:'R16_M7', nextSlot:'away' },
 ]
 
 // Full bracket progression tree: maps each match id to where its winner advances.
+// Numeración FIFA: R32=M73-M88, R16=M89-M96, QF=M97-M100, SF=M101-M102, Final=M104
 export const BRACKET_PROGRESSION = {
   // R32 → R16
-  R32_M1:  { nextMatch:'R16_M1', nextSlot:'home' },
-  R32_M2:  { nextMatch:'R16_M1', nextSlot:'away' },
-  R32_M3:  { nextMatch:'R16_M2', nextSlot:'home' },
-  R32_M4:  { nextMatch:'R16_M2', nextSlot:'away' },
-  R32_M5:  { nextMatch:'R16_M3', nextSlot:'home' },
-  R32_M6:  { nextMatch:'R16_M3', nextSlot:'away' },
-  R32_M7:  { nextMatch:'R16_M4', nextSlot:'home' },
-  R32_M8:  { nextMatch:'R16_M4', nextSlot:'away' },
-  R32_M9:  { nextMatch:'R16_M5', nextSlot:'home' },
-  R32_M10: { nextMatch:'R16_M5', nextSlot:'away' },
-  R32_M11: { nextMatch:'R16_M6', nextSlot:'home' },
-  R32_M12: { nextMatch:'R16_M6', nextSlot:'away' },
-  R32_M13: { nextMatch:'R16_M7', nextSlot:'home' },
-  R32_M14: { nextMatch:'R16_M7', nextSlot:'away' },
-  R32_M15: { nextMatch:'R16_M8', nextSlot:'home' },
-  R32_M16: { nextMatch:'R16_M8', nextSlot:'away' },
+  R32_M1:  { nextMatch:'R16_M2', nextSlot:'home' },  // M73 → M90
+  R32_M2:  { nextMatch:'R16_M1', nextSlot:'home' },  // M74 → M89
+  R32_M3:  { nextMatch:'R16_M2', nextSlot:'away' },  // M75 → M90
+  R32_M4:  { nextMatch:'R16_M3', nextSlot:'home' },  // M76 → M91
+  R32_M5:  { nextMatch:'R16_M1', nextSlot:'away' },  // M77 → M89
+  R32_M6:  { nextMatch:'R16_M3', nextSlot:'away' },  // M78 → M91
+  R32_M7:  { nextMatch:'R16_M4', nextSlot:'home' },  // M79 → M92
+  R32_M8:  { nextMatch:'R16_M4', nextSlot:'away' },  // M80 → M92
+  R32_M9:  { nextMatch:'R16_M6', nextSlot:'home' },  // M81 → M94
+  R32_M10: { nextMatch:'R16_M6', nextSlot:'away' },  // M82 → M94
+  R32_M11: { nextMatch:'R16_M5', nextSlot:'home' },  // M83 → M93
+  R32_M12: { nextMatch:'R16_M5', nextSlot:'away' },  // M84 → M93
+  R32_M13: { nextMatch:'R16_M8', nextSlot:'home' },  // M85 → M96
+  R32_M14: { nextMatch:'R16_M7', nextSlot:'home' },  // M86 → M95
+  R32_M15: { nextMatch:'R16_M8', nextSlot:'away' },  // M87 → M96
+  R32_M16: { nextMatch:'R16_M7', nextSlot:'away' },  // M88 → M95
   // R16 → QF
-  R16_M1: { nextMatch:'QF_M1', nextSlot:'home' },
-  R16_M2: { nextMatch:'QF_M1', nextSlot:'away' },
-  R16_M3: { nextMatch:'QF_M2', nextSlot:'home' },
-  R16_M4: { nextMatch:'QF_M2', nextSlot:'away' },
-  R16_M5: { nextMatch:'QF_M3', nextSlot:'home' },
-  R16_M6: { nextMatch:'QF_M3', nextSlot:'away' },
-  R16_M7: { nextMatch:'QF_M4', nextSlot:'home' },
-  R16_M8: { nextMatch:'QF_M4', nextSlot:'away' },
+  R16_M1: { nextMatch:'QF_M1', nextSlot:'home' },  // M89 → M97
+  R16_M2: { nextMatch:'QF_M1', nextSlot:'away' },  // M90 → M97
+  R16_M3: { nextMatch:'QF_M3', nextSlot:'home' },  // M91 → M99
+  R16_M4: { nextMatch:'QF_M3', nextSlot:'away' },  // M92 → M99
+  R16_M5: { nextMatch:'QF_M2', nextSlot:'home' },  // M93 → M98
+  R16_M6: { nextMatch:'QF_M2', nextSlot:'away' },  // M94 → M98
+  R16_M7: { nextMatch:'QF_M4', nextSlot:'home' },  // M95 → M100
+  R16_M8: { nextMatch:'QF_M4', nextSlot:'away' },  // M96 → M100
   // QF → SF
-  QF_M1: { nextMatch:'SF_M1', nextSlot:'home' },
-  QF_M2: { nextMatch:'SF_M1', nextSlot:'away' },
-  QF_M3: { nextMatch:'SF_M2', nextSlot:'home' },
-  QF_M4: { nextMatch:'SF_M2', nextSlot:'away' },
+  QF_M1: { nextMatch:'SF_M1', nextSlot:'home' },  // M97 → M101
+  QF_M2: { nextMatch:'SF_M1', nextSlot:'away' },  // M98 → M101
+  QF_M3: { nextMatch:'SF_M2', nextSlot:'home' },  // M99 → M102
+  QF_M4: { nextMatch:'SF_M2', nextSlot:'away' },  // M100 → M102
   // SF → Final / 3rd-place play-off
   SF_M1: { nextMatch:'FINAL',   nextSlot:'home', loserMatch:'THIRD_PLACE', loserSlot:'home' },
   SF_M2: { nextMatch:'FINAL',   nextSlot:'away', loserMatch:'THIRD_PLACE', loserSlot:'away' },
@@ -228,24 +238,23 @@ export const BRACKET_PROGRESSION = {
 
 // ─── BRACKET SCENARIOS ───────────────────────────────────────────────────────
 //
-// Key:   8 qualifying group letters sorted and joined, e.g. 'ABCDEFGH'
-// Value: 8-element array of group letters whose 3rd-place team fills
-//        rank slots [0..7] in R32_TEMPLATE (slot 0 = best opponent, etc.)
+// Key:   8 qualifying group letters sorted and joined, e.g. 'ABCDFGHI'
+// Value: 8-element array de letras de grupo que mapean al slot de rank [0..7]
+//        en R32_TEMPLATE:
+//          slot 0 → R32_M2  (vs 1E)   forbidden: E
+//          slot 1 → R32_M5  (vs 1I)   forbidden: I
+//          slot 2 → R32_M7  (vs 1A)   forbidden: A
+//          slot 3 → R32_M8  (vs 1L)   forbidden: L
+//          slot 4 → R32_M9  (vs 1D)   forbidden: D
+//          slot 5 → R32_M10 (vs 1G)   forbidden: G
+//          slot 6 → R32_M13 (vs 1B)   forbidden: B
+//          slot 7 → R32_M15 (vs 1K)   forbidden: K
 //
-// The rank-0 team (best 3rd) always goes to the first available slot it can
-// legally fill (no same-group clash).
-//
-// NOTE: Replace with official FIFA WC 2026 scenario table once published.
-//       The fallback greedy algorithm (assignThirdsToSlots) is used when
-//       the combination is not in this explicit table.
+// Fuente: Anexo C del reglamento oficial FIFA World Cup 2026.
+// Mientras no se poblen los 495 escenarios, el greedy fallback cubre todos.
 
 export const BRACKET_SCENARIOS = {
-  // Example scenarios for common combinations (add all 495 once official):
-  // All thirds from groups A–H → no same-group conflicts with I–L opponents
-  'ABCDEFGH': ['A','B','C','D','E','F','G','H'],
-  'ABCDEFGI': ['A','B','C','D','E','F','G','I'],
-  'ABCDEFGJ': ['A','B','C','D','E','F','G','J'],
-  // Add more scenarios here as needed …
+  // TODO: poblar con los 495 escenarios del Anexo C FIFA 2026
 }
 
 // ─── THIRD-PLACE SLOT ASSIGNMENT ─────────────────────────────────────────────
