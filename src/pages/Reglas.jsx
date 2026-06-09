@@ -11,7 +11,7 @@ export default function Reglas() {
         <span className="ed-mono text-terracotta text-[10px] block mb-1.5">// {t('reglas.chapter')}</span>
             <h2 className="font-display text-xl sm:text-2xl text-ink leading-none">{t('reglas.title')}</h2>
         <p className="font-serif italic text-ink/70 text-sm mt-1">{t('reglas.subtitle')}</p>
-            <EditorialBand items={['MANUAL', '4 SECCIONES', 'EDICIÓN 2026']} />
+            <EditorialBand items={['MANUAL', '6 SECCIONES', 'EDICIÓN 2026']} />
       </div>
 
       {/* 1. Los pronósticos */}
