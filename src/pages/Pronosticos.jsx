@@ -609,7 +609,7 @@ function StageSidebar({ stages, activeStage, onSelect, unfilledCount }) {
 
 export default function Pronosticos() {
   const { user }                  = useAuth()
-  const { activeLeague, leagues, loading: leagueLoading, leaguesReady, onLeagueCreated } = useLeague()
+  const { activeLeague, leagues, loading: leagueLoading, leaguesReady, onLeagueCreated, joinNotice, clearJoinNotice } = useLeague()
   const { t, dateLocale }         = useLang()
   const predictionMode = activeLeague?.prediction_mode ?? 'global'
 
@@ -633,6 +633,19 @@ export default function Pronosticos() {
   const [createdLeague,    setCreatedLeague]    = useState(null)
   const [previewMatch,     setPreviewMatch]     = useState(null)
   const [reuseExpanded,    setReuseExpanded]    = useState(false)
+
+  // Auto-abrir el modal de ligas una vez si el usuario no está en ninguna liga.
+  // Muchos se registran (incluso rellenan "compañía") pero no llegan a unirse;
+  // el banner pasivo se ignora, así que damos un empujón explícito. Solo una vez
+  // por montaje para no ser insistentes — el banner queda como vía de reentrada.
+  const leaguePromptedRef = useRef(false)
+  useEffect(() => {
+    if (leagueLoading || leaguePromptedRef.current) return
+    if (leaguesReady && leagues.length === 0) {
+      leaguePromptedRef.current = true
+      setShowLeagueModal(true)
+    }
+  }, [leagueLoading, leaguesReady, leagues.length])
 
   // Submission state
   const [isSubmitted,  setIsSubmitted]  = useState(false)
@@ -1098,6 +1111,27 @@ export default function Pronosticos() {
         <span className="ed-mono text-terracotta text-[10px] block mb-1">// {t('pronosticos.chapter')}</span>
         <h2 className="font-display text-base sm:text-lg text-ink leading-none">{t('pronosticos.title')}</h2>
       </div>
+
+      {/* Resultado de la unión automática por código (link/registro) */}
+      {joinNotice && (
+        <div className={`card px-4 py-3 flex items-start gap-3 ${
+          joinNotice.type === 'success'
+            ? 'border-green-600/30 bg-green-600/10'
+            : 'border-red-500/30 bg-red-500/10'
+        }`}>
+          <span className="text-lg flex-shrink-0">{joinNotice.type === 'success' ? '✅' : '⚠️'}</span>
+          <p className={`flex-1 text-sm ${joinNotice.type === 'success' ? 'text-ink' : 'text-red-400'}`}>
+            {joinNotice.message}
+          </p>
+          <button
+            onClick={clearJoinNotice}
+            className="text-ink/40 hover:text-ink flex-shrink-0"
+            aria-label={t('common.close')}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* No-league gate: banner replacing the submit panel */}
       {!leagueLoading && leagues.length === 0 ? (

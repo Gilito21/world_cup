@@ -300,6 +300,7 @@ export default {
     cantJoin: 'No se pudo unir a la liga',
     fullTitle: 'Liga completa',
     invalidCode: 'Código de invitación inválido.',
+    pendingJoined: '¡Listo! Te has unido a "{{name}}".',
     joining: 'Uniéndote a la liga…',
     goHome: 'Ir al inicio',
     alreadyMember: 'Ya eres miembro de esta liga.',

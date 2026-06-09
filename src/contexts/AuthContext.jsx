@@ -152,12 +152,14 @@ export function AuthProvider({ children }) {
     }
   }
 
-  async function signUp(email, password, username, company) {
+  async function signUp(email, password, username, company, inviteCode) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { username, company: company || null },
+        // invite_code en metadata sobrevive entre dispositivos: si el usuario
+        // confirma el email desde otro móvil, LeagueContext aún puede unirlo.
+        data: { username, company: company || null, ...(inviteCode ? { invite_code: inviteCode } : {}) },
         emailRedirectTo: appUrl(),
       },
     })

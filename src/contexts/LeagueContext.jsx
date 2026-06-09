@@ -28,6 +28,9 @@ export function LeagueProvider({ children }) {
   const [leagues, setLeagues]           = useState([])
   const [activeLeague, setActiveLeagueState] = useState(null)
   const [loading, setLoading]           = useState(true)
+  // Resultado de la unión automática por código pendiente (link/registro).
+  // { type: 'success' | 'error', message } — lo consume Pronosticos para avisar.
+  const [joinNotice, setJoinNotice]     = useState(null)
   // True once leagues have been confirmed for the current user (cache or network).
   // Stays false during the window where auth has resolved but leagues haven't
   // loaded yet — prevents consumers from running with stale activeLeague=null.
@@ -107,27 +110,47 @@ export function LeagueProvider({ children }) {
     return () => document.removeEventListener('visibilitychange', handleVisibility)
   }, [])
 
-  // Join pending league from invite link after login/register
+  // Join pending league from invite link after login/register.
+  // El código puede venir por dos vías:
+  //  - localStorage 'porra-invite-code' (mismo dispositivo)
+  //  - user_metadata.invite_code (sobrevive entre dispositivos: registras en
+  //    el portátil y confirmas el email desde el móvil)
+  // Antes esto fallaba en silencio si el código era inválido / la liga estaba
+  // llena; ahora dejamos un joinNotice para avisar al usuario.
   useEffect(() => {
     if (!user) return
-    const pendingCode = localStorage.getItem('porra-invite-code')
+    const localCode = localStorage.getItem('porra-invite-code')
+    const metaCode  = user.user_metadata?.invite_code
+    const pendingCode = (localCode || metaCode || '').trim().toUpperCase()
     if (!pendingCode) return
     localStorage.removeItem('porra-invite-code')
+
+    // Limpiar el código de la metadata para no reintentar en cada login.
+    async function clearMeta() {
+      if (!metaCode) return
+      try { await supabase.auth.updateUser({ data: { invite_code: null } }) } catch {}
+    }
+
     async function joinPending() {
       try {
         const { data: league } = await supabase
-          .from('leagues').select('*').eq('invite_code', pendingCode).single()
-        if (!league) return
+          .from('leagues').select('id, name').eq('invite_code', pendingCode).single()
+        if (!league) { setJoinNotice({ type: 'error', message: t('league.invalidCode') }); await clearMeta(); return }
         const { count } = await supabase
           .from('league_members')
           .select('*', { count: 'exact', head: true })
           .eq('league_id', league.id)
-        if (count >= 40) return // liga llena — no se puede unir
+        if (count >= 40) { setJoinNotice({ type: 'error', message: t('league.full') }); await clearMeta(); return }
         const { error } = await supabase.from('league_members')
           .insert({ league_id: league.id, user_id: user.id, role: 'member' })
-        if (error && error.code !== '23505') return // 23505 = ya es miembro
+        if (error && error.code !== '23505') { setJoinNotice({ type: 'error', message: t('league.cantJoin') }); await clearMeta(); return }
         await loadLeagues()
-      } catch { /* código inválido — ignorar */ }
+        if (!error) setJoinNotice({ type: 'success', message: t('league.pendingJoined', { name: league.name }) })
+        await clearMeta()
+      } catch {
+        setJoinNotice({ type: 'error', message: t('league.invalidCode') })
+        await clearMeta()
+      }
     }
     joinPending()
   }, [user?.id])
@@ -208,6 +231,8 @@ export function LeagueProvider({ children }) {
       joinLeague,
       setPredictionMode,
       reloadLeagues: loadLeagues,
+      joinNotice,
+      clearJoinNotice: () => setJoinNotice(null),
     }}>
       {children}
     </LeagueContext.Provider>

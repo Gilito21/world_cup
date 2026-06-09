@@ -291,6 +291,7 @@ export default {
     cantJoin: 'Could not join the league',
     fullTitle: 'League is full',
     invalidCode: 'Invalid invite code.',
+    pendingJoined: "You're in! Joined \"{{name}}\".",
     joining: 'Joining the league…',
     goHome: 'Go to home',
     alreadyMember: 'You are already a member of this league.',

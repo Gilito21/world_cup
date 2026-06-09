@@ -300,9 +300,13 @@ export default function Auth() {
           localStorage.setItem('porra-pending-league-create', leagueName.trim())
         }
 
+        const inviteCode = leagueMode === 'join' && joinCode.trim()
+          ? joinCode.trim().toUpperCase()
+          : null
+
         let authData
         try {
-          ;({ data: authData } = await signUp(form.email, form.password, form.username.trim(), company.trim()))
+          ;({ data: authData } = await signUp(form.email, form.password, form.username.trim(), company.trim(), inviteCode))
         } catch (signUpErr) {
           localStorage.removeItem('porra-pending-league-create')
           throw signUpErr
