@@ -155,19 +155,24 @@ function ScoreStepper({ value, onChange, disabled, placeholder }) {
 // editorial band) and a hint isn't needed once the user has reached
 // this part of the page.
 
-function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, onSubmit, submitting }) {
+function SubmitPanel({ filledCount, totalCount, cutoffTime, isSubmitted, editedSinceSubmit, onSubmit, submitting }) {
   const { t } = useLang()
   const pct          = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0
   const isPastCutoff = !!(cutoffTime && Date.now() >= cutoffTime)
   const isComplete   = filledCount === totalCount && totalCount > 0
   const canSubmit    = isComplete && !isPastCutoff && !isSubmitted
 
-  // Terminal: prediction was submitted — tiny green confirmation pill.
+  // Terminal: prediction was submitted — green confirmation pill. Once the
+  // user edits an already-submitted prediction, the pill switches to a
+  // persistent "Cambios guardados" so they get a clear, lasting signal that
+  // the edit landed (the per-card "Guardado" flash is easy to miss).
   if (isSubmitted) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-grass-500/15 border border-grass-500/30 text-grass-600 text-xs font-bold whitespace-nowrap flex-shrink-0">
-        <span aria-hidden="true">✅</span>
-        <span className="hidden sm:inline">{t('pronosticos.submitted')}</span>
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-grass-500/15 border border-grass-500/30 text-grass-600 text-xs font-bold whitespace-nowrap flex-shrink-0 ${editedSinceSubmit ? 'animate-fade-in' : ''}`}>
+        <span aria-hidden="true">{editedSinceSubmit ? '✓' : '✅'}</span>
+        <span className={editedSinceSubmit ? '' : 'hidden sm:inline'}>
+          {editedSinceSubmit ? t('pronosticos.changesSaved') : t('pronosticos.submitted')}
+        </span>
       </span>
     )
   }
@@ -653,6 +658,13 @@ export default function Pronosticos() {
   const [cutoffTime,   setCutoffTime]   = useState(null)
   const [submitting,   setSubmitting]   = useState(false)
   const [showConfirm,  setShowConfirm]  = useState(false)
+  // True once the user edits an already-submitted prediction. Drives the
+  // persistent "Cambios guardados" state in the submit pill. Reset on every
+  // (re)load so a fresh scope/refresh shows the canonical "Pronóstico enviado".
+  const [editedSinceSubmit, setEditedSinceSubmit] = useState(false)
+  // Read inside handleSave without recreating it on every submission change.
+  const isSubmittedRef = useRef(false)
+  useEffect(() => { isSubmittedRef.current = isSubmitted }, [isSubmitted])
 
   // ── Data loading ────────────────────────────────────────────────────────────
   const load = useCallback(async ({ force = false } = {}) => {
@@ -661,6 +673,7 @@ export default function Pronosticos() {
     const predCacheKey = `preds:${user.id}:${leagueKey}`
     const subCacheKey  = `sub:${user.id}:${leagueKey}`
     console.log(`[porra:load] START — mode=${predictionMode} leagueKey=${leagueKey} force=${force}`)
+    setEditedSinceSubmit(false)
 
     // Initial path: hydrate from caches so the UI is instant.
     // Force path (pull-to-refresh): keep current UI, just refetch.
@@ -846,6 +859,10 @@ export default function Pronosticos() {
       return next
     })
     setDrafts(d => ({ ...d, [matchId]: { home: String(data.home_score), away: String(data.away_score), tiebreaker: data.tiebreaker ?? null } }))
+    // Editing an already-submitted prediction → flip the pill to "Cambios
+    // guardados". Pre-submission saves (and the flush inside handleSubmit, which
+    // runs before the submission row exists) leave the ref false, so they don't.
+    if (isSubmittedRef.current) setEditedSinceSubmit(true)
     return true
   }, [predictions, user.id, activeLeague, predictionMode, t])
 
@@ -1277,6 +1294,7 @@ export default function Pronosticos() {
                   cutoffTime={cutoffTime}
                   isSubmitted={isSubmitted}
                   submittedAt={submittedAt}
+                  editedSinceSubmit={editedSinceSubmit}
                   onSubmit={() => setShowConfirm(true)}
                   submitting={submitting}
                 />

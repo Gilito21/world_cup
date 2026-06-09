@@ -347,6 +347,7 @@ export default {
     fillConsensusDone: '✓ {{n}} prediction{{s}} filled from consensus',
     fillConsensusPartial: '⚠ {{ok}} filled · {{fail}} failed · retry',
     submitted: 'Prediction submitted',
+    changesSaved: 'Changes saved',
     submittedDesc: '{{n}} matches · Editable until deadline',
     confirmTitle: 'Submit prediction?',
     confirmBody: 'You\'re about to submit your {{n}} predictions. You can keep editing them until the deadline.',

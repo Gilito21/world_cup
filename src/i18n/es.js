@@ -356,6 +356,7 @@ export default {
     fillConsensusDone: '✓ {{n}} pronóstico{{s}} rellenado{{s}} con consenso',
     fillConsensusPartial: '⚠ {{ok}} rellenados · {{fail}} fallaron · reintenta',
     submitted: 'Pronóstico enviado',
+    changesSaved: 'Cambios guardados',
     submittedDesc: '{{n}} partidos · Editable hasta el cierre',
     confirmTitle: '¿Enviar pronóstico?',
     confirmBody: 'Estás a punto de enviar tus {{n}} pronósticos. Podrás seguir editándolos hasta el cierre.',
