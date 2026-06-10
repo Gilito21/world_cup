@@ -15,7 +15,7 @@
   <![endif]-->
 </head>
 <body style="margin:0;padding:0;background:#F4ECD6;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#0E2A18;">
-  <div style="display:none !important;font-size:1px;color:#F4ECD6;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">Pediste cambiar tu contraseña — aquí tienes el enlace.</div>
+  <div style="display:none !important;font-size:1px;color:#F4ECD6;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">Pediste cambiar tu contraseña — aquí tienes tu código.</div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F4ECD6" style="background:#F4ECD6;">
     <tr>
@@ -43,21 +43,11 @@
 <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#0E2A18;opacity:.55;margin:0 0 8px;">Recuperar contraseña</div>
 <h1 style="margin:0 0 14px;font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-weight:400;font-size:34px;line-height:1.05;color:#0E2A18;letter-spacing:-.01em;">Vuelve a la porra.</h1>
 <p style="margin:0 0 22px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#0E2A18;">
-  Pediste restablecer tu contraseña. Pulsa el botón y elige una nueva — el resto de la cuenta sigue intacta.
+  Pediste restablecer tu contraseña. Escribe este código en la app para elegir una nueva — el resto de la cuenta sigue intacto.
 </p>
-
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-  <tr>
-    <td align="center" bgcolor="#0E2A18" style="background-color:#0E2A18;border:1px solid #0E2A18;">
-      <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-weight:700;font-size:15px;line-height:1;letter-spacing:.01em;color:#F4ECD6;text-decoration:none;">Elegir nueva contraseña &rarr;</a>
-    </td>
-  </tr>
-</table>
-
-<p style="margin:24px 0 0;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#0E2A18;opacity:.55;text-align:center;">
-  ¿No funciona el botón? Copia este enlace en tu navegador:<br>
-  <span style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#0E2A18;word-break:break-all;opacity:.85;">{{ .ConfirmationURL }}</span>
-</p>
+<div style="margin:8px 0 22px;text-align:center;">
+  <span style="display:inline-block;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:34px;font-weight:700;letter-spacing:.34em;color:#0E2A18;background:#F4ECD6;border:1px solid rgba(14,42,24,.18);padding:16px 24px 16px 34px;">{{ .Token }}</span>
+</div>
 <p style="margin:24px 0 0;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#0E2A18;opacity:.6;text-align:center;">
   Si no fuiste tú, no hace falta hacer nada: tu contraseña actual sigue siendo válida.
 </p></td></tr>
@@ -74,7 +64,7 @@
           <!-- Footer -->
           <tr>
             <td align="center" style="padding:10px 24px 0;">
-              <p style="margin:0 0 6px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#0E2A18;opacity:.62;">El enlace caduca pasada 1 hora por seguridad.</p>
+              <p style="margin:0 0 6px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#0E2A18;opacity:.62;">El código caduca pasada 1 hora por seguridad.</p>
               <p style="margin:0;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#0E2A18;opacity:.45;">
                 <a href="https://www.porradeempresas.com" style="color:#0E2A18;text-decoration:none;opacity:.7;">porradeempresas.com</a>
               </p>

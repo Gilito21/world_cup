@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
-import { appUrl } from '../lib/appUrl'
 import { LEAGUE_PRICE_LABEL } from '../lib/stripe'
 import Spinner from '../components/Spinner'
 import ReportButton from '../components/ReportButton'
@@ -71,20 +70,53 @@ function AuthBg({ children }) {
 // ── ForgotPassword ─────────────────────────────────────────────────────────
 function ForgotPassword({ onBack }) {
   const { t } = useLang()
-  const [email, setEmail]     = useState('')
-  const [loading, setLoading] = useState(false)
-  const [sent, setSent]       = useState(false)
-  const [error, setError]     = useState('')
+  const [step, setStep]         = useState('email') // 'email' | 'code' | 'done'
+  const [email, setEmail]       = useState('')
+  const [code, setCode]         = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm]   = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [resent, setResent]     = useState(false)
+  const [error, setError]       = useState('')
 
-  async function handleSubmit(e) {
+  // El email de recovery muestra un código de 6 dígitos ({{ .Token }}), no un
+  // enlace. Los escáneres de correo corporativo (Defender/Proofpoint…) clican
+  // los enlaces para analizarlos y, al ser de un solo uso, los "queman" antes
+  // de que el usuario los abra. Un código no se puede pre-clicar.
+  async function sendCode() {
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim())
+    return err
+  }
+
+  async function handleRequest(e) {
     e.preventDefault()
-    setError('')
-    setLoading(true)
-    const redirectTo = `${appUrl()}/reset-password`
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+    setError(''); setLoading(true)
+    const err = await sendCode()
     setLoading(false)
     if (err) { setError(err.message); return }
-    setSent(true)
+    setStep('code')
+  }
+
+  async function handleResend() {
+    setError(''); setResent(false)
+    const err = await sendCode()
+    if (err) { setError(err.message); return }
+    setResent(true)
+    setTimeout(() => setResent(false), 3000)
+  }
+
+  async function handleVerify(e) {
+    e.preventDefault()
+    setError('')
+    if (password !== confirm) { setError(t('auth.passwordsMismatch')); return }
+    if (password.length < 6)  { setError(t('auth.errWeakPassword')); return }
+    setLoading(true)
+    const { error: vErr } = await supabase.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'recovery' })
+    if (vErr) { setLoading(false); setError(t('auth.errInvalidCode')); return }
+    const { error: uErr } = await supabase.auth.updateUser({ password })
+    setLoading(false)
+    if (uErr) { setError(uErr.message); return }
+    setStep('done')
   }
 
   return (
@@ -99,18 +131,60 @@ function ForgotPassword({ onBack }) {
           <div className="bg-cream px-6 py-6 border-b border-ink/15 relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-px bg-terracotta" />
             <h2 className="text-lg font-bold text-ink">{t('auth.recoverTitle')}</h2>
-            <p className="text-ink/60 text-sm mt-1">{t('auth.recoverHint')}</p>
+            <p className="text-ink/60 text-sm mt-1">
+              {step === 'code' ? t('auth.codeStepHint', { email: email.trim() }) : t('auth.recoverHint')}
+            </p>
           </div>
           <div className="p-6">
-            {sent ? (
+            {step === 'done' ? (
               <div className="text-center space-y-3 py-4">
-                <div className="text-4xl">📧</div>
-                <p className="text-ink font-semibold">{t('auth.emailSent')}</p>
-                <p className="text-ink/60 text-sm">{t('auth.emailSentDesc')}</p>
+                <div className="text-4xl">✅</div>
+                <p className="text-ink font-semibold">{t('auth.passwordUpdated')}</p>
                 <button onClick={onBack} className="btn-secondary w-full mt-2">{t('auth.backToLogin')}</button>
               </div>
+            ) : step === 'code' ? (
+              <form onSubmit={handleVerify} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-ink/80 mb-1.5">{t('auth.codeLabel')}</label>
+                  <input
+                    type="text" inputMode="numeric" autoComplete="one-time-code"
+                    pattern="[0-9]*" maxLength={6}
+                    className="input text-center tracking-[0.4em] font-mono text-lg"
+                    placeholder="000000"
+                    value={code}
+                    onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+                    required autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-ink/80 mb-1.5">{t('auth.newPassword')}</label>
+                  <input type="password" className="input" placeholder={t('auth.passwordRegisterPlaceholder')}
+                    value={password} onChange={e => setPassword(e.target.value)}
+                    required minLength={6} autoComplete="new-password" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-ink/80 mb-1.5">{t('auth.confirmPassword')}</label>
+                  <input type="password" className="input" placeholder={t('auth.confirmPasswordPlaceholder')}
+                    value={confirm} onChange={e => setConfirm(e.target.value)}
+                    required autoComplete="new-password" />
+                </div>
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-none px-4 py-3 text-red-600 text-sm">{error}</div>
+                )}
+                <button type="submit" disabled={loading || code.length < 6} className="btn-primary w-full flex items-center justify-center gap-2">
+                  {loading && <Spinner size="sm" />} {t('auth.changePassword')}
+                </button>
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <button type="button" onClick={() => { setStep('email'); setCode(''); setError('') }} className="text-ink/50 hover:text-ink/80 transition-colors">
+                    {t('auth.changeEmail')}
+                  </button>
+                  <button type="button" onClick={handleResend} className="text-ink/50 hover:text-ink/80 transition-colors">
+                    {resent ? t('auth.codeResent') : t('auth.resendCode')}
+                  </button>
+                </div>
+              </form>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleRequest} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-ink/80 mb-1.5">{t('auth.email')}</label>
                   <input type="email" className="input" placeholder={t('auth.emailPlaceholder')}
@@ -121,7 +195,7 @@ function ForgotPassword({ onBack }) {
                   <div className="bg-red-50 border border-red-200 rounded-none px-4 py-3 text-red-600 text-sm">{error}</div>
                 )}
                 <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
-                  {loading && <Spinner size="sm" />} {t('auth.sendLink')}
+                  {loading && <Spinner size="sm" />} {t('auth.sendCode')}
                 </button>
                 <button type="button" onClick={onBack} className="w-full text-center text-ink/50 text-sm hover:text-ink/80 transition-colors">
                   {t('auth.backToAuth')}

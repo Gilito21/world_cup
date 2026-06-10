@@ -71,21 +71,28 @@ ${fallbackLink(URL_VAR)}
 })
 
 // ─── 3. Password recovery ─────────────────────────────────────────────────────
+// Usa un CÓDIGO de 6 dígitos ({{ .Token }}) en lugar de un enlace: los escáneres
+// de seguridad de correo corporativo (Defender/Proofpoint…) pre-clican los
+// enlaces para analizarlos y, al ser de un solo uso, los invalidan antes de que
+// el usuario llegue. Un código no se puede "pre-clicar". La app verifica el
+// código con verifyOtp({ type: 'recovery' }). NO incluir enlace aquí.
+const CODE_VAR = '{{ .Token }}'
 const recovery = brandShell({
   title: 'Restablece tu contraseña · Porra de Empresas',
-  preheader: 'Pediste cambiar tu contraseña — aquí tienes el enlace.',
+  preheader: 'Pediste cambiar tu contraseña — aquí tienes tu código.',
   content: `
 ${brandKicker('Recuperar contraseña')}
 ${brandHeadline('Vuelve a la porra.')}
 <p style="margin:0 0 22px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${BRAND.ink};">
-  Pediste restablecer tu contraseña. Pulsa el botón y elige una nueva — el resto de la cuenta sigue intacta.
+  Pediste restablecer tu contraseña. Escribe este código en la app para elegir una nueva — el resto de la cuenta sigue intacto.
 </p>
-${brandButton({ href: URL_VAR, label: 'Elegir nueva contraseña' })}
-${fallbackLink(URL_VAR)}
+<div style="margin:8px 0 22px;text-align:center;">
+  <span style="display:inline-block;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:34px;font-weight:700;letter-spacing:.34em;color:${BRAND.ink};background:#F4ECD6;border:1px solid rgba(14,42,24,.18);padding:16px 24px 16px 34px;">${CODE_VAR}</span>
+</div>
 <p style="margin:24px 0 0;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:${BRAND.ink};opacity:.6;text-align:center;">
   Si no fuiste tú, no hace falta hacer nada: tu contraseña actual sigue siendo válida.
 </p>`,
-  footerNote: 'El enlace caduca pasada 1 hora por seguridad.',
+  footerNote: 'El código caduca pasada 1 hora por seguridad.',
 })
 
 // ─── 4. Email change confirmation ─────────────────────────────────────────────
