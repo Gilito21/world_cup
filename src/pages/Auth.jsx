@@ -148,9 +148,8 @@ function ForgotPassword({ onBack }) {
                   <label className="block text-sm font-medium text-ink/80 mb-1.5">{t('auth.codeLabel')}</label>
                   <input
                     type="text" inputMode="numeric" autoComplete="one-time-code"
-                    pattern="[0-9]*" maxLength={6}
-                    className="input text-center tracking-[0.4em] font-mono text-lg"
-                    placeholder="000000"
+                    pattern="[0-9]*" maxLength={10}
+                    className="input text-center tracking-[0.3em] font-mono text-lg"
                     value={code}
                     onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                     required autoFocus
@@ -171,7 +170,7 @@ function ForgotPassword({ onBack }) {
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-none px-4 py-3 text-red-600 text-sm">{error}</div>
                 )}
-                <button type="submit" disabled={loading || code.length < 6} className="btn-primary w-full flex items-center justify-center gap-2">
+                <button type="submit" disabled={loading || code.trim().length < 6} className="btn-primary w-full flex items-center justify-center gap-2">
                   {loading && <Spinner size="sm" />} {t('auth.changePassword')}
                 </button>
                 <div className="flex items-center justify-between gap-2 text-sm">
