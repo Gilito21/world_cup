@@ -140,7 +140,7 @@ export function LeagueProvider({ children }) {
           .from('league_members')
           .select('*', { count: 'exact', head: true })
           .eq('league_id', league.id)
-        if (count >= 40) { setJoinNotice({ type: 'error', message: t('league.full') }); await clearMeta(); return }
+        if (count >= 100) { setJoinNotice({ type: 'error', message: t('league.full') }); await clearMeta(); return }
         const { error } = await supabase.from('league_members')
           .insert({ league_id: league.id, user_id: user.id, role: 'member' })
         if (error && error.code !== '23505') { setJoinNotice({ type: 'error', message: t('league.cantJoin') }); await clearMeta(); return }
@@ -202,7 +202,7 @@ export function LeagueProvider({ children }) {
       .from('league_members')
       .select('*', { count: 'exact', head: true })
       .eq('league_id', league.id)
-    if (count >= 40) { const e = new Error(t('league.full')); e.code = 'league_full'; throw e }
+    if (count >= 100) { const e = new Error(t('league.full')); e.code = 'league_full'; throw e }
 
     const { error: memberError } = await supabase
       .from('league_members')

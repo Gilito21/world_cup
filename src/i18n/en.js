@@ -267,7 +267,7 @@ export default {
     errLeagueNameShort: 'League name must be at least 2 characters.',
     errLeagueCodeLength: 'League code must be exactly 8 characters.',
     errLeagueNotFound: 'Invalid league code. Double-check it and try again.',
-    errLeagueFull: 'This league is full (40 participants max).',
+    errLeagueFull: 'This league is full (100 participants max).',
   },
 
   league: {
@@ -303,7 +303,7 @@ export default {
     joining: 'Joining the league…',
     goHome: 'Go to home',
     alreadyMember: 'You are already a member of this league.',
-    full: 'This league is full (40 participants max).',
+    full: 'This league is full (100 participants max).',
     leagueCodeLabel: 'League code',
     share: 'Share',
     shareBtn: 'Share league',

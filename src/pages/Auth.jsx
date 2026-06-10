@@ -430,7 +430,7 @@ export default function Auth() {
       .from('league_members')
       .select('*', { count: 'exact', head: true })
       .eq('league_id', league.id)
-    if (count >= 40) throw new Error(t('auth.errLeagueFull'))
+    if (count >= 100) throw new Error(t('auth.errLeagueFull'))
     const { error: memberError } = await supabase
       .from('league_members').insert({ league_id: league.id, user_id: userId, role: 'member' })
     if (memberError) {
