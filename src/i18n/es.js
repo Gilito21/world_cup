@@ -369,6 +369,8 @@ export default {
     standingsTitle: 'Cómo van los grupos',
     standingsSubtitle: 'Según tus pronósticos, en vivo',
     standingsComplete: '{{n}}/12 grupos completos',
+    autoSubmittedTitle: '¡Pronóstico enviado!',
+    autoSubmittedBody: 'Lo marcamos como enviado al completar los 104 partidos. Puedes seguir editándolo hasta el cierre.',
     submittedDesc: '{{n}} partidos · Editable hasta el cierre',
     confirmTitle: '¿Enviar pronóstico?',
     confirmBody: 'Estás a punto de enviar tus {{n}} pronósticos. Podrás seguir editándolos hasta el cierre.',

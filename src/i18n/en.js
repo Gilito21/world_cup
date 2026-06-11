@@ -360,6 +360,8 @@ export default {
     standingsTitle: 'How the groups look',
     standingsSubtitle: 'Based on your predictions, live',
     standingsComplete: '{{n}}/12 groups complete',
+    autoSubmittedTitle: 'Prediction submitted!',
+    autoSubmittedBody: 'We marked it as submitted once you completed all 104 matches. You can keep editing it until the deadline.',
     submittedDesc: '{{n}} matches · Editable until deadline',
     confirmTitle: 'Submit prediction?',
     confirmBody: 'You\'re about to submit your {{n}} predictions. You can keep editing them until the deadline.',

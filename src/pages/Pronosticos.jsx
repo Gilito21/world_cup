@@ -663,6 +663,11 @@ export default function Pronosticos() {
   // persistent "Cambios guardados" state in the submit pill. Reset on every
   // (re)load so a fresh scope/refresh shows the canonical "Pronóstico enviado".
   const [editedSinceSubmit, setEditedSinceSubmit] = useState(false)
+  // Auto-envío al completar los 104: muchos rellenan todo y creen que ya está
+  // enviado. Como se puede editar hasta el cierre, no hay fricción en marcarlo
+  // como enviado en cuanto se completa. El ref evita doble disparo por scope.
+  const [autoSubmitNotice, setAutoSubmitNotice] = useState(false)
+  const autoSubmitRef = useRef(false)
   // Read inside handleSave without recreating it on every submission change.
   const isSubmittedRef = useRef(false)
   useEffect(() => { isSubmittedRef.current = isSubmitted }, [isSubmitted])
@@ -675,6 +680,7 @@ export default function Pronosticos() {
     const subCacheKey  = `sub:${user.id}:${leagueKey}`
     console.log(`[porra:load] START — mode=${predictionMode} leagueKey=${leagueKey} force=${force}`)
     setEditedSinceSubmit(false)
+    autoSubmitRef.current = false
 
     // Initial path: hydrate from caches so the UI is instant.
     // Force path (pull-to-refresh): keep current UI, just refetch.
@@ -1039,17 +1045,18 @@ export default function Pronosticos() {
         )
         if (results.some(r => r === false)) {
           setError(t('pronosticos.errSaveMultiple'))
-          return
+          return false
         }
       }
 
-      // 2. Record the submission (unique per user+league — DB enforces no duplicates)
+      // 2. Record the submission (unique per user+league). 23505 = ya existe →
+      // lo tratamos como éxito (idempotente: auto-submit y manual conviven).
       const leagueId = (predictionMode === 'per_league' && activeLeague) ? activeLeague.id : null
       const { error: err } = await supabase
         .from('prediction_submissions')
         .insert({ user_id: user.id, league_id: leagueId, source: 'matches' })
 
-      if (err) throw err
+      if (err && err.code !== '23505') throw err
 
       const submittedAtNow = new Date().toISOString()
       setIsSubmitted(true)
@@ -1058,9 +1065,11 @@ export default function Pronosticos() {
       setCache(`sub:${user.id}:${leagueKey}`, { submitted: true, submittedAt: submittedAtNow })
       setShowConfirm(false)
       haptics.success()
+      return true
     } catch {
       setError(t('pronosticos.errSubmit'))
       haptics.error()
+      return false
     } finally {
       setSubmitting(false)
     }
@@ -1082,6 +1091,21 @@ export default function Pronosticos() {
     }).length,
     [matches, drafts]
   )
+
+  // Auto-envío: en cuanto los 104 están rellenos (y no ha cerrado), registra la
+  // submission sin modal. handleSubmit es idempotente, así que si ya estaba
+  // enviado no rompe; el aviso solo se muestra si se acaba de enviar de verdad.
+  useEffect(() => {
+    if (isSubmitted || submitting || isPastCutoff) return
+    if (totalCount === 0 || filledCount !== totalCount) return
+    if (autoSubmitRef.current) return
+    autoSubmitRef.current = true
+    ;(async () => {
+      const ok = await handleSubmit()
+      if (ok) setAutoSubmitNotice(true)
+      else    autoSubmitRef.current = false
+    })()
+  }, [filledCount, totalCount, isSubmitted, submitting, isPastCutoff, handleSubmit])
 
   // Badge on sidebar: how many matches in this stage still have no draft
   const unfilledCount = useCallback((stage) =>
@@ -1143,6 +1167,23 @@ export default function Pronosticos() {
           </p>
           <button
             onClick={clearJoinNotice}
+            className="text-ink/40 hover:text-ink flex-shrink-0"
+            aria-label={t('common.close')}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Aviso de auto-envío: al completar los 104 se marca como enviado solo. */}
+      {autoSubmitNotice && (
+        <div className="card px-4 py-3 flex items-start gap-3 border-green-600/30 bg-green-600/10">
+          <span className="text-lg flex-shrink-0">✅</span>
+          <p className="flex-1 text-sm text-ink">
+            <b>{t('pronosticos.autoSubmittedTitle')}</b> {t('pronosticos.autoSubmittedBody')}
+          </p>
+          <button
+            onClick={() => setAutoSubmitNotice(false)}
             className="text-ink/40 hover:text-ink flex-shrink-0"
             aria-label={t('common.close')}
           >
