@@ -406,6 +406,10 @@ export default function Extras() {
   const [submitting,   setSubmitting]   = useState(false)
   const [showConfirm,  setShowConfirm]  = useState(false)
   const [error,        setError]        = useState('')
+  // Auto-envío al responder todas: mucha gente rellena todo y cree que ya está
+  // enviado. Lo marcamos solo y avisamos. Mismo patrón que Pronósticos.
+  const [autoSubmitNotice, setAutoSubmitNotice] = useState(false)
+  const autoSubmitRef = useRef(false)
   const [saveState,    setSaveState]    = useState({}) // question_key → 'saving' | 'ok' | 'err'
   const saveTimers = useRef({})
 
@@ -422,6 +426,7 @@ export default function Extras() {
     }
     console.log('[porra:extras] fetchAll START — leagueKey:', leagueKey)
     setError('')
+    autoSubmitRef.current = false
 
     // Serve from cache immediately (avoids skeleton on nav/refresh)
     const cachedQs    = readCachedQuestions()
@@ -609,8 +614,7 @@ export default function Extras() {
   }
 
   // ── Envío definitivo: escribe todo en BD de una vez ─────────────────
-  async function handleSubmit() {
-    if (locked || submitting) return
+  const handleSubmit = useCallback(async () => {
     setSubmitting(true)
     setError('')
     try {
@@ -637,23 +641,26 @@ export default function Extras() {
         if (upErr) throw upErr
       }
 
-      // 2. Registrar el envío
+      // 2. Registrar el envío (único por user+league). 23505 = ya existe →
+      // lo tratamos como éxito (idempotente: auto-envío y manual conviven).
       const { error: subErr } = await supabase
         .from('prediction_submissions')
         .insert({ user_id: user.id, league_id: leagueIdForPred, source: 'extras' })
-      if (subErr) throw subErr
+      if (subErr && subErr.code !== '23505') throw subErr
 
       const now = new Date().toISOString()
       setIsSubmitted(true)
       setSubmittedAt(now)
       setShowConfirm(false)
       // El cache se reescribe vía el effect que observa answers/isSubmitted.
+      return true
     } catch (e) {
       setError(e.message ?? t('extras.errSend'))
+      return false
     } finally {
       setSubmitting(false)
     }
-  }
+  }, [questions, answers, user?.id, leagueIdForPred, t])
 
   // ── Progreso ────────────────────────────────────────────────────────
   const answeredCount = useMemo(
@@ -668,6 +675,22 @@ export default function Extras() {
   )
 
   const totalPoints = useMemo(() => questions.reduce((s, q) => s + q.points, 0), [questions])
+
+  // Auto-envío: en cuanto todas las preguntas están respondidas (y no ha
+  // cerrado), registra la submission sin modal. handleSubmit es idempotente,
+  // así que si ya estaba enviada no rompe; el aviso solo se muestra si se
+  // acaba de enviar de verdad.
+  useEffect(() => {
+    if (isSubmitted || submitting || isPastCutoff) return
+    if (questions.length === 0 || answeredCount !== questions.length) return
+    if (autoSubmitRef.current) return
+    autoSubmitRef.current = true
+    ;(async () => {
+      const ok = await handleSubmit()
+      if (ok) setAutoSubmitNotice(true)
+      else    autoSubmitRef.current = false
+    })()
+  }, [answeredCount, questions.length, isSubmitted, submitting, isPastCutoff, handleSubmit])
 
   if (loading) {
     return (
@@ -747,6 +770,23 @@ export default function Extras() {
       {error && (
         <div className="card p-3 text-sm text-red-600 bg-red-50 border-red-200">
           {error}
+        </div>
+      )}
+
+      {/* ── Aviso de auto-envío: al responder todas se marca como enviado solo. */}
+      {autoSubmitNotice && (
+        <div className="card px-4 py-3 flex items-start gap-3 border-green-600/30 bg-green-600/10">
+          <span className="text-lg flex-shrink-0">✅</span>
+          <p className="flex-1 text-sm text-ink">
+            <b>{t('extras.autoSubmittedTitle')}</b> {t('extras.autoSubmittedBody')}
+          </p>
+          <button
+            onClick={() => setAutoSubmitNotice(false)}
+            className="text-ink/40 hover:text-ink flex-shrink-0"
+            aria-label={t('common.close')}
+          >
+            ✕
+          </button>
         </div>
       )}
 

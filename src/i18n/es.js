@@ -470,6 +470,8 @@ export default {
     allRequired: 'Responde todas las preguntas antes de poder enviar.',
     submitted: 'Respuestas extra enviadas',
     submittedDesc: '{{n}} preguntas · Editable hasta el cierre',
+    autoSubmittedTitle: '¡Respuestas extra enviadas!',
+    autoSubmittedBody: 'Las marcamos como enviadas al responder todas las preguntas. Puedes seguir editándolas hasta el cierre.',
     confirmTitle: '¿Enviar respuestas extra?',
     confirmBody: 'Se guardan solas; podrás seguir editándolas hasta el cierre (1h antes del primer partido).',
     review: 'Revisar',

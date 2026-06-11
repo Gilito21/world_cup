@@ -461,6 +461,8 @@ export default {
     allRequired: 'Answer all questions before submitting.',
     submitted: 'Bonus answers submitted',
     submittedDesc: '{{n}} questions · Editable until deadline',
+    autoSubmittedTitle: 'Bonus answers submitted!',
+    autoSubmittedBody: 'We marked them as submitted once you answered every question. You can keep editing them until the deadline.',
     confirmTitle: 'Submit bonus answers?',
     confirmBody: 'They save automatically; you can keep editing them until the deadline (1h before the first match).',
     review: 'Review',
