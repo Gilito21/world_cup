@@ -1138,3 +1138,119 @@ export function slotLabel(slot) {
   if (slot.type === 'third')  return `3º #${slot.rank + 1}`
   return '?'
 }
+
+// ─── ADVANCEMENT BONUS (puntos por acertar que un equipo pasa de ronda) ───────
+//
+// Reglas (acumulativo, "por profundidad"):
+//   Por cada equipo ganas los puntos de cada ronda alcanzada SIEMPRE que en tu
+//   pronóstico ese equipo llegase AL MENOS a esa ronda Y en la realidad la
+//   alcance. Cuenta el mínimo entre la profundidad predicha y la real. El lugar
+//   del cuadro (rama / rival) es IRRELEVANTE: solo importa hasta qué ronda llega.
+//
+//   Ronda → +pts (incremental):   R32 +1 · octavos +2 · cuartos +3 · semis +4
+//                                 · final +5 · campeón +6   (acumulado campeón = 21)
+
+export const ADVANCE_STAGES = ['round_of_32','round_of_16','quarter_final','semi_final','final','champion']
+// rank = índice + 1 ; puntos incrementales por ronda alcanzada
+export const ADVANCE_POINTS = [1, 2, 3, 4, 5, 6]
+const ADVANCE_RANK = { round_of_32:1, round_of_16:2, quarter_final:3, semi_final:4, final:5 }
+
+function advIsTbd(name) {
+  return !name || name === 'TBD' || name === 'TBA' || name === 'Por determinar'
+}
+
+/**
+ * Profundidad REAL alcanzada por cada equipo, a partir de los resultados.
+ * Devuelve { reach: {team: rank}, decided: {team: {rank: ISOdate}} }.
+ *   rank 1=R32 (clasificó de grupos) … 5=final, 6=campeón.
+ * "Decided" = fecha del partido que confirmó esa ronda (R32 = fin de la fase de
+ * grupos; rondas siguientes = el partido de la ronda anterior que ganó).
+ */
+export function actualTeamReach(allMatches) {
+  const reach = {}, decided = {}
+  const set = (team, rank, dateISO) => {
+    if (advIsTbd(team)) return
+    if (!reach[team] || rank > reach[team]) reach[team] = rank
+    decided[team] = decided[team] || {}
+    if (!decided[team][rank]) decided[team][rank] = dateISO ?? null
+  }
+
+  // rank 1 (clasificar a R32): ser participante real de un partido de R32.
+  const groupDates = allMatches
+    .filter(m => m.stage === 'group' && m.status === 'finished')
+    .map(m => m.match_date).sort()
+  const r32Decided = groupDates.length ? groupDates[groupDates.length - 1] : null
+  for (const m of allMatches) {
+    if (m.stage !== 'round_of_32') continue
+    set(m.home_team, 1, r32Decided ?? m.match_date)
+    set(m.away_team, 1, r32Decided ?? m.match_date)
+  }
+
+  // ranks 2..6: el ganador de un partido de rango r alcanza el rango r+1.
+  for (const m of allMatches) {
+    const r = ADVANCE_RANK[m.stage]
+    if (!r) continue
+    if (m.status !== 'finished' || m.home_score == null || m.away_score == null) continue
+    const w = m.winner === 'home' ? m.home_team
+            : m.winner === 'away' ? m.away_team
+            : m.home_score > m.away_score ? m.home_team
+            : m.away_score > m.home_score ? m.away_team
+            : null
+    set(w, r + 1, m.match_date)
+  }
+  return { reach, decided }
+}
+
+/**
+ * Profundidad PREDICHA por el usuario para cada equipo, a partir de su bracket
+ * (reusa computePredictedKnockout). Devuelve { team: rank }.
+ */
+export function predictedTeamReach(allMatches, userPredMap) {
+  const ko = computePredictedKnockout(allMatches, userPredMap)
+  const byId = Object.fromEntries(allMatches.map(m => [m.id, m]))
+  const reach = {}
+  for (const [mid, teams] of Object.entries(ko)) {
+    const r = ADVANCE_RANK[byId[mid]?.stage]
+    if (!r) continue
+    for (const tm of [teams.homeTeam, teams.awayTeam]) {
+      if (!advIsTbd(tm) && (!reach[tm] || r > reach[tm])) reach[tm] = r
+    }
+  }
+  // Campeón predicho = ganador predicho de la final.
+  const finalMatch = allMatches.find(m => m.stage === 'final')
+  if (finalMatch) {
+    const t = ko[finalMatch.id], p = userPredMap[finalMatch.id]
+    if (t && p && !advIsTbd(t.homeTeam) && !advIsTbd(t.awayTeam)) {
+      const champ = p.home_score > p.away_score ? t.homeTeam
+                  : p.away_score > p.home_score ? t.awayTeam
+                  : p.tiebreaker === 'home' ? t.homeTeam
+                  : p.tiebreaker === 'away' ? t.awayTeam
+                  : null
+      if (!advIsTbd(champ)) reach[champ] = 6
+    }
+  }
+  return reach
+}
+
+/**
+ * Filas de bonus de avance para UN ámbito (un conjunto de pronósticos).
+ * Una fila por (equipo, ronda) conseguida = min(predicho, real) acumulado.
+ * Devuelve [{ team, stage, points, decided_on }].
+ */
+export function computeAdvanceRows(allMatches, userPredMap) {
+  const pred = predictedTeamReach(allMatches, userPredMap)
+  const { reach: actual, decided } = actualTeamReach(allMatches)
+  const rows = []
+  for (const team of Object.keys(actual)) {
+    const credited = Math.min(pred[team] ?? 0, actual[team] ?? 0)
+    for (let r = 1; r <= credited; r++) {
+      rows.push({
+        team,
+        stage: ADVANCE_STAGES[r - 1],
+        points: ADVANCE_POINTS[r - 1],
+        decided_on: decided[team]?.[r] ?? null,
+      })
+    }
+  }
+  return rows
+}

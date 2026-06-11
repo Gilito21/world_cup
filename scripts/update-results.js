@@ -11,6 +11,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { computeAndStoreAdvancePoints } from './compute-advance-points.js'
 
 const FOOTBALL_API_KEY = process.env.FOOTBALL_API_KEY
 const SUPABASE_URL     = process.env.SUPABASE_URL
@@ -105,6 +106,16 @@ async function main() {
     const elapsed = ((Date.now() - start) / 1000).toFixed(1)
 
     console.log(`✅ ${updated} actualizados · ${errors} errores · ${elapsed}s`)
+
+    // Recalcula el bonus de avance (puntos por acertar que un equipo pasa de
+    // ronda). Va aparte y no debe tumbar el cron si falla.
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+      const r = await computeAndStoreAdvancePoints(supabase)
+      console.log(`🏅 advance_points: ${r.rows} filas en ${r.scopes} ámbitos`)
+    } catch (e) {
+      console.error('⚠️ advance_points falló (no crítico):', e.message)
+    }
   } catch (err) {
     console.error('❌ Error:', err.message)
     process.exit(1)
