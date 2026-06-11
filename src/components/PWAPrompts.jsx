@@ -23,6 +23,7 @@ function isIos() {
 // devuelve un cleanup y el SW persiste entre montajes. Si se reinicializara
 // (HMR, remount), evitamos acumular timers.
 let swUpdateInterval = null
+let swVisibilityHooked = false
 
 function UpdateBanner() {
   const { t } = useLang()
@@ -32,9 +33,20 @@ function UpdateBanner() {
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return
+      // Busca versión nueva al registrar, al volver a la pestaña y cada
+      // minuto. Antes era solo cada hora: tras un deploy, la gente se
+      // quedaba con el bundle viejo durante mucho rato (p. ej. el día del
+      // cierre de pronósticos, con el cutoff antiguo bloqueando la edición).
+      const check = () => registration.update().catch(() => {})
+      check()
       if (swUpdateInterval) clearInterval(swUpdateInterval)
-      // Comprueba si hay una versión nueva cada hora.
-      swUpdateInterval = setInterval(() => { registration.update().catch(() => {}) }, 60 * 60 * 1000)
+      swUpdateInterval = setInterval(check, 60 * 1000)
+      if (!swVisibilityHooked) {
+        swVisibilityHooked = true
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') check()
+        })
+      }
     },
   })
 
