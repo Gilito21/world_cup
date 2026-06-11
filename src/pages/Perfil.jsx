@@ -8,6 +8,8 @@ import { EditorialBand, EditorialStats } from '../components/Editorial'
 export default function Perfil() {
   const { user, profile, refreshProfile } = useAuth()
   const { t } = useLang()
+  const [leagues, setLeagues]             = useState([])
+  const [selectedLeague, setSelectedLeague] = useState(null)
   const [stats, setStats]               = useState(null)
   const [loadingStats, setLoadingStats] = useState(true)
   const [uploading, setUploading]             = useState(false)
@@ -22,7 +24,7 @@ export default function Perfil() {
   const fileInputRef = useRef(null)
 
   useEffect(() => {
-    loadStats()
+    if (user) loadLeaguesAndStats()
   }, [user])
 
   useEffect(() => {
@@ -39,23 +41,52 @@ export default function Perfil() {
     setSavingReminders(false)
   }
 
-  async function loadStats() {
-    const { data } = await supabase
-      .from('predictions')
-      .select('points_earned, league_id')
+  async function loadLeaguesAndStats() {
+    const { data: memberships } = await supabase
+      .from('league_members')
+      .select('league_id, prediction_mode, leagues(id, name)')
       .eq('user_id', user.id)
 
-    if (data) {
-      const allScored = data.filter(p => p.points_earned !== null)
-      setStats({
-        totalPredictions: data.length,
-        exact:   allScored.filter(p => p.points_earned === 3).length,
-        correct: allScored.filter(p => p.points_earned === 1).length,
-        accuracy: allScored.length > 0
-          ? Math.round((allScored.filter(p => p.points_earned > 0).length / allScored.length) * 100)
-          : null,
-      })
-    }
+    const leagueList = (memberships ?? []).map(m => ({
+      id:   m.league_id,
+      name: m.leagues?.name ?? m.league_id,
+      mode: m.prediction_mode ?? 'global',
+    }))
+    setLeagues(leagueList)
+
+    const initial = leagueList[0] ?? null
+    setSelectedLeague(initial)
+    await loadStats(initial)
+  }
+
+  async function loadStats(league) {
+    setLoadingStats(true)
+
+    const isPerLeague = league?.mode === 'per_league'
+
+    const [{ data: preds }, { data: specials }] = await Promise.all([
+      supabase.from('predictions')
+        .select('points_earned')
+        .eq('user_id', user.id)
+        [isPerLeague ? 'eq' : 'is']('league_id', isPerLeague ? league.id : null),
+      supabase.from('special_predictions')
+        .select('points_earned')
+        .eq('user_id', user.id)
+        [isPerLeague ? 'eq' : 'is']('league_id', isPerLeague ? league.id : null),
+    ])
+
+    const totalPoints = (preds ?? []).reduce((s, p) => s + (p.points_earned ?? 0), 0)
+                      + (specials ?? []).reduce((s, p) => s + (p.points_earned ?? 0), 0)
+
+    setStats({
+      totalPoints,
+      totalPredictions: (preds ?? []).length,
+      exact:    (preds ?? []).filter(p => p.points_earned === 3).length,
+      correct:  (preds ?? []).filter(p => p.points_earned === 1).length,
+      accuracy: (preds ?? []).length > 0
+        ? Math.round((preds ?? []).filter(p => p.points_earned > 0).length / (preds ?? []).length * 100)
+        : null,
+    })
     setLoadingStats(false)
   }
 
@@ -182,10 +213,26 @@ export default function Perfil() {
               <p className="text-ink/60 text-sm truncate">🏢 {profile.company}</p>
             )}
             <p className="text-ink/50 text-sm truncate">{user?.email}</p>
-            <div className="flex items-center gap-2 mt-1.5">
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span className="text-xs bg-paper-200 text-ink border border-ink/20 px-2 py-0.5 rounded-full font-semibold">
-                {t('perfil.globalPts', { n: profile?.total_points ?? 0 })}
+                {stats?.totalPoints ?? profile?.total_points ?? 0} pts
+                {selectedLeague && ` · ${selectedLeague.name}`}
               </span>
+              {leagues.length > 1 && (
+                <select
+                  value={selectedLeague?.id ?? ''}
+                  onChange={e => {
+                    const lg = leagues.find(l => l.id === e.target.value)
+                    setSelectedLeague(lg)
+                    loadStats(lg)
+                  }}
+                  className="text-xs border border-ink/20 bg-paper text-ink px-2 py-0.5 rounded-full"
+                >
+                  {leagues.map(l => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
         </div>
