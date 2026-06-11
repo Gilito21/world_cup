@@ -273,7 +273,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
   }), [t])
 
   const isFinished  = match.status === 'finished'
-  // Enviar ya NO bloquea: se edita hasta el cutoff global (1h antes del primer
+  // Enviar ya NO bloquea: se edita hasta el cutoff global (30 min antes del primer
   // partido, vía isPastCutoff) reforzado en BD por check_prediction_global_cutoff.
   const isLocked    = isPastCutoff || isFinished ||
                       match.status !== 'scheduled' ||
@@ -751,7 +751,7 @@ export default function Pronosticos() {
         setMatches(effectiveMatches)
         const firstGroup = effectiveMatches.find(m => m.stage === 'group') ?? effectiveMatches[0]
         if (firstGroup) {
-          setCutoffTime(new Date(firstGroup.match_date).getTime() - 60 * 60 * 1000)
+          setCutoffTime(new Date(firstGroup.match_date).getTime() - 30 * 60 * 1000)
         }
         const available = [...new Set(effectiveMatches.map(m => m.stage))]
         setActiveStage(prev => available.includes(prev) ? prev : (STAGE_ORDER.find(s => available.includes(s)) ?? available[0]))

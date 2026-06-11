@@ -44,7 +44,7 @@ function writeCachedExtrasPreds(userId, leagueKey, data) {
 function cutoffFromMatches(matches) {
   if (!matches?.length) return null
   const first = matches.find(m => m.stage === 'group') ?? matches[0]
-  return first ? new Date(first.match_date).getTime() - 60 * 60 * 1000 : null
+  return first ? new Date(first.match_date).getTime() - 30 * 60 * 1000 : null
 }
 
 // Twemoji CDN URL for any emoji string (works on all browsers/OS)
@@ -522,7 +522,7 @@ export default function Extras() {
   useEffect(() => { fetchAll() }, [fetchAll])
 
   // Enviar ya NO bloquea: se puede seguir editando hasta el cierre. El único
-  // bloqueo duro es el cutoff (1h antes del primer partido), reforzado también
+  // bloqueo duro es el cutoff (30 min antes del primer partido), reforzado también
   // en BD por el trigger check_special_prediction_deadline (mig. 028).
   const isPastCutoff = !!(cutoffTime && Date.now() >= cutoffTime)
   const locked       = isPastCutoff

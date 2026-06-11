@@ -276,7 +276,7 @@ ${brandHeadline(`${escHtml(username)}, falta tu pronóstico.`)}
   <strong>Pedro</strong>, admin de tu liga <em style="font-family:'Instrument Serif',Georgia,serif;color:${BRAND.terra};font-style:italic;">Bluebull League</em>, te recuerda que aún no has enviado tus pronósticos para el Mundial 2026.
 </p>
 <p style="margin:0 0 24px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:${BRAND.ink};opacity:.78;">
-  El plazo cierra <strong>una hora antes del primer partido</strong>. Una vez pite el árbitro, no hay segunda oportunidad.
+  El plazo cierra <strong>30 minutos antes del primer partido</strong>. Una vez pite el árbitro, no hay segunda oportunidad.
 </p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 26px;border-collapse:collapse;">
   <tr><td valign="top" style="padding:14px 0;border-top:1px solid ${BRAND.rule};">
