@@ -191,6 +191,13 @@ export function sampleEmailArgs() {
     { home_team: 'Brasil',    away_team: 'Francia',  home_score: 0, away_score: 0, my_pred: { home_score: 1, away_score: 1 }, points: 1 },
     { home_team: 'Argentina', away_team: 'México',   home_score: 3, away_score: 1, my_pred: { home_score: 0, away_score: 2 }, points: 0 },
   ]
+  // Avance de muestra: dos equipos que ayer pasaron a semis (+4 cada uno).
+  // Por equipo y día suele decidirse una sola ronda, así que es el incremento.
+  const advanceTeams = [
+    { team: 'España', points: 4 },
+    { team: 'Brasil', points: 4 },
+  ]
+  const matchPoints = yesterdayMatches.reduce((s, m) => s + m.points, 0)
   return {
     username:         'Jaime',
     yesterdayMatches,
@@ -198,7 +205,8 @@ export function sampleEmailArgs() {
       { home_team: 'Portugal',   away_team: 'Croacia',   match_date: at(18, 0), stage: 'group' },
       { home_team: 'Inglaterra', away_team: 'Países Bajos', match_date: at(21, 0), stage: 'group' },
     ],
-    yesterdayPoints:  yesterdayMatches.reduce((s, m) => s + m.points, 0),
+    advanceTeams,
+    yesterdayPoints:  matchPoints + advanceTeams.reduce((s, a) => s + a.points, 0),
     position:         7,
     totalUsers:       142,
   }
