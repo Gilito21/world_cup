@@ -55,6 +55,9 @@ const message   = flag('message', 'Nos avisaste de un problema y ya está soluci
 const ctaLabel  = flag('cta-label', 'Volver a la porra')
 const ctaPath   = flag('cta-path', '/')
 const kicker    = flag('kicker', 'Incidencia resuelta')
+// Texto de vista previa (lo que muestra el cliente de correo tras el asunto).
+// Por defecto, un teaser a partir del titular; configurable con --preheader.
+const preheader = flag('preheader', headline.replace(/\s*[.!?]+\s*$/, ''))
 
 const recipient = previewTo
   ? { email: previewTo, name: name || 'Preview' }
@@ -71,7 +74,7 @@ ${brandButton({ href: `${APP_URL}${ctaPath}`, label: ctaLabel })}
 
 const html = brandShell({
   title: subject,
-  preheader: 'Tu incidencia ya está resuelta.',
+  preheader,
   content,
   appUrl: APP_URL,
 })
