@@ -122,6 +122,12 @@ function useFirstMatchKickoff() {
 // Mirrors the calculation used in src/pages/Clasificacion.jsx so the
 // landing's preview matches what users see inside the app.
 // ─────────────────────────────────────────────────────────────────────────
+// Orden destacado para el preview del landing MIENTRAS nadie tiene puntos
+// (pre-torneo todas las empresas empatan a 0). Pone delante marcas conocidas
+// en vez de caer a orden alfabético. En cuanto hay puntos reales, este orden
+// se ignora y manda la media de puntos por jugador.
+const FEATURED_COMPANIES = ['Visa', 'BBVA', 'McKinsey', 'Accenture', 'EY', 'FTI Consulting', 'BlueBull', 'MCH Private Equity']
+
 function useTopCompanies(limit = 8) {
   const [rows, setRows]    = useState([])
   const [state, setState]  = useState('loading') // 'loading' | 'ready' | 'empty'
@@ -149,9 +155,16 @@ function useTopCompanies(limit = 8) {
         map[c].sum   += p.total_points ?? 0
         map[c].count += 1
       }
-      const result = Object.entries(map)
-        .map(([name, v]) => ({ name, avg: v.count ? v.sum / v.count : 0 }))
-        .sort((a, b) => b.avg - a.avg || a.name.localeCompare(b.name))
+      const all = Object.entries(map)
+        .map(([name, v]) => ({ name, avg: v.count ? v.sum / v.count : 0, count: v.count }))
+      const anyPoints = all.some(r => r.avg > 0)
+      const featRank  = n => { const i = FEATURED_COMPANIES.indexOf(n); return i === -1 ? 999 : i }
+      const sorted = anyPoints
+        // Ranking real: media de puntos, luego tamaño, luego alfabético.
+        ? all.sort((a, b) => b.avg - a.avg || b.count - a.count || a.name.localeCompare(b.name))
+        // Pre-torneo (todo a 0): marcas destacadas primero, resto por tamaño.
+        : all.sort((a, b) => featRank(a.name) - featRank(b.name) || b.count - a.count || a.name.localeCompare(b.name))
+      const result = sorted
         .slice(0, limit)
         .map((r, i) => ({ ...r, position: i + 1 }))
 
