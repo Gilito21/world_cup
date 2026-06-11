@@ -1,7 +1,7 @@
 // notify-new-user
 //
-// 1) Notifica al admin de un nuevo registro CONFIRMADO.
-// 2) Envía email de bienvenida al nuevo usuario.
+// Envía email de bienvenida al nuevo usuario cuando confirma su email.
+// (El aviso al admin se retiró para ahorrar envíos en Brevo.)
 //
 // POST body: { email: string, username: string, company?: string }
 //
@@ -40,7 +40,6 @@ function corsFor(req: Request): Record<string, string> {
   }
 }
 
-const ADMIN_EMAIL = 'jpelaez@bluebullpartners.com'
 const FROM_EMAIL  = 'porra@porradeempresas.com'
 const FROM_NAME   = 'Porra Mundial 2026'
 const APP_URL     = 'https://www.porradeempresas.com'
@@ -178,7 +177,6 @@ Deno.serve(async (req: Request) => {
   const email    = (body.email    ?? '').trim()
   const username = (body.username ?? '').trim()
   const company  = (body.company  ?? '').trim()
-  const ts       = new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })
 
   // ── Gate: solo notificar cuando el usuario YA está confirmado ────────────
   // Esto convierte la función en idempotente respecto al momento en que
@@ -206,36 +204,7 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // ── 1. Email al admin ─────────────────────────────────────────────────────
-  const adminContent = `
-${brandKicker('Admin · alta confirmada')}
-${brandHeadline('Nuevo usuario en la porra.')}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:6px 0 24px;">
-  <tr><td style="padding:14px 0;border-top:1px solid ${BRAND.rule};">
-    <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;">Usuario</div>
-    <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;color:${BRAND.ink};margin-top:4px;">${esc(username) || '—'}</div>
-  </td></tr>
-  <tr><td style="padding:14px 0;border-top:1px solid ${BRAND.rule};">
-    <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;">Email</div>
-    <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};margin-top:4px;">${esc(email) || '—'}</div>
-  </td></tr>
-  ${company ? `<tr><td style="padding:14px 0;border-top:1px solid ${BRAND.rule};">
-    <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;">Empresa</div>
-    <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};margin-top:4px;">${esc(company)}</div>
-  </td></tr>` : ''}
-  <tr><td style="padding:14px 0;border-top:1px solid ${BRAND.rule};border-bottom:1px solid ${BRAND.rule};">
-    <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;">Fecha</div>
-    <div style="font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};margin-top:4px;">${esc(ts)}</div>
-  </td></tr>
-</table>`
-  const adminHtml = brandShell({
-    title: `Nuevo usuario · ${username || email}`,
-    preheader: `${username || email} acaba de confirmar su email${company ? ` (${company})` : ''}.`,
-    content: adminContent,
-    footerNote: 'Notificación interna · admin Porra de Empresas.',
-  })
-
-  // ── 2. Email de bienvenida al usuario ─────────────────────────────────────
+  // ── Email de bienvenida al usuario ────────────────────────────────────────
   const welcomeContent = `
 ${brandKicker('Bienvenido · Edición ’26')}
 ${brandHeadline(`Hola ${username || 'crack'}, ya estás dentro.`)}
@@ -288,16 +257,14 @@ ${brandButton({ href: APP_URL, label: 'Entrar a la app' })}
     footerNote: '¿Preguntas? Responde a este email y te leemos.',
   })
 
-  const results = await Promise.allSettled([
-    sendEmail(BREVO_KEY, ADMIN_EMAIL, `Nuevo usuario · ${username || email} · Porra de Empresas`, adminHtml),
-    email ? sendEmail(BREVO_KEY, email, 'Bienvenido a la Porra de Empresas · Mundial 2026', welcomeHtml) : Promise.resolve(),
-  ])
+  if (!email) return json({ ok: true, skipped: 'no_email' })
 
-  const adminFailed   = results[0].status === 'rejected'
-  const welcomeFailed = results[1].status === 'rejected'
+  try {
+    await sendEmail(BREVO_KEY, email, 'Bienvenido a la Porra de Empresas · Mundial 2026', welcomeHtml)
+  } catch (e) {
+    console.error('Welcome email failed:', e)
+    return json({ ok: true, welcomeFailed: true })
+  }
 
-  if (adminFailed) console.error('Admin notification failed:', (results[0] as PromiseRejectedResult).reason)
-  if (welcomeFailed) console.error('Welcome email failed:', (results[1] as PromiseRejectedResult).reason)
-
-  return json({ ok: true, adminFailed, welcomeFailed })
+  return json({ ok: true, welcomeFailed: false })
 })
