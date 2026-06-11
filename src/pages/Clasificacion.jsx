@@ -12,6 +12,10 @@ import PrizePotCard from '../components/PrizePotCard'
 import Spinner from '../components/Spinner'
 import { StandingsSkeleton } from '../components/Skeleton'
 import { EditorialBand } from '../components/Editorial'
+import { Flag, teamName } from '../utils/teams'
+import { ADVANCE_STAGES } from '../utils/tournament'
+
+const ADVANCE_RANK = Object.fromEntries(ADVANCE_STAGES.map((s, i) => [s, i + 1]))
 
 const MEDALS = ['🥇', '🥈', '🥉']
 const STANDINGS_LS_TTL = 10 * 60 * 1000 // 10 min
@@ -197,6 +201,8 @@ export default function Clasificacion() {
   const [leagueStandings, setLeagueStandings]   = useState([])
   const [companyStandings, setCompanyStandings] = useState(() => getCache('lb:companies') ?? [])
   const [myLeagueStats, setMyLeagueStats]       = useState({ exact: 0, correct: 0, total: 0 })
+  const [myAdvanceGlobal, setMyAdvanceGlobal]   = useState({})
+  const [myAdvanceLeague, setMyAdvanceLeague]   = useState({})
   const [loading, setLoading]           = useState(false)
   const [loadError, setLoadError]       = useState('')
   const [showModal, setShowModal]       = useState(false)
@@ -236,6 +242,9 @@ export default function Clasificacion() {
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'special_predictions' },
         reloadCurrent)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'advance_points' },
+        reloadCurrent)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -249,23 +258,48 @@ export default function Clasificacion() {
     else setLoading(true)
     setLoadError('')
     try {
-      const { data: profiles, error } = await sq(
-        supabase.from('profiles')
+      const [{ data: profiles, error }, { data: advanceRows }] = await Promise.all([
+        sq(supabase.from('profiles')
           .select('id, username, total_points, avatar_url, company')
           .eq('email_confirmed', true)
           .order('total_points', { ascending: false })
           // Desempate estable: dos usuarios con los mismos puntos no
           // deben intercambiar posiciones entre realtime refreshes.
-          .order('username', { ascending: true })
-      )
+          .order('username', { ascending: true })),
+        // Bonus de avance del ámbito GLOBAL (league_id NULL). Se suman al
+        // total mostrado y obligan a re-ordenar el array por el nuevo total.
+        sq(supabase.from('advance_points')
+          .select('user_id, team, stage, points')
+          .is('league_id', null)),
+      ])
 
       if (profiles) {
-        const next = profiles.map((p, i) => ({
-          ...p,
-          position:      i + 1,
-          league_points: p.total_points ?? 0,
-          stats:         { exact: 0, correct: 0, total: 0 },
-        }))
+        const advanceByUser = {}
+        ;(advanceRows ?? []).forEach(r => {
+          advanceByUser[r.user_id] = (advanceByUser[r.user_id] ?? 0) + (r.points ?? 0)
+        })
+
+        // Breakdown por equipo para el usuario logueado (ámbito global).
+        const myAdvance = {}
+        ;(advanceRows ?? []).forEach(r => {
+          if (r.user_id !== user.id) return
+          const rank = ADVANCE_RANK[r.stage] ?? 0
+          if (!myAdvance[r.team]) myAdvance[r.team] = { points: 0, rank: 0 }
+          myAdvance[r.team].points += (r.points ?? 0)
+          if (rank > myAdvance[r.team].rank) myAdvance[r.team].rank = rank
+        })
+        setMyAdvanceGlobal(myAdvance)
+
+        const next = profiles
+          .map(p => {
+            const total = (p.total_points ?? 0) + (advanceByUser[p.id] ?? 0)
+            return { ...p, league_points: total, stats: { exact: 0, correct: 0, total: 0 } }
+          })
+          .sort((a, b) =>
+            b.league_points - a.league_points ||
+            (a.username ?? '').localeCompare(b.username ?? '')
+          )
+          .map((p, i) => ({ ...p, position: i + 1 }))
         setGlobalStandings(next)
         setCache('lb:global', next)
       } else if (error && !cached) {
@@ -318,7 +352,7 @@ export default function Clasificacion() {
       const memberIds   = members.map(m => m.user_id)
       const modeByUser  = Object.fromEntries(members.map(m => [m.user_id, m.prediction_mode ?? 'global']))
 
-      const [{ data: profiles }, { data: leaguePreds }, { data: leagueSpecials }] = await Promise.all([
+      const [{ data: profiles }, { data: leaguePreds }, { data: leagueSpecials }, { data: leagueAdvance }] = await Promise.all([
         sq(supabase.from('profiles').select('id, username, avatar_url, company').in('id', memberIds)),
         sq(supabase.from('predictions').select('user_id, league_id, points_earned')
           .or(`league_id.eq.${activeLeague.id},league_id.is.null`)
@@ -328,6 +362,10 @@ export default function Clasificacion() {
         // puntos de extras en el ranking de su liga (sólo se reflejan en
         // profiles.total_points para los globales, ver migración 026).
         sq(supabase.from('special_predictions').select('user_id, league_id, points_earned')
+          .or(`league_id.eq.${activeLeague.id},league_id.is.null`)
+          .in('user_id', memberIds)),
+        // Bonus de avance: mismo patrón de filtro de ámbito que predicciones/extras.
+        sq(supabase.from('advance_points').select('user_id, league_id, team, stage, points')
           .or(`league_id.eq.${activeLeague.id},league_id.is.null`)
           .in('user_id', memberIds)),
       ])
@@ -350,6 +388,19 @@ export default function Clasificacion() {
         if (sp.league_id !== expected) return
         pointsMap[sp.user_id] = (pointsMap[sp.user_id] ?? 0) + (sp.points_earned ?? 0)
       })
+      const myAdvance = {}
+      ;(leagueAdvance ?? []).forEach(r => {
+        const mode     = modeByUser[r.user_id] ?? 'global'
+        const expected = mode === 'per_league' ? activeLeague.id : null
+        if (r.league_id !== expected) return
+        pointsMap[r.user_id] = (pointsMap[r.user_id] ?? 0) + (r.points ?? 0)
+        if (r.user_id !== user.id) return
+        const rank = ADVANCE_RANK[r.stage] ?? 0
+        if (!myAdvance[r.team]) myAdvance[r.team] = { points: 0, rank: 0 }
+        myAdvance[r.team].points += (r.points ?? 0)
+        if (rank > myAdvance[r.team].rank) myAdvance[r.team].rank = rank
+      })
+      setMyAdvanceLeague(myAdvance)
 
       const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
 
@@ -564,6 +615,33 @@ export default function Clasificacion() {
     )
   }, [user.id, myLeagueStats, setSelectedProfile, t])
 
+  // ── Advancement breakdown (puntos de avance del usuario logueado) ──────────
+
+  function AdvanceBreakdown({ advance }) {
+    const teams = Object.entries(advance ?? {})
+      .map(([team, v]) => ({ team, points: v.points, stage: ADVANCE_STAGES[(v.rank ?? 1) - 1] }))
+      .sort((a, b) => b.points - a.points || a.team.localeCompare(b.team))
+    if (teams.length === 0) return null
+    return (
+      <div className="bg-paper border border-ink/20 rounded-none text-ink p-3 sm:p-4 space-y-2.5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink/60">
+          {t('clasificacion.advanceTitle')}
+        </p>
+        <div className="space-y-1.5">
+          {teams.map(({ team, points, stage }) => (
+            <div key={team} className="flex items-center gap-2.5">
+              <Flag team={team} />
+              <span className="text-sm text-ink/80 truncate flex-1 min-w-0">{teamName(team)}</span>
+              <span className="text-xs text-ink/60 tabular-nums whitespace-nowrap">
+                +{points} · {t(`clasificacion.reached.${stage}`)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   // ── Main render ───────────────────────────────────────────────────────────
 
   return (
@@ -622,6 +700,7 @@ export default function Clasificacion() {
                 {t('clasificacion.nParticipants', { n: globalStandings.length, s: globalStandings.length !== 1 ? 's' : '' })}
               </p>
               <IndividualTable standings={globalStandings} />
+              <AdvanceBreakdown advance={myAdvanceGlobal} />
             </>
           )}
 
@@ -663,6 +742,7 @@ export default function Clasificacion() {
                     )}
                   </div>
                   <IndividualTable standings={leagueStandings} showStats />
+                  <AdvanceBreakdown advance={myAdvanceLeague} />
                   {activeLeague && <LeagueFeed leagueId={activeLeague.id} />}
                   <p className="text-center text-ink/50 text-xs">
                     {t('clasificacion.leaguePointsNote')}

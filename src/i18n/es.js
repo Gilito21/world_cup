@@ -439,6 +439,16 @@ export default {
     statCorrect: 'Correct.',
     statTotal: 'Total',
     yourCompany: 'Tu emp.',
+    advanceTitle: 'Puntos de avance',
+    advanceEmpty: 'Todavía no tienes puntos de avance.',
+    reached: {
+      round_of_32: 'dieciseisavos',
+      round_of_16: 'octavos',
+      quarter_final: 'cuartos',
+      semi_final: 'semis',
+      final: 'final',
+      champion: 'campeón',
+    },
   },
 
   extras: {

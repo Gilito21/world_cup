@@ -430,6 +430,16 @@ export default {
     statCorrect: 'Correct',
     statTotal: 'Total',
     yourCompany: 'Your co.',
+    advanceTitle: 'Advancement points',
+    advanceEmpty: 'You have no advancement points yet.',
+    reached: {
+      round_of_32: 'round of 32',
+      round_of_16: 'round of 16',
+      quarter_final: 'quarterfinals',
+      semi_final: 'semifinals',
+      final: 'final',
+      champion: 'champion',
+    },
   },
 
   extras: {

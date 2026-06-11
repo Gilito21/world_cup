@@ -66,7 +66,7 @@ function dayKey(d) {
 
 // ─── Email builder ────────────────────────────────────────────────────────────
 
-export function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints, position, totalUsers }) {
+export function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints, advanceTeams = [], position, totalUsers }) {
   const yesterdayStr = fmtDateHumanES(new Date(Date.now() - 86400_000))
   const todayStr     = fmtDateHumanES(new Date())
 
@@ -122,6 +122,24 @@ export function buildEmail({ username, yesterdayMatches, todayMatches, yesterday
     </div>` : `
     <p style="margin:0 0 24px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};opacity:.65;">Ayer no hubo partidos del torneo.</p>`
 
+  const advanceRows = advanceTeams.map(a => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid ${BRAND.rule};font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};font-weight:600;">
+          ${escHtml(a.team)}
+        </td>
+        <td style="padding:10px 0 10px 16px;border-bottom:1px solid ${BRAND.rule};text-align:right;white-space:nowrap;vertical-align:middle;">
+          <span style="display:inline-block;background:${BRAND.terra};color:${BRAND.cream};font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:11px;letter-spacing:.08em;padding:4px 10px;">+${a.points}</span>
+        </td>
+      </tr>`).join('')
+
+  const advanceBlock = advanceTeams.length > 0 ? `
+    <div style="margin:0 0 24px;">
+      ${brandKicker('Puntos de avance de ayer')}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-top:6px;">
+        ${advanceRows}
+      </table>
+    </div>` : ''
+
   const hoyBlock = todayMatches.length > 0 ? `
     <div style="margin:0 0 28px;">
       ${brandKicker(`Hoy · ${todayStr}`)}
@@ -139,6 +157,7 @@ ${brandKicker('Resumen diario')}
 ${brandHeadline(headline)}
 
 ${ayerBlock}
+${advanceBlock}
 ${positionBlock}
 ${hoyBlock}
 
@@ -341,6 +360,26 @@ async function main() {
     }
   }
 
+  // ── Bonus de avance decidido ayer (ámbito global) ──────────────────────
+  // advance_points con league_id NULL y decided_on dentro de la ventana de
+  // ayer. Agrupamos por usuario: puntos del día + desglose por equipo.
+  const advanceByUser = new Map()  // user_id -> { points, teams: [{team, points}] }
+  {
+    const yAdvance = await fetchAllPages(supabase, s =>
+      s.from('advance_points')
+        .select('user_id, team, points, decided_on')
+        .is('league_id', null)
+        .gte('decided_on', yStart.toISOString())
+        .lt('decided_on',  yEnd.toISOString())
+    )
+    for (const r of yAdvance) {
+      if (!advanceByUser.has(r.user_id)) advanceByUser.set(r.user_id, { points: 0, teams: new Map() })
+      const e = advanceByUser.get(r.user_id)
+      e.points += (r.points ?? 0)
+      e.teams.set(r.team, (e.teams.get(r.team) ?? 0) + (r.points ?? 0))
+    }
+  }
+
   // ── Envío en bucle ──────────────────────────────────────────────────────
   let ok = 0
   let skipped = 0
@@ -364,7 +403,13 @@ async function main() {
         points:     p?.points_earned ?? 0,
       }
     })
-    const yPoints = yMatches.reduce((s, m) => s + (m.points ?? 0), 0)
+    const matchPoints = yMatches.reduce((s, m) => s + (m.points ?? 0), 0)
+    const adv         = advanceByUser.get(profile.id) ?? null
+    const advancePoints = adv?.points ?? 0
+    const advanceTeams  = adv
+      ? [...adv.teams.entries()].map(([team, points]) => ({ team, points })).sort((a, b) => b.points - a.points)
+      : []
+    const yPoints = matchPoints + advancePoints
 
     try {
       const { subject, html } = buildEmail({
@@ -372,6 +417,7 @@ async function main() {
         yesterdayMatches: yMatches,
         todayMatches:     todayMatches ?? [],
         yesterdayPoints:  yPoints,
+        advanceTeams,
         position:         positionById.get(profile.id) ?? null,
         totalUsers,
       })
