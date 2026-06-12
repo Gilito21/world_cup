@@ -2,9 +2,11 @@ name: Actualizar resultados
 
 on:
   schedule:
-    # Cada 5 min: update-results.js hace 1 sola llamada a football-data por
-    # ejecución → 12/hora, muy por debajo del límite del free tier (10/min).
-    - cron: '*/5 * * * *'
+    # Cada hora: los resultados en tiempo real los gestiona la edge function
+    # update-results de Supabase (pg_cron cada 5 min). Este workflow corre
+    # de backup y para recalcular advance_points (bonus de avance de ronda),
+    # que no están en la edge function.
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
