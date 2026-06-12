@@ -65,11 +65,25 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
       )
       if (cancelled) return
 
-      const predRows = (allPredRows ?? []).filter(p => {
-        const mode     = modeByUser[p.user_id] ?? 'global'
-        const expected = mode === 'per_league' ? league.id : null
-        return p.league_id === expected
-      })
+      // Indexar predicciones por tipo para lookup rápido
+      const perLeaguePred = {}
+      const globalPred    = {}
+      for (const p of (allPredRows ?? [])) {
+        if (p.league_id === league.id) perLeaguePred[p.user_id] = p
+        else if (p.league_id === null)  globalPred[p.user_id]    = p
+      }
+      // Para cada miembro, la predicción autoritativa según su modo.
+      // Si es per_league pero no tiene predicción per-liga para ESTE partido
+      // (puede pasar si la predijo antes de cambiar de modo), usamos la global
+      // como fallback para que aparezca en el panel de la liga.
+      const predRows = memberRows.reduce((acc, m) => {
+        const mode = modeByUser[m.user_id] ?? 'global'
+        const pred = mode === 'per_league'
+          ? (perLeaguePred[m.user_id] ?? globalPred[m.user_id])
+          : globalPred[m.user_id]
+        if (pred) acc.push(pred)
+        return acc
+      }, [])
 
       setMembers(memberRows)
       setPredictions(predRows)
