@@ -160,7 +160,7 @@ const todayMatches = [
 ]
 
 const ayerRowsHtml = digestRows.map(r => {
-  const badgeBg = r.pts === 3 ? BRAND.terra : r.pts === 1 ? BRAND.inkSoft : 'transparent'
+  const badgeBg = r.pts === 3 ? BRAND.green : r.pts === 1 ? BRAND.inkSoft : 'transparent'
   const badgeFg = r.pts === 0 ? BRAND.ink : BRAND.cream
   const badgeTx = r.pts === 3 ? '+3' : r.pts === 1 ? '+1' : '0'
   const badgeBd = r.pts === 0 ? `1px solid ${BRAND.ink}` : 'none'
