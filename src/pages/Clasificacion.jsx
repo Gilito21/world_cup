@@ -370,6 +370,14 @@ export default function Clasificacion() {
           .in('user_id', memberIds)),
       ])
 
+      // If the predictions query timed out, keep whatever is already on screen.
+      // Without this guard the code would compute 0 pts for everyone and write
+      // those zeros into localStorage, permanently corrupting the cache.
+      if (leaguePreds === null) {
+        if (!cached) setLoadError(t('clasificacion.loadError'))
+        return
+      }
+
       // For per_league users whose predictions were never copied to liga scope
       // (copy_predictions_atomic never ran), fall back to counting their global
       // predictions rather than showing 0. If they DO have any per-liga
