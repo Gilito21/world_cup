@@ -370,11 +370,25 @@ export default function Clasificacion() {
           .in('user_id', memberIds)),
       ])
 
+      // For per_league users whose predictions were never copied to liga scope
+      // (copy_predictions_atomic never ran), fall back to counting their global
+      // predictions rather than showing 0. If they DO have any per-liga
+      // predictions the copy ran atomically for all matches, so use per-liga
+      // exclusively — no double-counting.
+      const hasPerLeaguePreds    = new Set()
+      const hasPerLeagueSpecials = new Set()
+      const hasPerLeagueAdvance  = new Set()
+      ;(leaguePreds    ?? []).forEach(p  => { if (p.league_id  === activeLeague.id) hasPerLeaguePreds.add(p.user_id)     })
+      ;(leagueSpecials ?? []).forEach(sp => { if (sp.league_id === activeLeague.id) hasPerLeagueSpecials.add(sp.user_id) })
+      ;(leagueAdvance  ?? []).forEach(r  => { if (r.league_id  === activeLeague.id) hasPerLeagueAdvance.add(r.user_id)   })
+
       const pointsMap = {}
       const statsMap  = {}
       ;(leaguePreds ?? []).forEach(p => {
         const mode     = modeByUser[p.user_id] ?? 'global'
-        const expected = mode === 'per_league' ? activeLeague.id : null
+        const expected = mode === 'per_league'
+          ? (hasPerLeaguePreds.has(p.user_id) ? activeLeague.id : null)
+          : null
         if (p.league_id !== expected) return
         pointsMap[p.user_id] = (pointsMap[p.user_id] ?? 0) + (p.points_earned ?? 0)
         if (!statsMap[p.user_id]) statsMap[p.user_id] = { exact: 0, correct: 0, total: 0 }
@@ -384,14 +398,18 @@ export default function Clasificacion() {
       })
       ;(leagueSpecials ?? []).forEach(sp => {
         const mode     = modeByUser[sp.user_id] ?? 'global'
-        const expected = mode === 'per_league' ? activeLeague.id : null
+        const expected = mode === 'per_league'
+          ? (hasPerLeagueSpecials.has(sp.user_id) ? activeLeague.id : null)
+          : null
         if (sp.league_id !== expected) return
         pointsMap[sp.user_id] = (pointsMap[sp.user_id] ?? 0) + (sp.points_earned ?? 0)
       })
       const myAdvance = {}
       ;(leagueAdvance ?? []).forEach(r => {
         const mode     = modeByUser[r.user_id] ?? 'global'
-        const expected = mode === 'per_league' ? activeLeague.id : null
+        const expected = mode === 'per_league'
+          ? (hasPerLeagueAdvance.has(r.user_id) ? activeLeague.id : null)
+          : null
         if (r.league_id !== expected) return
         pointsMap[r.user_id] = (pointsMap[r.user_id] ?? 0) + (r.points ?? 0)
         if (r.user_id !== user.id) return
