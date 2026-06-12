@@ -349,78 +349,43 @@ export default function Clasificacion() {
         return
       }
 
-      const memberIds   = members.map(m => m.user_id)
-      const modeByUser  = Object.fromEntries(members.map(m => [m.user_id, m.prediction_mode ?? 'global']))
+      const memberIds = members.map(m => m.user_id)
+      const myMode    = members.find(m => m.user_id === user.id)?.prediction_mode ?? 'global'
 
-      const [{ data: profiles }, { data: leaguePreds }, { data: leagueSpecials }, { data: leagueAdvance }] = await Promise.all([
+      const [{ data: standings }, { data: profiles }, { data: myPerLigaPred }] = await Promise.all([
+        // Ranking calculado en el servidor (función league_standings): una fila
+        // por miembro en vez de traer miles de predicciones al navegador. Evita
+        // los timeouts de sq() que en móvil dejaban la liga a 0 al abrir la app.
+        // La función ya aplica el ámbito correcto (per_league con predicciones
+        // en la liga → ámbito liga; resto → global) sin doble conteo.
+        sq(supabase.rpc('league_standings', { p_league_id: activeLeague.id })),
         sq(supabase.from('profiles').select('id, username, avatar_url, company').in('id', memberIds)),
-        sq(supabase.from('predictions').select('user_id, league_id, points_earned')
-          .or(`league_id.eq.${activeLeague.id},league_id.is.null`)
-          .in('user_id', memberIds)),
-        // Las extras puntúan igual que los partidos, según el prediction_mode del
-        // miembro. Si no las sumamos aquí, un usuario per_league perdería sus
-        // puntos de extras en el ranking de su liga (sólo se reflejan en
-        // profiles.total_points para los globales, ver migración 026).
-        sq(supabase.from('special_predictions').select('user_id, league_id, points_earned')
-          .or(`league_id.eq.${activeLeague.id},league_id.is.null`)
-          .in('user_id', memberIds)),
-        // Bonus de avance: mismo patrón de filtro de ámbito que predicciones/extras.
-        sq(supabase.from('advance_points').select('user_id, league_id, team, stage, points')
-          .or(`league_id.eq.${activeLeague.id},league_id.is.null`)
-          .in('user_id', memberIds)),
+        // ¿El usuario logueado tiene predicciones en ámbito liga? Determina el
+        // ámbito de su desglose de avance (mismo criterio que la función).
+        sq(supabase.from('predictions').select('id')
+          .eq('user_id', user.id).eq('league_id', activeLeague.id).limit(1)),
       ])
 
-      // If the predictions query timed out, keep whatever is already on screen.
-      // Without this guard the code would compute 0 pts for everyone and write
-      // those zeros into localStorage, permanently corrupting the cache.
-      if (leaguePreds === null) {
+      // Si el ranking no llegó (timeout), conserva lo que ya se muestra (caché)
+      // en vez de pintar ceros y cachearlos.
+      if (standings === null) {
         if (!cached) setLoadError(t('clasificacion.loadError'))
         return
       }
 
-      // For per_league users whose predictions were never copied to liga scope
-      // (copy_predictions_atomic never ran), fall back to counting their global
-      // predictions rather than showing 0. If they DO have any per-liga
-      // predictions the copy ran atomically for all matches, so use per-liga
-      // exclusively — no double-counting.
-      const hasPerLeaguePreds    = new Set()
-      const hasPerLeagueSpecials = new Set()
-      const hasPerLeagueAdvance  = new Set()
-      ;(leaguePreds    ?? []).forEach(p  => { if (p.league_id  === activeLeague.id) hasPerLeaguePreds.add(p.user_id)     })
-      ;(leagueSpecials ?? []).forEach(sp => { if (sp.league_id === activeLeague.id) hasPerLeagueSpecials.add(sp.user_id) })
-      ;(leagueAdvance  ?? []).forEach(r  => { if (r.league_id  === activeLeague.id) hasPerLeagueAdvance.add(r.user_id)   })
+      const statsByUser = Object.fromEntries(standings.map(s => [s.user_id, s]))
 
-      const pointsMap = {}
-      const statsMap  = {}
-      ;(leaguePreds ?? []).forEach(p => {
-        const mode     = modeByUser[p.user_id] ?? 'global'
-        const expected = mode === 'per_league'
-          ? (hasPerLeaguePreds.has(p.user_id) ? activeLeague.id : null)
-          : null
-        if (p.league_id !== expected) return
-        pointsMap[p.user_id] = (pointsMap[p.user_id] ?? 0) + (p.points_earned ?? 0)
-        if (!statsMap[p.user_id]) statsMap[p.user_id] = { exact: 0, correct: 0, total: 0 }
-        statsMap[p.user_id].total++
-        if (p.points_earned === 3)      statsMap[p.user_id].exact++
-        else if (p.points_earned === 1) statsMap[p.user_id].correct++
-      })
-      ;(leagueSpecials ?? []).forEach(sp => {
-        const mode     = modeByUser[sp.user_id] ?? 'global'
-        const expected = mode === 'per_league'
-          ? (hasPerLeagueSpecials.has(sp.user_id) ? activeLeague.id : null)
-          : null
-        if (sp.league_id !== expected) return
-        pointsMap[sp.user_id] = (pointsMap[sp.user_id] ?? 0) + (sp.points_earned ?? 0)
-      })
+      // Desglose de puntos de avance del usuario logueado (panel informativo).
+      const myScopeLeagueId = (myMode === 'per_league' && (myPerLigaPred ?? []).length > 0)
+        ? activeLeague.id : null
+      const { data: myAdvanceRows } = await sq(
+        supabase.from('advance_points').select('team, stage, points, league_id')
+          .or(`league_id.eq.${activeLeague.id},league_id.is.null`)
+          .eq('user_id', user.id)
+      )
       const myAdvance = {}
-      ;(leagueAdvance ?? []).forEach(r => {
-        const mode     = modeByUser[r.user_id] ?? 'global'
-        const expected = mode === 'per_league'
-          ? (hasPerLeagueAdvance.has(r.user_id) ? activeLeague.id : null)
-          : null
-        if (r.league_id !== expected) return
-        pointsMap[r.user_id] = (pointsMap[r.user_id] ?? 0) + (r.points ?? 0)
-        if (r.user_id !== user.id) return
+      ;(myAdvanceRows ?? []).forEach(r => {
+        if ((r.league_id ?? null) !== myScopeLeagueId) return
         const rank = ADVANCE_RANK[r.stage] ?? 0
         if (!myAdvance[r.team]) myAdvance[r.team] = { points: 0, rank: 0 }
         myAdvance[r.team].points += (r.points ?? 0)
@@ -433,14 +398,15 @@ export default function Clasificacion() {
       const result = members
         .map(member => {
           const profile = profileMap[member.user_id] ?? {}
+          const st      = statsByUser[member.user_id] ?? { points: 0, exact: 0, correct: 0, total: 0 }
           return {
             id:            member.user_id,
             username:      profile.username,
             avatar_url:    profile.avatar_url ?? null,
             company:       profile.company ?? null,
             role:          member.role,
-            league_points: pointsMap[member.user_id] ?? 0,
-            stats:         statsMap[member.user_id] ?? { exact: 0, correct: 0, total: 0 },
+            league_points: st.points ?? 0,
+            stats:         { exact: st.exact ?? 0, correct: st.correct ?? 0, total: st.total ?? 0 },
           }
         })
         // Sort por puntos desc; en empates desempate estable por username
