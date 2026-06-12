@@ -67,11 +67,10 @@ function dayKey(d) {
 // ─── Email builder ────────────────────────────────────────────────────────────
 
 export function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints, advanceTeams = [], position, totalUsers }) {
-  const yesterdayStr = fmtDateHumanES(new Date(Date.now() - 86400_000))
   const todayStr     = fmtDateHumanES(new Date())
 
   const subject = yesterdayMatches.length > 0
-    ? `Tu resumen · ${yesterdayPoints} pts · ${yesterdayStr}`
+    ? `Tu resumen · ${yesterdayPoints} ${yesterdayPoints === 1 ? 'pt' : 'pts'}`
     : `Hoy juegan: ${todayMatches.slice(0, 2).map(m => `${m.home_team} – ${m.away_team}`).join(' · ')}`
 
   const yesterdayRows = yesterdayMatches.map(m => {
@@ -110,17 +109,17 @@ export function buildEmail({ username, yesterdayMatches, todayMatches, yesterday
 
   const positionBlock = (position && totalUsers) ? `
     <div style="margin:0 0 24px;">
-      ${brandStatTile({ kicker: 'Posición global', value: `#${position} <span style="font-family:Inter,-apple-system,sans-serif;font-size:14px;opacity:.55;">/ ${totalUsers}</span>`, sub: yesterdayPoints > 0 ? `Sumaste ${yesterdayPoints} ${yesterdayPoints === 1 ? 'punto' : 'puntos'} ayer.` : null })}
+      ${brandStatTile({ kicker: 'Posición global', value: `#${position} <span style="font-family:Inter,-apple-system,sans-serif;font-size:14px;opacity:.55;">/ ${totalUsers}</span>`, sub: yesterdayPoints > 0 ? `Sumaste ${yesterdayPoints} ${yesterdayPoints === 1 ? 'punto' : 'puntos'} en la última jornada.` : null })}
     </div>` : ''
 
   const ayerBlock = yesterdayMatches.length > 0 ? `
     <div style="margin:0 0 24px;">
-      ${brandKicker(`Ayer · ${yesterdayStr}`)}
+      ${brandKicker('Resultados recientes')}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-top:6px;">
         ${yesterdayRows}
       </table>
     </div>` : `
-    <p style="margin:0 0 24px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};opacity:.65;">Ayer no hubo partidos del torneo.</p>`
+    <p style="margin:0 0 24px;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};opacity:.65;">No hay resultados nuevos desde el último resumen.</p>`
 
   const advanceRows = advanceTeams.map(a => `
       <tr>
@@ -167,7 +166,7 @@ ${brandButton({ href: APP_URL, label: 'Ver clasificación' })}
   const html = brandShell({
     title: subject,
     preheader: yesterdayMatches.length > 0
-      ? `Sumaste ${yesterdayPoints} ${yesterdayPoints === 1 ? 'punto' : 'puntos'} en los partidos de ayer.`
+      ? `Sumaste ${yesterdayPoints} ${yesterdayPoints === 1 ? 'punto' : 'puntos'} en la última jornada.`
       : `Partidos previstos para hoy en el Mundial 2026.`,
     content,
     footerNote: `Recibes este resumen porque tienes los recordatorios activados. Puedes desactivarlos en tu perfil: ${APP_URL}/perfil`,
@@ -294,13 +293,19 @@ async function main() {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
-  // Ventanas de "ayer" y "hoy" en UTC. Aceptable porque kickoffs FIFA son
-  // tarde (>= 18:00 UTC en EE.UU.), así que usar UTC para delimitar el
-  // día reparte los partidos como espera el usuario europeo medio.
-  const yStart = startOfDayUTC(new Date(now.getTime() - 86400_000))
-  const yEnd   = new Date(yStart.getTime() + 86400_000)
-  const tStart = startOfDayUTC(now)
-  const tEnd   = new Date(tStart.getTime() + 86400_000)
+  // Jornada con corte a las 05:00 UTC en vez de día natural UTC. Las sedes del
+  // Mundial 2026 están en América: el último partido de la noche cae a las
+  // ~02:00-04:00 UTC del día natural siguiente. Si delimitáramos por día UTC,
+  // ese partido de madrugada se contaría como "hoy" y no sumaría en el resumen
+  // (el bug por el que Corea–Chequia a las 04:00 Madrid no aparecía con sus
+  // puntos). Cortando a las 05:00 UTC —ya no hay partidos en juego y el cron de
+  // las 06:00 aún no ha mandado— toda la noche queda en la misma jornada.
+  // yStart..yEnd = resultados recientes (24h hasta el corte); tStart..tEnd = hoy.
+  const yEnd = new Date(now); yEnd.setUTCHours(5, 0, 0, 0)
+  if (yEnd > now) yEnd.setUTCDate(yEnd.getUTCDate() - 1)
+  const yStart = new Date(yEnd.getTime() - 86400_000)
+  const tStart = yEnd
+  const tEnd   = new Date(yEnd.getTime() + 86400_000)
 
   // ── Datos compartidos por todos los emails ─────────────────────────────
   // Las consultas que pueden devolver >1000 filas usan los wrappers
@@ -331,6 +336,7 @@ async function main() {
       .select('id, home_team, away_team, match_date, stage, status')
       .gte('match_date', tStart.toISOString())
       .lt('match_date',  tEnd.toISOString())
+      .neq('status', 'finished')
       .order('match_date'),
     supabase.from('daily_digests').select('user_id').eq('digest_date', todayKey),
     // Misma regla: el ranking que mostramos en el email es el de usuarios
