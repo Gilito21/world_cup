@@ -24,6 +24,8 @@ export async function initSentry() {
       /Object Not Found Matching Id/,
       // Stripe.js bloqueado por content blockers (no es un error de la app)
       'Failed to load Stripe.js',
+      // Google Translate / Grammarly modifican el DOM y rompen la reconciliación de React
+      /removeChild/,
     ],
   })
 }
