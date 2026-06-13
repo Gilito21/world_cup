@@ -10,6 +10,23 @@ import './index.css'
 
 initSentry()
 
+// Chunk obsoleto tras un deploy: el navegador tiene cacheado el JS anterior
+// cuyos hashes ya no existen en el servidor. Detectamos el error y recargamos
+// una sola vez para que el navegador descargue el bundle nuevo.
+window.addEventListener('error', (event) => {
+  const msg = event.message ?? ''
+  if (
+    msg.includes('Importing a module script failed') ||
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Loading chunk')
+  ) {
+    if (!sessionStorage.getItem('_chunk_reloaded')) {
+      sessionStorage.setItem('_chunk_reloaded', '1')
+      window.location.reload()
+    }
+  }
+})
+
 // When Chrome restores a page from bfcache (back/forward navigation),
 // React state is frozen at whatever it was when the page was frozen.
 // If it was frozen mid-load (loading=true), the spinner never clears.

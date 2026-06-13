@@ -28,6 +28,9 @@ export async function initSentry() {
       /removeChild/,
       // Safari/Chrome extensions usando WebExtension API (runtime.sendMessage, Tab not found)
       /runtime\.sendMessage/,
+      // Chunk obsoleto tras deploy (el navegador ya hace reload automático)
+      'Importing a module script failed.',
+      /Failed to fetch dynamically imported module/,
     ],
   })
 }
