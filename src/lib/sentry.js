@@ -26,6 +26,8 @@ export async function initSentry() {
       'Failed to load Stripe.js',
       // Google Translate / Grammarly modifican el DOM y rompen la reconciliación de React
       /removeChild/,
+      // Safari/Chrome extensions usando WebExtension API (runtime.sendMessage, Tab not found)
+      /runtime\.sendMessage/,
     ],
   })
 }
