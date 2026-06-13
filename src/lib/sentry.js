@@ -31,6 +31,8 @@ export async function initSentry() {
       // Chunk obsoleto tras deploy (el navegador ya hace reload automático)
       'Importing a module script failed.',
       /Failed to fetch dynamically imported module/,
+      // Supabase Web Lock API: múltiples pestañas compitiendo por renovar el token (ruido interno)
+      /Navigator LockManager lock.*immediately failed/,
     ],
   })
 }
