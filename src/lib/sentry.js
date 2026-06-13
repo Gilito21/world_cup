@@ -19,5 +19,11 @@ export async function initSentry() {
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1.0,
     sendDefaultPii: false,
+    ignoreErrors: [
+      // Ruido de extensiones de navegador (LastPass, gestores de contraseñas, etc.)
+      /Object Not Found Matching Id/,
+      // Stripe.js bloqueado por content blockers (no es un error de la app)
+      'Failed to load Stripe.js',
+    ],
   })
 }
