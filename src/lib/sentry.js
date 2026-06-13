@@ -25,7 +25,7 @@ export async function initSentry() {
       // Stripe.js bloqueado por content blockers (no es un error de la app)
       'Failed to load Stripe.js',
       // Google Translate / Grammarly modifican el DOM y rompen la reconciliación de React
-      /removeChild/,
+      /removeChild|insertBefore/,
       // Safari/Chrome extensions usando WebExtension API (runtime.sendMessage, Tab not found)
       /runtime\.sendMessage/,
       // Chunk obsoleto tras deploy (el navegador ya hace reload automático)
