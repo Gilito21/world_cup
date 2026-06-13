@@ -5,7 +5,7 @@ const pk = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
 // Carga perezosa: una sola promesa compartida en toda la app.
 // Si no hay key configurada devolvemos null y los componentes que
 // dependen de Stripe muestran un fallback.
-export const stripePromise = pk ? loadStripe(pk) : null
+export const stripePromise = pk ? loadStripe(pk).catch(() => null) : null
 
 // Precio fijo del producto. Si cambia, actualizar también el edge
 // function "create-league-payment" para que coincida con Stripe.
