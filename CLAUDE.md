@@ -25,7 +25,7 @@ Porra Mundial 2026 — predicciones con ligas privadas.
 **Estructura clave**:
 - `src/pages/` — vistas (`Pronosticos`, `Clasificacion`, `Bracket`, `Extras`, `AdminLeague`, …)
 - `src/components/`, `src/contexts/`, `src/lib/`, `src/utils/`, `src/i18n/`
-- `supabase/migrations/NNN_<slug>.sql` — append-only, siempre el siguiente número libre (hoy va por 035)
+- `supabase/migrations/NNN_<slug>.sql` — append-only, siempre el siguiente número libre (hoy va por 043)
 - `supabase/functions/<name>/` — edge functions
 - `supabase/auth-templates/` — fuente; compilar con `npm run build-auth-templates`
 - `scripts/` — jobs corridos por GitHub Actions; muchos soportan `--preview` / `--dry-run`
@@ -45,7 +45,7 @@ Para no tener que inspeccionar Supabase cada sesión, aquí está el estado de l
 - `create-league-payment`, `confirm-league-payment`, `create-league-free` — alta de ligas (Stripe / gratis).
 - `notify-new-user`, `send-reminder`, `report-issue` — notificaciones y soporte.
 
-**Actualización de resultados (real-time):** la dispara **`pg_cron` (job `jobid=1`), cada minuto** (`* * * * *`) vía `pg_net` → `http_post` a la edge function `update-results`. **No** lo dispara GitHub Actions. El trigger `on_match_finished` recalcula puntos de pronóstico al cambiar `matches`. Para cambiar la cadencia: `select cron.alter_job(job_id := 1, schedule := '<cron>');` (este schedule vive en la DB, no en una migración).
+**Actualización de resultados (real-time):** la dispara **`pg_cron` (job `update-match-results-1min`), cada minuto** (`* * * * *`) vía `pg_net` → `http_post` a la edge function `update-results`. **No** lo dispara GitHub Actions. El trigger `on_match_finished` recalcula puntos de pronóstico al cambiar `matches`. El schedule está trazado en `supabase/migrations/043_pg_cron_update_results_every_minute.sql`; para cambiar la cadencia, crea una migración nueva con `cron.unschedule` + `cron.schedule` (o `cron.alter_job` por `jobid`).
   - Coste a 1/min: ~1.440 llamadas/día a football-data (límite free tier 10/min) y ~43K invocaciones edge/mes (límite free 500K/mes). Holgado.
 
 **GitHub Actions** (`.github/workflows/`):
