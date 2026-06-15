@@ -75,7 +75,7 @@ export function buildEmail({ username, yesterdayMatches, todayMatches, yesterday
 
   const yesterdayRows = yesterdayMatches.map(m => {
     const pts = m.points ?? 0
-    const badgeBg = pts === 3 ? BRAND.green : pts === 1 ? BRAND.inkSoft : 'transparent'
+    const badgeBg = pts === 3 ? BRAND.green : pts === 1 ? BRAND.terra : 'transparent'
     const badgeFg = pts === 0 ? BRAND.ink : BRAND.cream
     const badgeTx = pts === 3 ? '+3' : pts === 1 ? '+1' : '0'
     const badgeBd = pts === 0 ? `1px solid ${BRAND.ink}` : 'none'

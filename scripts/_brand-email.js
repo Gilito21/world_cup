@@ -20,7 +20,7 @@ export const BRAND = Object.freeze({
   inkSoft:  '#1C4D2C',
   terra:    '#C8552B',
   terra2:   '#E58A2E',
-  green:    '#2E8B45',  // acierto exacto (+3): verde vivo, distinto del verde bosque inkSoft (+1)
+  green:    '#2E8B45',  // acierto exacto (+3): verde vivo. El +1 (tendencia) usa terra/clay.
   rule:     'rgba(14,42,24,0.18)',
 })
 
