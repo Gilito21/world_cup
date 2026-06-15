@@ -66,7 +66,7 @@ function dayKey(d) {
 
 // ─── Email builder ────────────────────────────────────────────────────────────
 
-export function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints, advanceTeams = [], position, totalUsers }) {
+export function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints, advanceTeams = [], position, totalUsers, leagues = [] }) {
   const todayStr     = fmtDateHumanES(new Date())
 
   const subject = yesterdayMatches.length > 0
@@ -110,6 +110,24 @@ export function buildEmail({ username, yesterdayMatches, todayMatches, yesterday
   const positionBlock = (position && totalUsers) ? `
     <div style="margin:0 0 24px;">
       ${brandStatTile({ kicker: 'Posición global', value: `#${position} <span style="font-family:Inter,-apple-system,sans-serif;font-size:14px;opacity:.55;">/ ${totalUsers}</span>`, sub: yesterdayPoints > 0 ? `Sumaste ${yesterdayPoints} ${yesterdayPoints === 1 ? 'punto' : 'puntos'} en la última jornada.` : null })}
+    </div>` : ''
+
+  const leagueRows = leagues.map(l => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid ${BRAND.rule};font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};font-weight:600;">
+          ${escHtml(l.name)}
+        </td>
+        <td style="padding:10px 0 10px 16px;border-bottom:1px solid ${BRAND.rule};text-align:right;white-space:nowrap;vertical-align:middle;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:14px;color:${BRAND.ink};">
+          #${l.position} <span style="font-size:11px;opacity:.55;">/ ${l.total}</span>
+        </td>
+      </tr>`).join('')
+
+  const leaguesBlock = leagues.length > 0 ? `
+    <div style="margin:0 0 24px;">
+      ${brandKicker(leagues.length === 1 ? 'Tu liga' : 'Tus ligas')}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-top:6px;">
+        ${leagueRows}
+      </table>
     </div>` : ''
 
   const ayerBlock = yesterdayMatches.length > 0 ? `
@@ -158,6 +176,7 @@ ${brandHeadline(headline)}
 ${ayerBlock}
 ${advanceBlock}
 ${positionBlock}
+${leaguesBlock}
 ${hoyBlock}
 
 ${brandButton({ href: APP_URL, label: 'Ver clasificación' })}
@@ -208,6 +227,10 @@ export function sampleEmailArgs() {
     yesterdayPoints:  matchPoints + advanceTeams.reduce((s, a) => s + a.points, 0),
     position:         7,
     totalUsers:       142,
+    leagues: [
+      { name: 'Oficina Madrid',   position: 2, total: 18 },
+      { name: 'Amigos del fútbol', position: 5, total: 11 },
+    ],
   }
 }
 
@@ -358,6 +381,63 @@ async function main() {
     return
   }
 
+  // ── Posición en cada liga del usuario ──────────────────────────────────
+  // Replica la lógica de src/pages/Clasificacion.jsx: los puntos de un
+  // miembro en una liga dependen de su prediction_mode. En modo 'global'
+  // (default) puntúa con sus pronósticos globales —que es justo
+  // profiles.total_points (ver migración 026)—; en modo 'per_league' suma
+  // predictions + special_predictions de ESA liga. Ordenamos por puntos
+  // desc con desempate estable por username, igual que la app.
+  const [leagueMembers, leagueList, allProfiles, perLeaguePredRows, perLeagueSpecialRows] = await Promise.all([
+    fetchAllPages(supabase, s => s.from('league_members').select('league_id, user_id, prediction_mode')),
+    fetchAllPages(supabase, s => s.from('leagues').select('id, name')),
+    fetchAllPages(supabase, s => s.from('profiles').select('id, username, total_points')),
+    fetchAllPages(supabase, s => s.from('predictions')
+      .select('user_id, league_id, points_earned').not('league_id', 'is', null)),
+    fetchAllPages(supabase, s => s.from('special_predictions')
+      .select('user_id, league_id, points_earned').not('league_id', 'is', null)),
+  ])
+
+  const leagueNameById = new Map(leagueList.map(l => [l.id, l.name]))
+  const profileById    = new Map(allProfiles.map(p => [p.id, p]))
+
+  // Puntos per_league por (usuario, liga): predictions + special_predictions.
+  const perLeaguePts = new Map()  // `${user_id}|${league_id}` -> puntos
+  const addPerLeague = r => {
+    const k = `${r.user_id}|${r.league_id}`
+    perLeaguePts.set(k, (perLeaguePts.get(k) ?? 0) + (r.points_earned ?? 0))
+  }
+  perLeaguePredRows.forEach(addPerLeague)
+  perLeagueSpecialRows.forEach(addPerLeague)
+
+  // Standings por liga → posición y total de cada miembro.
+  const membersByLeague = new Map()
+  for (const m of leagueMembers) {
+    if (!membersByLeague.has(m.league_id)) membersByLeague.set(m.league_id, [])
+    membersByLeague.get(m.league_id).push(m)
+  }
+  const leaguePosition = new Map()  // `${user_id}|${league_id}` -> { position, total }
+  for (const [leagueId, members] of membersByLeague) {
+    const rows = members.map(m => {
+      const mode = m.prediction_mode ?? 'global'
+      const pts  = mode === 'per_league'
+        ? (perLeaguePts.get(`${m.user_id}|${leagueId}`) ?? 0)
+        : (profileById.get(m.user_id)?.total_points ?? 0)
+      return { user_id: m.user_id, pts, username: profileById.get(m.user_id)?.username ?? '' }
+    }).sort((a, b) => b.pts - a.pts || a.username.localeCompare(b.username))
+    rows.forEach((r, i) => leaguePosition.set(`${r.user_id}|${leagueId}`, { position: i + 1, total: rows.length }))
+  }
+
+  // Ligas por usuario (solo las que importan: las de cada destinatario).
+  const leaguesByUser = new Map()  // user_id -> [{ name, position, total }]
+  for (const m of leagueMembers) {
+    const pos = leaguePosition.get(`${m.user_id}|${m.league_id}`)
+    if (!pos) continue
+    if (!leaguesByUser.has(m.user_id)) leaguesByUser.set(m.user_id, [])
+    leaguesByUser.get(m.user_id).push({ name: leagueNameById.get(m.league_id) ?? 'Liga', ...pos })
+  }
+  for (const arr of leaguesByUser.values()) arr.sort((a, b) => a.position - b.position)
+
   // ── Predicciones globales de ayer (paginadas) ──────────────────────────
   const yMatchIds = (yesterdayMatches ?? []).map(m => m.id)
   const predsByUser = new Map()
@@ -434,6 +514,7 @@ async function main() {
         advanceTeams,
         position:         positionById.get(profile.id) ?? null,
         totalUsers,
+        leagues:          leaguesByUser.get(profile.id) ?? [],
       })
       await sendEmail(email, subject, html)
 
