@@ -25,13 +25,40 @@ Porra Mundial 2026 — predicciones con ligas privadas.
 **Estructura clave**:
 - `src/pages/` — vistas (`Pronosticos`, `Clasificacion`, `Bracket`, `Extras`, `AdminLeague`, …)
 - `src/components/`, `src/contexts/`, `src/lib/`, `src/utils/`, `src/i18n/`
-- `supabase/migrations/NNN_<slug>.sql` — append-only, siempre el siguiente número libre (hoy va por 028)
+- `supabase/migrations/NNN_<slug>.sql` — append-only, siempre el siguiente número libre (hoy va por 035)
 - `supabase/functions/<name>/` — edge functions
 - `supabase/auth-templates/` — fuente; compilar con `npm run build-auth-templates`
 - `scripts/` — jobs corridos por GitHub Actions; muchos soportan `--preview` / `--dry-run`
 - `.github/workflows/` — yo los mantengo, **no tocar sin avisar**
+- `.claude/hooks/session-start.sh` — hook de arranque (instala deps en sesiones web). Ver "Setup de sesiones".
 
 **Comandos**: `npm run dev | build | preview | seed-matches | update-results | send-reminders | send-daily-digest | send-brand-samples | build-auth-templates | generate-icons`.
+
+## Infraestructura y jobs programados
+
+Para no tener que inspeccionar Supabase cada sesión, aquí está el estado de lo que corre solo. Si cambias algo de esto, **actualiza esta sección**.
+
+**Supabase** — proyecto `World_Cup`, id `jpbbxrlrkavuckghwzpz`.
+
+**Edge functions desplegadas** (`supabase/functions/`):
+- `update-results` — actualiza la tabla `matches` desde football-data.org (1 llamada por run). `verify_jwt=false`.
+- `create-league-payment`, `confirm-league-payment`, `create-league-free` — alta de ligas (Stripe / gratis).
+- `notify-new-user`, `send-reminder`, `report-issue` — notificaciones y soporte.
+
+**Actualización de resultados (real-time):** la dispara **`pg_cron` (job `jobid=1`), cada minuto** (`* * * * *`) vía `pg_net` → `http_post` a la edge function `update-results`. **No** lo dispara GitHub Actions. El trigger `on_match_finished` recalcula puntos de pronóstico al cambiar `matches`. Para cambiar la cadencia: `select cron.alter_job(job_id := 1, schedule := '<cron>');` (este schedule vive en la DB, no en una migración).
+  - Coste a 1/min: ~1.440 llamadas/día a football-data (límite free tier 10/min) y ~43K invocaciones edge/mes (límite free 500K/mes). Holgado.
+
+**GitHub Actions** (`.github/workflows/`):
+- `update-results.yml` — **cada hora**, solo de backup y para recalcular `advance_points` (bonus de avance de ronda; la edge function no los toca).
+- `send-daily-digest.yml` — resumen diario, `06:30 UTC`. Idempotente vía tabla `daily_digests` (PK `user_id+digest_date`).
+- `send-reminders.yml`, `send-league-intent-reminders.yml`, `seed-matches.yml`, `resolve-prizes.yml`, `test-email.yml` — el resto de jobs.
+
+## Setup de sesiones (Claude Code on the web)
+
+- Al abrir una sesión web, el hook `SessionStart` (`.claude/hooks/session-start.sh`, registrado en `.claude/settings.json`) corre `npm install` automáticamente. No hace falta pedir que instale dependencias.
+- El hook solo actúa en remoto (`CLAUDE_CODE_REMOTE=true`); en local hace early-return.
+- Es **síncrono**: la sesión arranca con las deps ya listas. Para cambiarlo a async (arranque más rápido, con riesgo de carrera), añadir `echo '{"async": true, "asyncTimeout": 300000}'` al principio del script.
+- El estado de Supabase (edge functions, cron) está documentado arriba; léelo antes de consultarlo por MCP.
 
 ## Reglas duras
 
