@@ -27,6 +27,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { brandShell, brandButton, brandHeadline, brandKicker, brandStatTile, escHtml, BRAND } from './_brand-email.js'
+import { getTriggerInfo } from '../src/utils/prizeRules.js'
 config()
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -66,7 +67,7 @@ function dayKey(d) {
 
 // ─── Email builder ────────────────────────────────────────────────────────────
 
-export function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints, advanceTeams = [], position, totalUsers, leagues = [] }) {
+export function buildEmail({ username, yesterdayMatches, todayMatches, yesterdayPoints, advanceTeams = [], position, totalUsers, leagues = [], prizes = [] }) {
   const todayStr     = fmtDateHumanES(new Date())
 
   const subject = yesterdayMatches.length > 0
@@ -130,6 +131,26 @@ export function buildEmail({ username, yesterdayMatches, todayMatches, yesterday
       </table>
     </div>` : ''
 
+  const prizeRows = prizes.map(p => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid ${BRAND.rule};font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};font-weight:600;">
+          ${p.emoji ? `${p.emoji} ` : ''}${escHtml(p.label)}
+          <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;margin-top:3px;">${escHtml(p.league)}</div>
+        </td>
+        <td style="padding:10px 0 10px 16px;border-bottom:1px solid ${BRAND.rule};text-align:right;white-space:nowrap;vertical-align:middle;">
+          ${p.amount != null ? `<span style="display:inline-block;background:${BRAND.green};color:${BRAND.cream};font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:12px;letter-spacing:.04em;padding:4px 10px;">€${p.amount}</span>` : ''}
+        </td>
+      </tr>`).join('')
+
+  const prizesBlock = prizes.length > 0 ? `
+    <div style="margin:0 0 24px;">
+      ${brandKicker(prizes.length === 1 ? 'Vas ganando un premio' : 'Vas ganando premios')}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-top:6px;">
+        ${prizeRows}
+      </table>
+      <p style="margin:8px 0 0;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:11px;color:${BRAND.ink};opacity:.55;">Provisional: si el torneo acabara hoy. Aún puede cambiar.</p>
+    </div>` : ''
+
   const ayerBlock = yesterdayMatches.length > 0 ? `
     <div style="margin:0 0 24px;">
       ${brandKicker('Resultados recientes')}
@@ -175,6 +196,7 @@ ${brandHeadline(headline)}
 
 ${ayerBlock}
 ${advanceBlock}
+${prizesBlock}
 ${positionBlock}
 ${leaguesBlock}
 ${hoyBlock}
@@ -230,6 +252,10 @@ export function sampleEmailArgs() {
     leagues: [
       { name: 'Oficina Madrid',   position: 2, total: 18 },
       { name: 'Amigos del fútbol', position: 5, total: 11 },
+    ],
+    prizes: [
+      { league: 'Oficina Madrid', label: '1º clasificado al final del torneo', emoji: '🥇', amount: 358, locked: false },
+      { league: 'Oficina Madrid', label: 'Más resultados exactos predichos',   emoji: '🎯', amount: 65,  locked: false },
     ],
   }
 }
@@ -388,17 +414,20 @@ async function main() {
   // profiles.total_points (ver migración 026)—; en modo 'per_league' suma
   // predictions + special_predictions de ESA liga. Ordenamos por puntos
   // desc con desempate estable por username, igual que la app.
-  const [leagueMembers, leagueList, allProfiles, perLeaguePredRows, perLeagueSpecialRows] = await Promise.all([
+  const [leagueMembers, leagueList, allProfiles, perLeaguePredRows, perLeagueSpecialRows, prizeResults] = await Promise.all([
     fetchAllPages(supabase, s => s.from('league_members').select('league_id, user_id, prediction_mode')),
-    fetchAllPages(supabase, s => s.from('leagues').select('id, name')),
+    fetchAllPages(supabase, s => s.from('leagues').select('id, name, entry_fee, prize_rules')),
     fetchAllPages(supabase, s => s.from('profiles').select('id, username, total_points')),
     fetchAllPages(supabase, s => s.from('predictions')
       .select('user_id, league_id, points_earned').not('league_id', 'is', null)),
     fetchAllPages(supabase, s => s.from('special_predictions')
       .select('user_id, league_id, points_earned').not('league_id', 'is', null)),
+    fetchAllPages(supabase, s => s.from('league_prize_results')
+      .select('league_id, rule_id, trigger_key, winner_id, locked')),
   ])
 
   const leagueNameById = new Map(leagueList.map(l => [l.id, l.name]))
+  const leagueById     = new Map(leagueList.map(l => [l.id, l]))
   const profileById    = new Map(allProfiles.map(p => [p.id, p]))
 
   // Puntos per_league por (usuario, liga): predictions + special_predictions.
@@ -437,6 +466,27 @@ async function main() {
     leaguesByUser.get(m.user_id).push({ name: leagueNameById.get(m.league_id) ?? 'Liga', ...pos })
   }
   for (const arr of leaguesByUser.values()) arr.sort((a, b) => a.position - b.position)
+
+  // ── Premios provisionales por usuario ──────────────────────────────────
+  // Por cada resultado cuyo ganador sea el destinatario, resolvemos etiqueta
+  // (prizeRules.js) e importe igual que PrizePotCard: bote = entry_fee × nº
+  // miembros, importe = round(bote × pct/100). Filtrar por rule.id descarta
+  // resultados huérfanos de reglas borradas.
+  const prizesByUser = new Map()  // user_id -> [{ league, label, emoji, amount, locked }]
+  for (const pr of prizeResults) {
+    if (!pr.winner_id) continue
+    const league = leagueById.get(pr.league_id)
+    if (!league) continue
+    const rules = Array.isArray(league.prize_rules) ? league.prize_rules : []
+    const rule  = rules.find(r => r.id === pr.rule_id)
+    if (!rule) continue
+    const info        = getTriggerInfo(rule.trigger)
+    const memberCount = (membersByLeague.get(pr.league_id) ?? []).length
+    const pot         = league.entry_fee && memberCount > 0 ? league.entry_fee * memberCount : null
+    const amount      = pot ? Math.round(pot * Number(rule.pct) / 100) : null
+    if (!prizesByUser.has(pr.winner_id)) prizesByUser.set(pr.winner_id, [])
+    prizesByUser.get(pr.winner_id).push({ league: league.name, label: info.label, emoji: info.emoji, amount, locked: pr.locked })
+  }
 
   // ── Predicciones globales de ayer (paginadas) ──────────────────────────
   const yMatchIds = (yesterdayMatches ?? []).map(m => m.id)
@@ -515,6 +565,7 @@ async function main() {
         position:         positionById.get(profile.id) ?? null,
         totalUsers,
         leagues:          leaguesByUser.get(profile.id) ?? [],
+        prizes:           prizesByUser.get(profile.id) ?? [],
       })
       await sendEmail(email, subject, html)
 
