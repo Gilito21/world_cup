@@ -55,9 +55,11 @@ const KNOCKOUT = new Set(['round_of_32', 'round_of_16', 'quarter_final', 'semi_f
 // que el premio "Nº clasificado" nunca diverja de la clasificación.
 const FINAL_TRIGGERS = new Set(['final_1st', 'final_2nd', 'final_3rd', 'final_4th', 'final_last'])
 
-// Ranking con desempate estable por username (idéntico a Clasificacion.jsx).
-const rankDesc = (map, nameById) => Object.entries(map)
-  .sort(([ia, a], [ib, b]) => b - a || (nameById.get(ia) ?? '').localeCompare(nameById.get(ib) ?? ''))
+// Ranking de un trigger; ante empate gana quien va más arriba en la
+// clasificación general (rankIndexById, 0 = líder). Así "most_exact" y demás
+// superlativos desempatan por posición, no por orden alfabético.
+const rankDesc = (map, rankIndexById) => Object.entries(map)
+  .sort(([ia, a], [ib, b]) => b - a || (rankIndexById.get(ia) ?? Infinity) - (rankIndexById.get(ib) ?? Infinity))
   .map(([id]) => id)
 
 // PostgREST tope implícito de 1000 filas. Sin paginar, una liga con muchas
@@ -149,6 +151,8 @@ async function processLeague(leagueId, rules, matchStage, done) {
     .map(s => ({ id: s.user_id, points: s.points ?? 0 }))
     .sort((a, b) => b.points - a.points || (nameById.get(a.id) ?? '').localeCompare(nameById.get(b.id) ?? ''))
     .map(r => r.id)
+  // Índice en la clasificación (0 = líder) para desempatar los superlativos.
+  const rankIndexById = new Map(rankedIds.map((id, i) => [id, i]))
 
   const preds    = (await loadPreds(globalIds, leagueIds, leagueId)).map(p => ({ ...p, stage: matchStage[p.match_id] }))
   const specials = await loadSpecials(globalIds, leagueIds, leagueId)
@@ -160,7 +164,7 @@ async function processLeague(leagueId, rules, matchStage, done) {
   for (const rule of rules) {
     const winner = FINAL_TRIGGERS.has(rule.trigger)
       ? finalWinner(rule.trigger, rankedIds)
-      : computeWinner(rule.trigger, allIds, preds, extrasPts, specials, nameById)
+      : computeWinner(rule.trigger, allIds, preds, extrasPts, specials, rankIndexById)
     if (!winner) continue
     upserts.push({
       league_id:   leagueId,
@@ -217,40 +221,40 @@ async function loadSpecials(globalIds, leagueIds, leagueId) {
 // ─── lógica de cálculo ────────────────────────────────────────────────────────
 
 // Triggers que NO son puesto-en-clasificación (esos van por finalWinner).
-function computeWinner(trigger, allIds, preds, extrasPts, specials, nameById) {
+function computeWinner(trigger, allIds, preds, extrasPts, specials, rankIndexById) {
   const score = Object.fromEntries(allIds.map(id => [id, 0]))
 
   if (CUMUL[trigger]) {
     const stages = new Set(CUMUL[trigger])
     for (const p of preds) if (stages.has(p.stage)) score[p.user_id] += p.points_earned ?? 0
-    const ranked = rankDesc(score, nameById)
+    const ranked = rankDesc(score, rankIndexById)
     return ranked[trigger.endsWith('_2nd') ? 1 : 0] ?? null
   }
 
   switch (trigger) {
     case 'best_groups_only': {
       for (const p of preds) if (p.stage === 'group') score[p.user_id] += p.points_earned ?? 0
-      return rankDesc(score, nameById)[0] ?? null
+      return rankDesc(score, rankIndexById)[0] ?? null
     }
     case 'best_knockouts_only': {
       for (const p of preds) if (KNOCKOUT.has(p.stage)) score[p.user_id] += p.points_earned ?? 0
-      return rankDesc(score, nameById)[0] ?? null
+      return rankDesc(score, rankIndexById)[0] ?? null
     }
     case 'most_exact': {
       for (const p of preds) if (p.points_earned === 3) score[p.user_id]++
-      return rankDesc(score, nameById)[0] ?? null
+      return rankDesc(score, rankIndexById)[0] ?? null
     }
     case 'most_correct': {
       for (const p of preds) if (p.points_earned === 1) score[p.user_id]++
-      return rankDesc(score, nameById)[0] ?? null
+      return rankDesc(score, rankIndexById)[0] ?? null
     }
     case 'most_submitted': {
       for (const p of preds) if (p.home_score !== null && p.away_score !== null) score[p.user_id]++
-      return rankDesc(score, nameById)[0] ?? null
+      return rankDesc(score, rankIndexById)[0] ?? null
     }
     case 'best_extras': {
       for (const [id, pts] of Object.entries(extrasPts)) score[id] = pts
-      return rankDesc(score, nameById)[0] ?? null
+      return rankDesc(score, rankIndexById)[0] ?? null
     }
     case 'predicted_winner': {
       const w = specials.filter(sp =>

@@ -48,7 +48,7 @@ export default {
       atlas: 'Venues',
       how: 'How it works',
       ranking: 'Leaderboard',
-      cta: 'Start a pool',
+      cta: 'Log in',
     },
 
     cover: {

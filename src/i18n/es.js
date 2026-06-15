@@ -49,7 +49,7 @@ export default {
       atlas: 'Sedes',
       how: 'Cómo funciona',
       ranking: 'Ranking',
-      cta: 'Crear porra',
+      cta: 'Acceder',
     },
 
     // Cabecera tipo revista
