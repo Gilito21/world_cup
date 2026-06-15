@@ -50,8 +50,39 @@ const LOCK_AT = {
 
 const KNOCKOUT = new Set(['round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'final', 'third_place'])
 
-const rankDesc = map => Object.entries(map).sort(([, a], [, b]) => b - a).map(([id]) => id)
-const rankAsc  = map => Object.entries(map).sort(([, a], [, b]) => a - b).map(([id]) => id)
+// Triggers de "puesto en la clasificación final": los resolvemos con el mismo
+// ranking que ve el usuario (RPC league_standings), no recalculando aquí, para
+// que el premio "Nº clasificado" nunca diverja de la clasificación.
+const FINAL_TRIGGERS = new Set(['final_1st', 'final_2nd', 'final_3rd', 'final_4th', 'final_last'])
+
+// Ranking con desempate estable por username (idéntico a Clasificacion.jsx).
+const rankDesc = (map, nameById) => Object.entries(map)
+  .sort(([ia, a], [ib, b]) => b - a || (nameById.get(ia) ?? '').localeCompare(nameById.get(ib) ?? ''))
+  .map(([id]) => id)
+
+// PostgREST tope implícito de 1000 filas. Sin paginar, una liga con muchas
+// predicciones (26 miembros × decenas de partidos > 1000) se truncaba en
+// silencio y los premios salían sobre datos parciales. Iteramos hasta agotar.
+async function fetchAllPages(build) {
+  const PAGE = 1000
+  const all = []
+  for (let page = 0; page < 50; page++) {
+    const from = page * PAGE
+    const { data, error } = await build().range(from, from + PAGE - 1)
+    if (error) throw error
+    all.push(...(data ?? []))
+    if (!data || data.length < PAGE) return all
+  }
+  throw new Error('[prize] fetchAllPages superó 50 páginas')
+}
+
+// Puesto N en la clasificación final. rankedIds ya viene ordenado igual que la
+// pantalla (puntos desc, username asc) e incluye advance_points.
+function finalWinner(trigger, rankedIds) {
+  if (!rankedIds.length) return null
+  if (trigger === 'final_last') return rankedIds[rankedIds.length - 1]
+  return rankedIds[{ final_1st: 0, final_2nd: 1, final_3rd: 2, final_4th: 3 }[trigger]] ?? null
+}
 
 // ─── main ─────────────────────────────────────────────────────────────────────
 
@@ -107,8 +138,19 @@ async function processLeague(leagueId, rules, matchStage, done) {
   const leagueIds = members.filter(m => m.prediction_mode && m.prediction_mode !== 'global').map(m => m.user_id)
   const allIds    = members.map(m => m.user_id)
 
-  const preds   = await loadPreds(globalIds, leagueIds, leagueId)
-  const staged  = preds.map(p => ({ ...p, stage: matchStage[p.match_id] }))
+  // Usernames para desempate estable (mismo criterio que Clasificacion.jsx).
+  const nameById = await loadUsernames(allIds)
+
+  // Ranking de puesto idéntico al que ve el usuario: el RPC league_standings
+  // suma predictions + special_predictions + advance_points en el ámbito
+  // correcto. Lo ordenamos igual que la pantalla (puntos desc, username asc).
+  const { data: standings } = await supabase.rpc('league_standings', { p_league_id: leagueId })
+  const rankedIds = (standings ?? [])
+    .map(s => ({ id: s.user_id, points: s.points ?? 0 }))
+    .sort((a, b) => b.points - a.points || (nameById.get(a.id) ?? '').localeCompare(nameById.get(b.id) ?? ''))
+    .map(r => r.id)
+
+  const preds    = (await loadPreds(globalIds, leagueIds, leagueId)).map(p => ({ ...p, stage: matchStage[p.match_id] }))
   const specials = await loadSpecials(globalIds, leagueIds, leagueId)
 
   const extrasPts = {}
@@ -116,7 +158,9 @@ async function processLeague(leagueId, rules, matchStage, done) {
 
   const upserts = []
   for (const rule of rules) {
-    const winner = computeWinner(rule.trigger, allIds, staged, extrasPts, specials)
+    const winner = FINAL_TRIGGERS.has(rule.trigger)
+      ? finalWinner(rule.trigger, rankedIds)
+      : computeWinner(rule.trigger, allIds, preds, extrasPts, specials, nameById)
     if (!winner) continue
     upserts.push({
       league_id:   leagueId,
@@ -136,82 +180,77 @@ async function processLeague(leagueId, rules, matchStage, done) {
   else console.log(`[prize] liga ${leagueId}: ${upserts.length} resultado(s)`)
 }
 
+async function loadUsernames(ids) {
+  if (!ids.length) return new Map()
+  const { data } = await supabase.from('profiles').select('id, username').in('id', ids)
+  return new Map((data ?? []).map(p => [p.id, p.username ?? '']))
+}
+
 async function loadPreds(globalIds, leagueIds, leagueId) {
+  const cols = 'id, user_id, match_id, points_earned, home_score, away_score'
   const res = []
   if (globalIds.length) {
-    const { data } = await supabase.from('predictions')
-      .select('user_id, match_id, points_earned, home_score, away_score')
-      .in('user_id', globalIds).is('league_id', null)
-    if (data) res.push(...data)
+    res.push(...await fetchAllPages(() => supabase.from('predictions')
+      .select(cols).in('user_id', globalIds).is('league_id', null).order('id')))
   }
   if (leagueIds.length) {
-    const { data } = await supabase.from('predictions')
-      .select('user_id, match_id, points_earned, home_score, away_score')
-      .in('user_id', leagueIds).eq('league_id', leagueId)
-    if (data) res.push(...data)
+    res.push(...await fetchAllPages(() => supabase.from('predictions')
+      .select(cols).in('user_id', leagueIds).eq('league_id', leagueId).order('id')))
   }
   return res
 }
 
 async function loadSpecials(globalIds, leagueIds, leagueId) {
+  const cols = 'id, user_id, question_key, points_earned'
   const res = []
   if (globalIds.length) {
-    const { data } = await supabase.from('special_predictions')
-      .select('user_id, question_key, points_earned')
-      .in('user_id', globalIds).is('league_id', null)
-    if (data) res.push(...data)
+    res.push(...await fetchAllPages(() => supabase.from('special_predictions')
+      .select(cols).in('user_id', globalIds).is('league_id', null).order('id')))
   }
   if (leagueIds.length) {
-    const { data } = await supabase.from('special_predictions')
-      .select('user_id, question_key, points_earned')
-      .in('user_id', leagueIds).eq('league_id', leagueId)
-    if (data) res.push(...data)
+    res.push(...await fetchAllPages(() => supabase.from('special_predictions')
+      .select(cols).in('user_id', leagueIds).eq('league_id', leagueId).order('id')))
   }
   return res
 }
 
 // ─── lógica de cálculo ────────────────────────────────────────────────────────
 
-function computeWinner(trigger, allIds, preds, extrasPts, specials) {
+// Triggers que NO son puesto-en-clasificación (esos van por finalWinner).
+function computeWinner(trigger, allIds, preds, extrasPts, specials, nameById) {
   const score = Object.fromEntries(allIds.map(id => [id, 0]))
 
   if (CUMUL[trigger]) {
     const stages = new Set(CUMUL[trigger])
     for (const p of preds) if (stages.has(p.stage)) score[p.user_id] += p.points_earned ?? 0
-    const ranked = rankDesc(score)
+    const ranked = rankDesc(score, nameById)
     return ranked[trigger.endsWith('_2nd') ? 1 : 0] ?? null
   }
 
   switch (trigger) {
     case 'best_groups_only': {
       for (const p of preds) if (p.stage === 'group') score[p.user_id] += p.points_earned ?? 0
-      return rankDesc(score)[0] ?? null
+      return rankDesc(score, nameById)[0] ?? null
     }
     case 'best_knockouts_only': {
       for (const p of preds) if (KNOCKOUT.has(p.stage)) score[p.user_id] += p.points_earned ?? 0
-      return rankDesc(score)[0] ?? null
-    }
-    case 'final_1st': case 'final_2nd': case 'final_3rd': case 'final_4th': case 'final_last': {
-      for (const p of preds)   score[p.user_id]  += p.points_earned  ?? 0
-      for (const sp of specials) score[sp.user_id] = (score[sp.user_id] ?? 0) + (sp.points_earned ?? 0)
-      if (trigger === 'final_last') return rankAsc(score)[0] ?? null
-      return rankDesc(score)[{ final_1st: 0, final_2nd: 1, final_3rd: 2, final_4th: 3 }[trigger]] ?? null
+      return rankDesc(score, nameById)[0] ?? null
     }
     case 'most_exact': {
       for (const p of preds) if (p.points_earned === 3) score[p.user_id]++
-      return rankDesc(score)[0] ?? null
+      return rankDesc(score, nameById)[0] ?? null
     }
     case 'most_correct': {
       for (const p of preds) if (p.points_earned === 1) score[p.user_id]++
-      return rankDesc(score)[0] ?? null
+      return rankDesc(score, nameById)[0] ?? null
     }
     case 'most_submitted': {
       for (const p of preds) if (p.home_score !== null && p.away_score !== null) score[p.user_id]++
-      return rankDesc(score)[0] ?? null
+      return rankDesc(score, nameById)[0] ?? null
     }
     case 'best_extras': {
       for (const [id, pts] of Object.entries(extrasPts)) score[id] = pts
-      return rankDesc(score)[0] ?? null
+      return rankDesc(score, nameById)[0] ?? null
     }
     case 'predicted_winner': {
       const w = specials.filter(sp =>
