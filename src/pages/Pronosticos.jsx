@@ -4,6 +4,7 @@ import { getMatchCache, getMatchCacheStale, setMatchCache } from '../lib/matchCa
 import { getCache, setCache } from '../lib/dataCache'
 import haptics from '../lib/haptics'
 import usePullRefresh from '../lib/usePullRefresh'
+import { useChromeHidden } from '../lib/scrollChrome'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { useLang } from '../contexts/LangContext'
@@ -633,6 +634,7 @@ export default function Pronosticos() {
   const [error,       setError]       = useState('')
   const [copying,     setCopying]     = useState(false)
   const [scrollTarget, setScrollTarget] = useState(null)
+  const chromeHidden = useChromeHidden()
 
   // No-league join modal state
   const [showLeagueModal,  setShowLeagueModal]  = useState(false)
@@ -1489,7 +1491,9 @@ export default function Pronosticos() {
           onClick={goToLatest}
           aria-label={t('pronosticos.jumpToLive')}
           title={t('pronosticos.jumpToLive')}
-          className="fixed bottom-20 sm:bottom-5 left-3 sm:left-5 z-40 flex items-center gap-2 pl-3 pr-3.5 py-2.5 rounded-full bg-ink/90 text-cream shadow-lg backdrop-blur hover:bg-ink transition-colors"
+          className={`fixed bottom-20 sm:bottom-5 left-3 sm:left-5 z-40 flex items-center gap-2 pl-3 pr-3.5 py-2.5 rounded-full bg-ink/90 text-cream shadow-lg backdrop-blur hover:bg-ink transition-all duration-300 ${
+            chromeHidden ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'
+          } sm:opacity-100 sm:translate-y-0 sm:pointer-events-auto`}
         >
           {latestPlayed.status === 'live'
             ? <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" aria-hidden="true" />

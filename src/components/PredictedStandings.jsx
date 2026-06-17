@@ -11,7 +11,7 @@ import { GROUPS, computeAllStandings, getQualifiers } from '../utils/tournament'
 export default function PredictedStandings({ matches, predictions, drafts }) {
   const { t } = useLang()
   const [open, setOpen] = useState(false)
-  const minimized = useChromeHidden()
+  const hidden = useChromeHidden()
 
   const { standings, qualifyingThirds, thirds, groupsComplete } = useMemo(() => {
     const groupMatches = matches.filter(m => m.stage === 'group')
@@ -60,15 +60,13 @@ export default function PredictedStandings({ matches, predictions, drafts }) {
       {/* Floating button — sits above the report button (bottom-right). */}
       <button
         onClick={() => setOpen(true)}
-        className={`fixed bottom-32 sm:bottom-16 right-3 sm:right-4 z-40 flex items-center rounded-full bg-ink text-cream shadow-lg hover:bg-terracotta transition-all duration-300 text-xs font-bold py-2.5 ${
-          minimized ? 'gap-0 px-2.5' : 'gap-1.5 px-3.5'
-        } sm:gap-1.5 sm:px-3.5`}
+        className={`fixed bottom-32 sm:bottom-16 right-3 sm:right-4 z-40 flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-ink text-cream shadow-lg hover:bg-terracotta transition-all duration-300 text-xs font-bold ${
+          hidden ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'
+        } sm:opacity-100 sm:translate-y-0 sm:pointer-events-auto`}
         aria-label={t('pronosticos.standingsFab')}
       >
         <span className="text-sm leading-none" aria-hidden="true">📊</span>
-        <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
-          minimized ? 'max-w-0 opacity-0' : 'max-w-[8rem] opacity-100'
-        } sm:max-w-[8rem] sm:opacity-100`}>{t('pronosticos.standingsFab')}</span>
+        <span>{t('pronosticos.standingsFab')}</span>
       </button>
 
       {open && (

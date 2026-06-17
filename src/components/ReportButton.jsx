@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useLang } from '../contexts/LangContext'
+import { useChromeHidden } from '../lib/scrollChrome'
 import Spinner from './Spinner'
 
 export default function ReportButton({ username, userEmail }) {
   const { t } = useLang()
+  const hidden = useChromeHidden()
   const [open, setOpen]       = useState(false)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -44,7 +46,9 @@ export default function ReportButton({ username, userEmail }) {
       {/* Botón flotante */}
       <button
         onClick={handleOpen}
-        className="fixed bottom-20 sm:bottom-5 right-3 sm:right-4 z-40 flex items-center px-2.5 py-1.5 rounded-full bg-paper border border-ink/20 shadow-md text-ink/50 hover:text-ink/80 hover:border-ink/30 hover:shadow-lg transition-all duration-200 text-xs font-medium group"
+        className={`fixed bottom-20 sm:bottom-5 right-3 sm:right-4 z-40 flex items-center px-2.5 py-1.5 rounded-full bg-paper border border-ink/20 shadow-md text-ink/50 hover:text-ink/80 hover:border-ink/30 hover:shadow-lg transition-all duration-200 text-xs font-medium group ${
+          hidden ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'
+        } sm:opacity-100 sm:translate-y-0 sm:pointer-events-auto`}
         aria-label={t('report.btnLabel')}
       >
         <span className="text-sm leading-none">⚠️</span>
