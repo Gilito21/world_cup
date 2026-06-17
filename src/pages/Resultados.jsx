@@ -10,6 +10,7 @@ import Spinner from '../components/Spinner'
 import { MatchListSkeleton } from '../components/Skeleton'
 import MatchPostmortem from '../components/MatchPostmortem'
 import { EditorialBand, EditorialStats } from '../components/Editorial'
+import { Flag, teamName } from '../utils/teams'
 
 function formatDate(dateStr, locale) {
   return new Date(dateStr).toLocaleDateString(locale, {
@@ -142,9 +143,9 @@ function FinishedMatchCard({ match, myPrediction, league }) {
         <div className="flex items-center gap-3">
           <div className={`flex-1 flex items-center justify-end gap-2 min-w-0 ${winner !== 'home' ? 'opacity-60' : ''}`}>
             <span className={`text-sm font-semibold truncate text-right ${winner === 'home' ? 'text-ink' : 'text-ink/50'}`}>
-              {match.home_team}
+              {teamName(match.home_team)}
             </span>
-            <span className="text-xl flex-shrink-0">{match.home_flag}</span>
+            <Flag team={match.home_team} />
           </div>
 
           <div className="flex-shrink-0 flex items-center gap-2 bg-paper rounded-none px-4 py-2 border border-ink/30">
@@ -154,9 +155,9 @@ function FinishedMatchCard({ match, myPrediction, league }) {
           </div>
 
           <div className={`flex-1 flex items-center justify-start gap-2 min-w-0 ${winner !== 'away' ? 'opacity-60' : ''}`}>
-            <span className="text-xl flex-shrink-0">{match.away_flag}</span>
+            <Flag team={match.away_team} />
             <span className={`text-sm font-semibold truncate ${winner === 'away' ? 'text-ink' : 'text-ink/50'}`}>
-              {match.away_team}
+              {teamName(match.away_team)}
             </span>
           </div>
         </div>
