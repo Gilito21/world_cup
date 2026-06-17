@@ -7,6 +7,7 @@ import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
 import haptics from '../lib/haptics'
 import { PullRefreshContext } from '../lib/usePullRefresh'
+import { ScrollChromeContext } from '../lib/scrollChrome'
 import { ViewNavLink } from '../lib/viewTransition'
 import LeagueSwitcher from './LeagueSwitcher'
 import LangToggle from './LangToggle'
@@ -106,6 +107,32 @@ export default function Layout() {
   const [refreshing, setRefreshing] = useState(false)
   const setRefreshHandler = useCallback((fn) => { refreshHandlerRef.current = fn }, [])
   const pullCtx = useMemo(() => ({ setRefreshHandler }), [setRefreshHandler])
+
+  // Ocultar la bottom-nav / minimizar FABs al bajar; mostrar al subir o arriba.
+  const [hideChrome, setHideChrome] = useState(false)
+  useEffect(() => {
+    const el = mainRef.current
+    if (!el) return
+    let last = el.scrollTop
+    let ticking = false
+    function onScroll() {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        const y = el.scrollTop
+        const delta = y - last
+        if (y < 64)          setHideChrome(false)
+        else if (delta > 8)  setHideChrome(true)
+        else if (delta < -8) setHideChrome(false)
+        last = y
+        ticking = false
+      })
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
+  // Al cambiar de página el scroll vuelve arriba: restaura el chrome.
+  useEffect(() => { setHideChrome(false) }, [location.pathname])
 
   useEffect(() => {
     const el = mainRef.current
@@ -365,6 +392,7 @@ export default function Layout() {
       )}
 
       {/* Content */}
+      <ScrollChromeContext.Provider value={hideChrome}>
       <PullRefreshContext.Provider value={pullCtx}>
         <main
           ref={mainRef}
@@ -400,6 +428,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </PullRefreshContext.Provider>
+      </ScrollChromeContext.Provider>
 
       {/* Modal de pago para crear liga (disparado tras signup).
           Se renderiza salvo que el perfil esté cargado y sea founder
@@ -480,7 +509,9 @@ export default function Layout() {
 
       {/* ── BOTTOM NAV (solo móvil) ──────────────────────────── */}
       <nav
-        className="sm:hidden shrink-0 bg-cream/95 backdrop-blur-md border-t border-ink/15 pb-safe"
+        className={`sm:hidden shrink-0 min-h-0 bg-cream/95 backdrop-blur-md border-t border-ink/15 pb-safe overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+          hideChrome ? 'max-h-0 opacity-0 border-t-0 pointer-events-none' : 'max-h-32 opacity-100'
+        }`}
         aria-label="Navegación principal"
       >
         <div className="grid grid-cols-5">
