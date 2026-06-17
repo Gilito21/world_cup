@@ -5,6 +5,40 @@ import { useLang } from '../contexts/LangContext'
 import Spinner from '../components/Spinner'
 import { EditorialBand, EditorialStats } from '../components/Editorial'
 
+// Los avatares se servían en crudo (fotos de móvil de 2–4 MB) y se cargan
+// repetidamente en Clasificación/Feed, lo que disparaba el cached egress del
+// CDN de Supabase. Redimensionamos a 256px y reencodeamos a WebP en el cliente
+// antes de subir: el archivo baja a ~20–50 KB sin tocar el backend.
+const AVATAR_MAX_PX = 256
+
+async function compressAvatar(file) {
+  const dataUrl = URL.createObjectURL(file)
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image()
+      el.onload  = () => resolve(el)
+      el.onerror = reject
+      el.src = dataUrl
+    })
+
+    const { naturalWidth: w, naturalHeight: h } = img
+    if (!w || !h || w > 4096 || h > 4096) return { tooLarge: true }
+
+    const scale  = Math.min(1, AVATAR_MAX_PX / Math.max(w, h))
+    const canvas = document.createElement('canvas')
+    canvas.width  = Math.round(w * scale)
+    canvas.height = Math.round(h * scale)
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+
+    const blob = await new Promise(resolve =>
+      canvas.toBlob(resolve, 'image/webp', 0.85)
+    )
+    return { blob }
+  } finally {
+    URL.revokeObjectURL(dataUrl)
+  }
+}
+
 export default function Perfil() {
   const { user, profile, refreshProfile } = useAuth()
   const { t } = useLang()
@@ -116,40 +150,43 @@ export default function Perfil() {
       return
     }
 
-    // Reject absurdly large dimensions before uploading. A 2MB JPEG can
-    // still decode to 12000×12000 pixels and lock up the browser.
-    const dims = await new Promise(resolve => {
-      const img = new Image()
-      img.onload  = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
-      img.onerror = () => resolve(null)
-      img.src = URL.createObjectURL(file)
-    })
-    if (!dims || dims.w > 4096 || dims.h > 4096) {
-      setUploadError(t('perfil.uploadDimensionsError'))
-      return
-    }
-
     setUploading(true)
     try {
-      const ext  = file.name.split('.').pop().toLowerCase()
-      const path = `${user.id}/avatar.${ext}`
+      // Comprime y rechaza dimensiones absurdas (un JPEG de 2MB puede decodear
+      // a 12000×12000 y colgar el navegador) en una sola decodificación.
+      const { blob, tooLarge } = await compressAvatar(file)
+      if (tooLarge) {
+        setUploadError(t('perfil.uploadDimensionsError'))
+        return
+      }
+      if (!blob) throw new Error('compression failed')
+
+      const path = `${user.id}/avatar.webp`
 
       const { error: uploadErr } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { upsert: true })
+        .upload(path, blob, {
+          upsert: true,
+          contentType: 'image/webp',
+          cacheControl: '31536000',
+        })
       if (uploadErr) throw uploadErr
 
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(path)
 
+      // El nombre de archivo es estable (avatar.webp) y lo cacheamos un año, así
+      // que añadimos un query param de versión para invalidar el CDN al cambiar.
+      const versionedUrl = `${publicUrl}?v=${Date.now()}`
+
       const { error: updateErr } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: versionedUrl })
         .eq('id', user.id)
       if (updateErr) throw updateErr
 
-      setAvatarUrl(publicUrl)
+      setAvatarUrl(versionedUrl)
       await refreshProfile()
     } catch (err) {
       setUploadError(t('perfil.uploadFailed'))
