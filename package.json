@@ -13,7 +13,8 @@
     "send-daily-digest": "node scripts/send-daily-digest.js",
     "send-brand-samples": "node scripts/send-brand-samples.js",
     "build-auth-templates": "node scripts/build-auth-templates.js",
-    "generate-icons": "node scripts/generate-pwa-icons.js"
+    "generate-icons": "node scripts/generate-pwa-icons.js",
+    "recompress-avatars": "node scripts/recompress-avatars.js"
   },
   "dependencies": {
     "@sentry/react": "^8.55.2",
