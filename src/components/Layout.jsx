@@ -134,6 +134,17 @@ export default function Layout() {
   // Al cambiar de página el scroll vuelve arriba: restaura el chrome.
   useEffect(() => { setHideChrome(false) }, [location.pathname])
 
+  // Re-tocar la pestaña activa sube al principio (en vez de no hacer nada).
+  const handleNavClick = (to) => (e) => {
+    if (location.pathname === to) {
+      e.preventDefault()
+      mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+      setHideChrome(false)
+    } else {
+      haptics.tap()
+    }
+  }
+
   useEffect(() => {
     const el = mainRef.current
     if (!el) return
@@ -362,6 +373,7 @@ export default function Layout() {
               <ViewNavLink
                 key={to}
                 to={to}
+                onClick={handleNavClick(to)}
                 className={({ isActive }) =>
                   `flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-all duration-150 ${
                     isActive ? 'tab-active' : 'tab-inactive'
@@ -428,7 +440,6 @@ export default function Layout() {
           <Outlet />
         </main>
       </PullRefreshContext.Provider>
-      </ScrollChromeContext.Provider>
 
       {/* Modal de pago para crear liga (disparado tras signup).
           Se renderiza salvo que el perfil esté cargado y sea founder
@@ -519,7 +530,7 @@ export default function Layout() {
             <ViewNavLink
               key={to}
               to={to}
-              onClick={() => { if (location.pathname !== to) haptics.tap() }}
+              onClick={handleNavClick(to)}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors min-h-[60px] ${
                   isActive ? 'text-terracotta' : 'text-ink/55 active:text-ink'
@@ -555,6 +566,7 @@ export default function Layout() {
           </button>
         </div>
       </nav>
+      </ScrollChromeContext.Provider>
     </div>
   )
 }
