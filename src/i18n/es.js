@@ -398,6 +398,7 @@ export default {
     saveErrRetry: 'Reintentar',
     liveLabel: 'EN VIVO',
     finishedLabel: 'Finalizado',
+    jumpToLive: 'Ir al último resultado',
     errSaveDraft: 'Error al guardar el borrador.',
     errSubmit: 'Error al enviar el pronóstico. Inténtalo de nuevo.',
     errSaveMultiple: 'Error guardando algunos pronósticos. Inténtalo de nuevo.',

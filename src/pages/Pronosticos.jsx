@@ -632,6 +632,7 @@ export default function Pronosticos() {
   const [activeStage, setActiveStage] = useState('group')
   const [error,       setError]       = useState('')
   const [copying,     setCopying]     = useState(false)
+  const [scrollTarget, setScrollTarget] = useState(null)
 
   // No-league join modal state
   const [showLeagueModal,  setShowLeagueModal]  = useState(false)
@@ -1119,6 +1120,32 @@ export default function Pronosticos() {
     [matches, drafts]
   )
 
+  // Último partido jugándose / jugado, para el botón de salto rápido. matches
+  // viene ordenado por match_date asc, así que el último del grupo es el más
+  // reciente; si hay alguno en vivo, ese manda.
+  const latestPlayed = useMemo(() => {
+    const played = matches.filter(m => m.status === 'live' || m.status === 'finished')
+    if (played.length === 0) return null
+    const live = played.filter(m => m.status === 'live')
+    const pool = live.length ? live : played
+    return pool[pool.length - 1]
+  }, [matches])
+
+  const goToLatest = useCallback(() => {
+    if (!latestPlayed) return
+    haptics.tap()
+    setActiveStage(latestPlayed.stage)
+    setScrollTarget(latestPlayed.id)
+  }, [latestPlayed])
+
+  useEffect(() => {
+    if (!scrollTarget) return
+    const el = document.getElementById(`match-${scrollTarget}`)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setScrollTarget(null)
+  }, [scrollTarget, activeStage])
+
   const filtered = matches.filter(m => m.stage === activeStage)
   const grouped  = filtered.reduce((acc, m) => {
     const day = new Date(m.match_date).toLocaleDateString(dateLocale, {
@@ -1400,8 +1427,8 @@ export default function Pronosticos() {
                 <p className="text-xs font-semibold text-ink/50 uppercase tracking-wider mb-2 capitalize">{day}</p>
                 <div className="space-y-3">
                   {dayMatches.map(m => (
+                    <div key={`${m.id}-${activeLeague?.id ?? 'none'}`} id={`match-${m.id}`} className="scroll-mt-20">
                     <MatchCard
-                      key={`${m.id}-${activeLeague?.id ?? 'none'}`}
                       match={m}
                       prediction={predictions[m.id]}
                       onSave={handleSave}
@@ -1414,6 +1441,7 @@ export default function Pronosticos() {
                       consensus={consensus[m.id]}
                       onPreview={activeLeague ? () => setPreviewMatch(m) : null}
                     />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -1453,6 +1481,25 @@ export default function Pronosticos() {
           league={activeLeague}
           onClose={() => setPreviewMatch(null)}
         />
+      )}
+
+      {latestPlayed && matches.length > 0 && (
+        <button
+          type="button"
+          onClick={goToLatest}
+          aria-label={t('pronosticos.jumpToLive')}
+          title={t('pronosticos.jumpToLive')}
+          className="fixed bottom-20 sm:bottom-5 left-3 sm:left-5 z-40 flex items-center gap-2 pl-3 pr-3.5 py-2.5 rounded-full bg-ink/90 text-cream shadow-lg backdrop-blur hover:bg-ink transition-colors"
+        >
+          {latestPlayed.status === 'live'
+            ? <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" aria-hidden="true" />
+            : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            )}
+          <span className="text-xs font-semibold hidden sm:inline">{t('pronosticos.jumpToLive')}</span>
+        </button>
       )}
     </div>
   )

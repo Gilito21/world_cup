@@ -389,6 +389,7 @@ export default {
     saveErrRetry: 'Retry',
     liveLabel: 'LIVE',
     finishedLabel: 'Finished',
+    jumpToLive: 'Jump to latest result',
     errSaveDraft: 'Error saving draft.',
     errSubmit: 'Error submitting prediction. Please try again.',
     errSaveMultiple: 'Error saving some predictions. Please try again.',
