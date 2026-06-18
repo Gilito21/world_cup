@@ -356,6 +356,16 @@ async function main() {
   const tStart = yEnd
   const tEnd   = new Date(yEnd.getTime() + 86400_000)
 
+  // "Resultados recientes" ya NO se delimita por la ventana rígida yStart..yEnd:
+  // un resultado que llegaba tarde del proveedor caía fuera y se perdía para
+  // siempre (le pasó a Ghana–Panamá). Ahora qué partidos reportar lo decide la
+  // tabla digested_matches (cada partido se reporta una sola vez, en el primer
+  // digest que corra tras quedar finished). recentStart es solo un techo
+  // defensivo de 4 días para no escanear todo el torneo ni resucitar un partido
+  // antiquísimo que por un bug nunca se marcara. yStart/yEnd siguen usándose
+  // para los puntos de avance y para "hoy".
+  const recentStart = new Date(yEnd.getTime() - 4 * 86400_000)
+
   // ── Datos compartidos por todos los emails ─────────────────────────────
   // Las consultas que pueden devolver >1000 filas usan los wrappers
   // paginados (listAllAuthUsers, fetchAllPages). Los matches del día
@@ -363,9 +373,10 @@ async function main() {
   const [
     authUsers,
     optInProfiles,
-    { data: yesterdayMatches },
+    { data: recentFinished },
     { data: todayMatches },
     { data: alreadySent },
+    { data: digestedRows },
     standings,
   ] = await Promise.all([
     listAllAuthUsers(supabase),
@@ -378,8 +389,7 @@ async function main() {
     supabase.from('matches')
       .select('id, home_team, away_team, home_score, away_score, status, match_date, stage')
       .eq('status', 'finished')
-      .gte('match_date', yStart.toISOString())
-      .lt('match_date',  yEnd.toISOString())
+      .gte('match_date', recentStart.toISOString())
       .order('match_date'),
     supabase.from('matches')
       .select('id, home_team, away_team, match_date, stage, status')
@@ -388,6 +398,7 @@ async function main() {
       .neq('status', 'finished')
       .order('match_date'),
     supabase.from('daily_digests').select('user_id').eq('digest_date', todayKey),
+    supabase.from('digested_matches').select('match_id'),
     // Misma regla: el ranking que mostramos en el email es el de usuarios
     // confirmados, coherente con lo que ven en la app.
     fetchAllPages(supabase, s => s.from('profiles')
@@ -400,6 +411,12 @@ async function main() {
   const alreadySentIds = new Set((alreadySent ?? []).map(r => r.user_id))
   const totalUsers     = standings.length
   const positionById   = new Map(standings.map((p, i) => [p.id, i + 1]))
+
+  // Resultados recientes = partidos finished que aún no se han reportado en
+  // ningún digest. Así un resultado que llegó tarde se incluye en el siguiente
+  // resumen en vez de perderse.
+  const digestedSet      = new Set((digestedRows ?? []).map(r => r.match_id))
+  const yesterdayMatches = (recentFinished ?? []).filter(m => !digestedSet.has(m.id))
 
   // Si ayer no hubo partidos y hoy tampoco, no es interesante enviar nada.
   if ((yesterdayMatches ?? []).length === 0 && (todayMatches ?? []).length === 0) {
@@ -580,6 +597,17 @@ async function main() {
       console.error(`❌ ${profile.username}: ${err.message}`)
       errored++
     }
+  }
+
+  // Marcar como reportados los partidos incluidos, pero solo si de verdad salió
+  // al menos un email este run. Si todos estaban ya enviados (ok=0, p.ej. un
+  // re-disparo manual el mismo día), no marcamos: dejamos que el próximo digest
+  // real los reporte y nadie se quede sin verlos.
+  if (ok > 0 && yesterdayMatches.length > 0) {
+    const { error: digErr } = await supabase
+      .from('digested_matches')
+      .upsert(yesterdayMatches.map(m => ({ match_id: m.id })), { onConflict: 'match_id', ignoreDuplicates: true })
+    if (digErr) console.warn(`No se pudieron marcar partidos como reportados: ${digErr.message}`)
   }
 
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1)
