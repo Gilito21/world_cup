@@ -794,6 +794,20 @@ export default function Pronosticos() {
   // Pull-to-refresh: force a network round-trip, bypass match/pred caches.
   usePullRefresh(useCallback(() => load({ force: true }), [load]))
 
+  // Realtime: cuando un partido cambia de estado (live → finished, corrección
+  // de marcador), recargamos para reflejar el resultado y los puntos sin que
+  // el usuario tenga que hacer pull-to-refresh.
+  useEffect(() => {
+    if (!user?.id) return
+    const channel = supabase
+      .channel(`pronosticos-matches-${user.id}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'matches' },
+        () => load({ force: true }))
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [user?.id, load])
+
   // ── Consensus (most-picked score per match) ─────────────────────────────────
   // En modo global: RPC `match_consensus_v1()` agrega sobre todos los usuarios.
   // En modo per_league: RPC `match_consensus_by_league_v1(league_id)` filtra
