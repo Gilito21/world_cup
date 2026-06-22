@@ -278,16 +278,18 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               </div>
             </>
           ) : (
-            {debugInfo && (
-              <div className="bg-yellow-50 border border-yellow-300 rounded p-2 text-xs font-mono text-yellow-900 space-y-0.5 mb-2">
-                <div>👥 miembros: {debugInfo.members}</div>
-                <div>🌐 preds globales: {debugInfo.globalPreds}</div>
-                <div>🏆 preds liga: {debugInfo.leaguePreds}</div>
-                <div>🔑 league.id: {league?.id?.slice(0,8)}…</div>
-                <div>⚽ match.id: {match?.id?.slice(0,8)}…</div>
-              </div>
-            )}
-            <p className="text-center text-sm text-ink/50 py-4">{t('preview.noLeaguePredictions')}</p>
+            <>
+              {debugInfo && (
+                <div className="bg-yellow-50 border border-yellow-300 rounded p-2 text-xs font-mono text-yellow-900 space-y-0.5 mb-2">
+                  <div>👥 miembros: {debugInfo.members}</div>
+                  <div>🌐 preds globales: {debugInfo.globalPreds}</div>
+                  <div>🏆 preds liga: {debugInfo.leaguePreds}</div>
+                  <div>🔑 league.id: {league?.id?.slice(0,8)}…</div>
+                  <div>⚽ match.id: {match?.id?.slice(0,8)}…</div>
+                </div>
+              )}
+              <p className="text-center text-sm text-ink/50 py-4">{t('preview.noLeaguePredictions')}</p>
+            </>
           )}
         </div>
       </div>
