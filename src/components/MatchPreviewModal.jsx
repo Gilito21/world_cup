@@ -8,6 +8,20 @@ import useScrollLock from '../lib/useScrollLock'
 import Spinner from './Spinner'
 import SharePredictionCard from './SharePredictionCard'
 
+function DebugBox({ d }) {
+  return (
+    <div className="bg-yellow-50 border border-yellow-300 rounded p-2 text-xs font-mono text-yellow-900 space-y-0.5">
+      <div>👥 miembros: {String(d.members)}</div>
+      <div>🌐 preds globales: {String(d.globalPreds)}</div>
+      <div>🏆 preds liga: {String(d.leaguePreds)}</div>
+      {d.membersErr && <div>❌ membersErr: {d.membersErr}</div>}
+      {d.globalErr  && <div>❌ globalErr: {d.globalErr}</div>}
+      <div>🔑 league: {String(d.leagueId).slice(0,8)}</div>
+      <div>⚽ match: {String(d.matchId).slice(0,8)}</div>
+    </div>
+  )
+}
+
 function formatDateTime(date, locale) {
   return new Date(date).toLocaleString(locale, {
     weekday: 'short', day: 'numeric', month: 'short',
@@ -50,8 +64,8 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
       // Tres queries en paralelo: evita .or() que puede fallar en algunas
       // versiones del cliente Supabase JS con league_id.is.null
       const [
-        { data: memberRows },
-        { data: globalPredRows },
+        { data: memberRows,       error: membersErr },
+        { data: globalPredRows,   error: globalErr },
         { data: perLeaguePredRows },
       ] = await Promise.all([
         sq(supabase.from('league_members')
@@ -66,11 +80,17 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
           .eq('match_id', match.id)
           .eq('league_id', league.id)),
       ])
-      if (cancelled || !memberRows) { setLoading(false); return }
-
-      const allPredRows = [...(globalPredRows ?? []), ...(perLeaguePredRows ?? [])]
-      const memberIds   = new Set(memberRows.map(m => m.user_id))
-      setDebugInfo({ members: memberRows.length, globalPreds: (globalPredRows ?? []).length, leaguePreds: (perLeaguePredRows ?? []).length })
+      if (cancelled) return
+      setDebugInfo({
+        members:      memberRows?.length ?? 'null',
+        globalPreds:  globalPredRows?.length ?? 'null',
+        leaguePreds:  perLeaguePredRows?.length ?? 'null',
+        membersErr:   membersErr?.message ?? null,
+        globalErr:    globalErr?.message ?? null,
+        leagueId:     league?.id ?? 'undefined',
+        matchId:      match?.id ?? 'undefined',
+      })
+      if (!memberRows) { setLoading(false); return }
       const modeByUser  = Object.fromEntries(memberRows.map(m => [m.user_id, m.prediction_mode ?? 'global']))
 
       // Indexar predicciones por tipo para lookup rápido
@@ -246,7 +266,10 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               <p className="text-xs text-ink/60">{t('preview.lockedDesc')}</p>
             </div>
           ) : loading ? (
-            <div className="flex justify-center py-6"><Spinner /></div>
+            <>
+              <div className="flex justify-center py-6"><Spinner /></div>
+              {debugInfo && <DebugBox d={debugInfo} />}
+            </>
           ) : consensus && consensus.total > 0 ? (
             <>
               {/* Consensus */}
@@ -279,15 +302,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
             </>
           ) : (
             <>
-              {debugInfo && (
-                <div className="bg-yellow-50 border border-yellow-300 rounded p-2 text-xs font-mono text-yellow-900 space-y-0.5 mb-2">
-                  <div>👥 miembros: {debugInfo.members}</div>
-                  <div>🌐 preds globales: {debugInfo.globalPreds}</div>
-                  <div>🏆 preds liga: {debugInfo.leaguePreds}</div>
-                  <div>🔑 league.id: {league?.id?.slice(0,8)}…</div>
-                  <div>⚽ match.id: {match?.id?.slice(0,8)}…</div>
-                </div>
-              )}
+              {debugInfo && <DebugBox d={debugInfo} />}
               <p className="text-center text-sm text-ink/50 py-4">{t('preview.noLeaguePredictions')}</p>
             </>
           )}
