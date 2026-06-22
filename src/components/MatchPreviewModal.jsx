@@ -27,6 +27,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
   const [predictions, setPredictions] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showShare, setShowShare] = useState(false)
+  const [debugInfo, setDebugInfo] = useState(null)
 
   const matchStart = new Date(match.match_date).getTime()
   const hasStarted = Date.now() >= matchStart
@@ -69,6 +70,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
 
       const allPredRows = [...(globalPredRows ?? []), ...(perLeaguePredRows ?? [])]
       const memberIds   = new Set(memberRows.map(m => m.user_id))
+      setDebugInfo({ members: memberRows.length, globalPreds: (globalPredRows ?? []).length, leaguePreds: (perLeaguePredRows ?? []).length })
       const modeByUser  = Object.fromEntries(memberRows.map(m => [m.user_id, m.prediction_mode ?? 'global']))
 
       // Indexar predicciones por tipo para lookup rápido
@@ -276,6 +278,15 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               </div>
             </>
           ) : (
+            {debugInfo && (
+              <div className="bg-yellow-50 border border-yellow-300 rounded p-2 text-xs font-mono text-yellow-900 space-y-0.5 mb-2">
+                <div>👥 miembros: {debugInfo.members}</div>
+                <div>🌐 preds globales: {debugInfo.globalPreds}</div>
+                <div>🏆 preds liga: {debugInfo.leaguePreds}</div>
+                <div>🔑 league.id: {league?.id?.slice(0,8)}…</div>
+                <div>⚽ match.id: {match?.id?.slice(0,8)}…</div>
+              </div>
+            )}
             <p className="text-center text-sm text-ink/50 py-4">{t('preview.noLeaguePredictions')}</p>
           )}
         </div>
