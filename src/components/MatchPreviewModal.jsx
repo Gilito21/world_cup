@@ -8,20 +8,6 @@ import useScrollLock from '../lib/useScrollLock'
 import Spinner from './Spinner'
 import SharePredictionCard from './SharePredictionCard'
 
-function DebugBox({ d }) {
-  return (
-    <div className="bg-yellow-50 border border-yellow-300 rounded p-2 text-xs font-mono text-yellow-900 space-y-0.5">
-      <div>👥 miembros: {String(d.members)}</div>
-      <div>🌐 preds globales: {String(d.globalPreds)}</div>
-      <div>🏆 preds liga: {String(d.leaguePreds)}</div>
-      {d.membersErr && <div>❌ membersErr: {d.membersErr}</div>}
-      {d.globalErr  && <div>❌ globalErr: {d.globalErr}</div>}
-      <div>🔑 league: {String(d.leagueId).slice(0,8)}</div>
-      <div>⚽ match: {String(d.matchId).slice(0,8)}</div>
-    </div>
-  )
-}
-
 function formatDateTime(date, locale) {
   return new Date(date).toLocaleString(locale, {
     weekday: 'short', day: 'numeric', month: 'short',
@@ -41,7 +27,6 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
   const [predictions, setPredictions] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showShare, setShowShare] = useState(false)
-  const [debugInfo, setDebugInfo] = useState(null)
 
   const matchStart = new Date(match.match_date).getTime()
   const hasStarted = Date.now() >= matchStart
@@ -61,15 +46,16 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
 
     let cancelled = false
     ;(async () => {
-      // Tres queries en paralelo: evita .or() que puede fallar en algunas
-      // versiones del cliente Supabase JS con league_id.is.null
+      // Fetch members and predictions in parallel.
+      // Profiles are fetched separately to avoid the schema-cache join issue
+      // that causes `profiles(username, avatar_url)` to fail intermittently.
       const [
-        { data: memberRows,       error: membersErr },
-        { data: globalPredRows,   error: globalErr },
+        { data: memberRows },
+        { data: globalPredRows },
         { data: perLeaguePredRows },
       ] = await Promise.all([
         sq(supabase.from('league_members')
-          .select('user_id, prediction_mode, profiles(username, avatar_url)')
+          .select('user_id, prediction_mode')
           .eq('league_id', league.id)),
         sq(supabase.from('predictions')
           .select('user_id, home_score, away_score, tiebreaker, points_earned, league_id')
@@ -81,32 +67,35 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
           .eq('league_id', league.id)),
       ])
       if (cancelled) return
-      setDebugInfo({
-        members:      memberRows?.length ?? 'null',
-        globalPreds:  globalPredRows?.length ?? 'null',
-        leaguePreds:  perLeaguePredRows?.length ?? 'null',
-        membersErr:   membersErr?.message ?? null,
-        globalErr:    globalErr?.message ?? null,
-        leagueId:     league?.id ?? 'undefined',
-        matchId:      match?.id ?? 'undefined',
-      })
       if (!memberRows) { setLoading(false); return }
-      const modeByUser  = Object.fromEntries(memberRows.map(m => [m.user_id, m.prediction_mode ?? 'global']))
 
-      // Indexar predicciones por tipo para lookup rápido
+      const memberUserIds = memberRows.map(m => m.user_id)
+      const { data: profileRows } = await sq(
+        supabase.from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', memberUserIds)
+      )
+      if (cancelled) return
+
+      const profileById = Object.fromEntries((profileRows ?? []).map(p => [p.id, p]))
+      const membersWithProfiles = memberRows.map(m => ({
+        ...m,
+        profiles: profileById[m.user_id] ?? null,
+      }))
+
+      const memberIdSet = new Set(memberUserIds)
+      const allPredRows = [...(globalPredRows ?? []), ...(perLeaguePredRows ?? [])]
+
       const perLeaguePred = {}
-      const globalPred    = {}
+      const globalPred = {}
       for (const p of allPredRows) {
-        if (!memberIds.has(p.user_id)) continue
+        if (!memberIdSet.has(p.user_id)) continue
         if (p.league_id === league.id) perLeaguePred[p.user_id] = p
         else if (p.league_id === null)  globalPred[p.user_id]    = p
       }
-      // Para cada miembro, la predicción autoritativa según su modo.
-      // Si es per_league pero no tiene predicción per-liga para ESTE partido
-      // (puede pasar si la predijo antes de cambiar de modo), usamos la global
-      // como fallback para que aparezca en el panel de la liga.
-      const predRows = memberRows.reduce((acc, m) => {
-        const mode = modeByUser[m.user_id] ?? 'global'
+
+      const predRows = membersWithProfiles.reduce((acc, m) => {
+        const mode = m.prediction_mode ?? 'global'
         const pred = mode === 'per_league'
           ? (perLeaguePred[m.user_id] ?? globalPred[m.user_id])
           : globalPred[m.user_id]
@@ -114,7 +103,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
         return acc
       }, [])
 
-      setMembers(memberRows)
+      setMembers(membersWithProfiles)
       setPredictions(predRows)
       setLoading(false)
     })()
@@ -266,10 +255,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               <p className="text-xs text-ink/60">{t('preview.lockedDesc')}</p>
             </div>
           ) : loading ? (
-            <>
-              <div className="flex justify-center py-6"><Spinner /></div>
-              {debugInfo && <DebugBox d={debugInfo} />}
-            </>
+            <div className="flex justify-center py-6"><Spinner /></div>
           ) : consensus && consensus.total > 0 ? (
             <>
               {/* Consensus */}
@@ -301,10 +287,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
               </div>
             </>
           ) : (
-            <>
-              {debugInfo && <DebugBox d={debugInfo} />}
-              <p className="text-center text-sm text-ink/50 py-4">{t('preview.noLeaguePredictions')}</p>
-            </>
+            <p className="text-center text-sm text-ink/50 py-4">{t('preview.noLeaguePredictions')}</p>
           )}
         </div>
       </div>
