@@ -46,7 +46,7 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
 
     let cancelled = false
     ;(async () => {
-      const [{ data: memberRows }, { data: allPredRows }] = await Promise.all([
+      const [{ data: memberRows, error: membersErr }, { data: allPredRows, error: predsErr }] = await Promise.all([
         sq(supabase.from('league_members')
           .select('user_id, prediction_mode, profiles(username, avatar_url)')
           .eq('league_id', league.id)),
@@ -55,6 +55,9 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
           .eq('match_id', match.id)
           .or(`league_id.eq.${league.id},league_id.is.null`)),
       ])
+      console.log('[preview] league.id:', league.id, 'match.id:', match.id)
+      console.log('[preview] memberRows:', memberRows?.length, membersErr)
+      console.log('[preview] allPredRows:', allPredRows?.length, predsErr, allPredRows)
       if (cancelled || !memberRows) { setLoading(false); return }
 
       const memberIds  = new Set(memberRows.map(m => m.user_id))
@@ -67,7 +70,9 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
         if (!memberIds.has(p.user_id)) continue
         if (p.league_id === league.id) perLeaguePred[p.user_id] = p
         else if (p.league_id === null)  globalPred[p.user_id]    = p
+        else console.log('[preview] pred skipped, league_id:', p.league_id, typeof p.league_id)
       }
+      console.log('[preview] memberIds:', [...memberIds].length, 'globalPred:', Object.keys(globalPred).length, 'perLeaguePred:', Object.keys(perLeaguePred).length)
       // Para cada miembro, la predicción autoritativa según su modo.
       // Si es per_league pero no tiene predicción per-liga para ESTE partido
       // (puede pasar si la predijo antes de cambiar de modo), usamos la global
