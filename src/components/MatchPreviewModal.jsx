@@ -46,29 +46,25 @@ export default function MatchPreviewModal({ match, userPrediction, league, onClo
 
     let cancelled = false
     ;(async () => {
-      const { data: memberRows } = await sq(
-        supabase.from('league_members')
+      const [{ data: memberRows }, { data: allPredRows }] = await Promise.all([
+        sq(supabase.from('league_members')
           .select('user_id, prediction_mode, profiles(username, avatar_url)')
-          .eq('league_id', league.id)
-      )
-      if (cancelled || !memberRows) { setLoading(false); return }
-
-      const userIds    = memberRows.map(m => m.user_id)
-      const modeByUser = Object.fromEntries(memberRows.map(m => [m.user_id, m.prediction_mode ?? 'global']))
-
-      const { data: allPredRows } = await sq(
-        supabase.from('predictions')
+          .eq('league_id', league.id)),
+        sq(supabase.from('predictions')
           .select('user_id, home_score, away_score, tiebreaker, points_earned, league_id')
           .eq('match_id', match.id)
-          .or(`league_id.eq.${league.id},league_id.is.null`)
-          .in('user_id', userIds)
-      )
-      if (cancelled) return
+          .or(`league_id.eq.${league.id},league_id.is.null`)),
+      ])
+      if (cancelled || !memberRows) { setLoading(false); return }
+
+      const memberIds  = new Set(memberRows.map(m => m.user_id))
+      const modeByUser = Object.fromEntries(memberRows.map(m => [m.user_id, m.prediction_mode ?? 'global']))
 
       // Indexar predicciones por tipo para lookup rápido
       const perLeaguePred = {}
       const globalPred    = {}
       for (const p of (allPredRows ?? [])) {
+        if (!memberIds.has(p.user_id)) continue
         if (p.league_id === league.id) perLeaguePred[p.user_id] = p
         else if (p.league_id === null)  globalPred[p.user_id]    = p
       }
