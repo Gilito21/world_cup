@@ -25,7 +25,7 @@ Porra Mundial 2026 — predicciones con ligas privadas.
 **Estructura clave**:
 - `src/pages/` — vistas (`Pronosticos`, `Clasificacion`, `Bracket`, `Extras`, `AdminLeague`, …)
 - `src/components/`, `src/contexts/`, `src/lib/`, `src/utils/`, `src/i18n/`
-- `supabase/migrations/NNN_<slug>.sql` — append-only, siempre el siguiente número libre (hoy va por 043)
+- `supabase/migrations/NNN_<slug>.sql` — append-only, siempre el siguiente número libre (hoy va por 046)
 - `supabase/functions/<name>/` — edge functions
 - `supabase/auth-templates/` — fuente; compilar con `npm run build-auth-templates`
 - `scripts/` — jobs corridos por GitHub Actions; muchos soportan `--preview` / `--dry-run`
@@ -76,6 +76,13 @@ Lee las migraciones relevantes para no romper invariantes:
 - `011_tiebreaker.sql`, `012_special_predictions.sql` — extras y desempates
 - `025_copy_predictions_atomic.sql`, `026_on_match_finished_special_points.sql` — cálculo de puntos
 - `021_feed_and_postmortem.sql` — feed/postmortem
+
+## Extras (preguntas especiales)
+
+Las `special_questions` (`mbappe_vs_lamine`, `top_scorer` = MVP, `total_cards_weighted`) no tienen campo de marcador en vivo: el conteo "hasta ahora" se mete a mano en la `description` vía migración (patrón de 015/017/046).
+
+- **Tarjetas**: cuando te pida actualizar las tarjetas del extra, saca los totales de **ESPN** (`https://espndeportes.espn.com/futbol/estadisticas/_/liga/FIFA.WORLD/vista/tarjetas`). La página es JS; los datos fiables salen de la API: scoreboard `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=AAAAMMDD-AAAAMMDD&limit=200` → por cada evento completado, summary `…/summary?event=<id>` → `boxscore.teams[].statistics` (`yellowCards`, `redCards`). El valor de la pregunta es **amarillas + 2 × rojas**.
+- **Goles Mbappé/Lamine**: valores que yo te diga.
 
 ## Estilo de código
 
