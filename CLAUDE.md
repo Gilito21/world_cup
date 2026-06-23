@@ -81,8 +81,13 @@ Lee las migraciones relevantes para no romper invariantes:
 
 Las `special_questions` (`mbappe_vs_lamine`, `top_scorer` = MVP, `total_cards_weighted`) no tienen campo de marcador en vivo: el conteo "hasta ahora" se mete a mano en la `description` vía migración (patrón de 015/017/046).
 
-- **Tarjetas**: cuando te pida actualizar las tarjetas del extra, saca los totales de **ESPN** (`https://espndeportes.espn.com/futbol/estadisticas/_/liga/FIFA.WORLD/vista/tarjetas`). La página es JS; los datos fiables salen de la API: scoreboard `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=AAAAMMDD-AAAAMMDD&limit=200` → por cada evento completado, summary `…/summary?event=<id>` → `boxscore.teams[].statistics` (`yellowCards`, `redCards`). El valor de la pregunta es **amarillas + 2 × rojas**.
-- **Goles Mbappé/Lamine**: valores que yo te diga.
+**Cuando te pida "actualizar el extra"/"actualizar la página de extra", actualiza goles Y tarjetas, ambos desde la API de ESPN (la web `espndeportes.espn.com/.../liga/FIFA.WORLD/...` es JS y viene vacía por scraping directo).** Fuente única para los dos:
+
+1. Lista de partidos jugados: `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=AAAAMMDD-AAAAMMDD&limit=200` → quédate con los eventos `status.type.completed`.
+2. Por cada evento, el acta: `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=<id>`.
+
+- **Goles** (`mbappe_vs_lamine`): suma por jugador los `keyEvents` con `scoringPlay=true` y `type.type=='goal'` (excluye los que el `text` diga "own goal"); el goleador es `participants[0].athlete.displayName`. Filtra "Kylian Mbappé" y "Lamine Yamal". Captura a los de 1 gol (la tabla top-20 de 365scores no los muestra). Verificado 23-jun-2026: Mbappé 4, Lamine 1 (top: Messi 5).
+- **Tarjetas** (`total_cards_weighted`): suma `boxscore.teams[].statistics` (`yellowCards`, `redCards`) de cada acta. El valor de la pregunta es **amarillas + 2 × rojas**.
 
 ## Estilo de código
 
