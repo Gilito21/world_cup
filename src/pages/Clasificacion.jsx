@@ -258,7 +258,7 @@ export default function Clasificacion() {
     else setLoading(true)
     setLoadError('')
     try {
-      const [{ data: profiles, error }, { data: advanceRows }] = await Promise.all([
+      const [{ data: profiles, error }, { data: advanceRows }, { data: statsRows }] = await Promise.all([
         sq(supabase.from('profiles')
           .select('id, username, total_points, avatar_url, company')
           .eq('email_confirmed', true)
@@ -271,6 +271,9 @@ export default function Clasificacion() {
         sq(supabase.from('advance_points')
           .select('user_id, team, stage, points')
           .is('league_id', null)),
+        // Desglose exactos/aciertos del ámbito global, calculado en servidor
+        // (RPC global_standings) para no traerse miles de predicciones.
+        sq(supabase.rpc('global_standings')),
       ])
 
       if (profiles) {
@@ -278,6 +281,10 @@ export default function Clasificacion() {
         ;(advanceRows ?? []).forEach(r => {
           advanceByUser[r.user_id] = (advanceByUser[r.user_id] ?? 0) + (r.points ?? 0)
         })
+
+        const statsByUser = Object.fromEntries(
+          (statsRows ?? []).map(s => [s.user_id, s])
+        )
 
         // Breakdown por equipo para el usuario logueado (ámbito global).
         const myAdvance = {}
@@ -293,7 +300,12 @@ export default function Clasificacion() {
         const next = profiles
           .map(p => {
             const total = (p.total_points ?? 0) + (advanceByUser[p.id] ?? 0)
-            return { ...p, league_points: total, stats: { exact: 0, correct: 0, total: 0 } }
+            const st    = statsByUser[p.id] ?? { exact: 0, correct: 0, total: 0 }
+            return {
+              ...p,
+              league_points: total,
+              stats: { exact: st.exact ?? 0, correct: st.correct ?? 0, total: st.total ?? 0 },
+            }
           })
           .sort((a, b) =>
             b.league_points - a.league_points ||
