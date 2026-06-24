@@ -309,6 +309,7 @@ export default function Clasificacion() {
           })
           .sort((a, b) =>
             b.league_points - a.league_points ||
+            (b.stats?.exact ?? 0) - (a.stats?.exact ?? 0) ||
             (a.username ?? '').localeCompare(b.username ?? '')
           )
           .map((p, i) => ({ ...p, position: i + 1 }))
@@ -421,10 +422,12 @@ export default function Clasificacion() {
             stats:         { exact: st.exact ?? 0, correct: st.correct ?? 0, total: st.total ?? 0 },
           }
         })
-        // Sort por puntos desc; en empates desempate estable por username
-        // para que la posición no parpadee entre renders al recalcular.
+        // Sort por puntos desc; en empate, más exactos; si sigue igual,
+        // desempate estable por username para que la posición no parpadee
+        // entre renders al recalcular.
         .sort((a, b) =>
           b.league_points - a.league_points ||
+          (b.stats?.exact ?? 0) - (a.stats?.exact ?? 0) ||
           (a.username ?? '').localeCompare(b.username ?? '')
         )
         .map((entry, i) => ({ ...entry, position: i + 1 }))
