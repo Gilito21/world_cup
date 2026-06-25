@@ -15,7 +15,6 @@ import MatchPreviewModal from '../components/MatchPreviewModal'
 import LeagueModal from '../components/LeagueModal'
 import PaymentModal from '../components/PaymentModal'
 import LeagueCreatedModal from '../components/LeagueCreatedModal'
-import PredictedStandings from '../components/PredictedStandings'
 import { Flag, teamName } from '../utils/teams'
 import { computePredictedKnockout } from '../utils/tournament'
 import { EditorialBand } from '../components/Editorial'
@@ -1464,10 +1463,6 @@ export default function Pronosticos() {
             ))}
           </div>
         </div>
-      )}
-
-      {matches.length > 0 && (
-        <PredictedStandings matches={matches} predictions={predictions} drafts={drafts} />
       )}
 
       {showLeagueModal && (
