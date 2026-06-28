@@ -1,0 +1,26 @@
+name: Enviar email explicativo de puntos (one-shot)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - run: echo "SI" | node scripts/send-points-explainer.js --send-all
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BREVO_API_KEY:             ${{ secrets.BREVO_API_KEY }}
+          APP_URL:                   ${{ secrets.APP_URL }}
+          FROM_EMAIL:                ${{ secrets.FROM_EMAIL }}
+          FROM_NAME:                 ${{ secrets.FROM_NAME }}
