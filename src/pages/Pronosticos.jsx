@@ -263,7 +263,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
 
 // ─── MATCH CARD ───────────────────────────────────────────────────────────────
 
-function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, isPastCutoff, onPreview, consensus }) {
+function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, realHome, realAway, isPastCutoff, onPreview, consensus }) {
   const { t, dateLocale } = useLang()
   const STAGE_INFO = buildStageInfo(t)
   const STATUS_BADGE = useMemo(() => ({
@@ -279,10 +279,12 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
                       match.status !== 'scheduled' ||
                       Date.now() >= new Date(match.match_date).getTime() - 30 * 60 * 1000
 
-  const displayHome = isTbd(match.home_team) ? (predictedHome ?? match.home_team) : match.home_team
-  const displayAway = isTbd(match.away_team) ? (predictedAway ?? match.away_team) : match.away_team
+  // Para display: equipos reales del bracket (si disponibles) > cascade del usuario > TBD
+  const displayHome = isTbd(match.home_team) ? (realHome ?? predictedHome ?? match.home_team) : match.home_team
+  const displayAway = isTbd(match.away_team) ? (realAway ?? predictedAway ?? match.away_team) : match.away_team
+  // 🔮 solo cuando mostramos el cascade del usuario (los equipos reales aún no están disponibles)
   const hasPredictedTeams = (isTbd(match.home_team) || isTbd(match.away_team)) &&
-                            (predictedHome || predictedAway)
+                            !realHome && !realAway && (predictedHome || predictedAway)
 
   // El consenso global solo tiene sentido si sabemos quiénes juegan. En
   // eliminatorias eso requiere que el waterfall de mis picks de grupos (o los
@@ -410,7 +412,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="flex-1 flex items-center justify-end gap-1.5 sm:gap-2 min-w-0">
           <span className={`text-sm font-semibold truncate text-right ${
-            isTbd(match.home_team) && predictedHome ? 'text-violet-600' : 'text-ink'
+            isTbd(match.home_team) && !realHome && predictedHome ? 'text-violet-600' : 'text-ink'
           }`}>
             {teamName(displayHome)}
           </span>
@@ -463,12 +465,19 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
         <div className="flex-1 flex items-center justify-start gap-1.5 sm:gap-2 min-w-0">
           <Flag team={displayAway} />
           <span className={`text-sm font-semibold truncate ${
-            isTbd(match.away_team) && predictedAway ? 'text-violet-600' : 'text-ink'
+            isTbd(match.away_team) && !realAway && predictedAway ? 'text-violet-600' : 'text-ink'
           }`}>
             {teamName(displayAway)}
           </span>
         </div>
       </div>
+
+      {/* Tu cuadro: equipos predichos cuando difieren de los reales */}
+      {isKnockout && !isFinished && realHome && predictedHome && predictedHome !== realHome && (
+        <p className="text-[10px] text-ink/50 text-center mt-1.5">
+          Tu cuadro: {teamName(predictedHome)} – {teamName(predictedAway ?? '')}
+        </p>
+      )}
 
       {/* Tiebreaker selector: knockout draw predictions only */}
       {isKnockout && isDraw && !isFinished && (
@@ -507,30 +516,35 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
       )}
 
       {/* Footer */}
-      {isFinished && prediction && (
-        <div className="mt-3 pt-3 border-t border-ink/20 text-center text-xs text-ink/60 space-y-1">
-          <div>
-            {t('pronosticos.myPrediction')}{' '}
-            <span className="text-ink/80 font-medium">
-              {teamName(displayHome)} {prediction.home_score} – {prediction.away_score} {teamName(displayAway)}
-            </span>
-          </div>
-          {isKnockout && match.home_score === match.away_score && match.winner && (
+      {isFinished && prediction && (() => {
+        // Para "Tu pronóstico:" usar equipos del cascade del usuario (lo que pensaba que jugaría)
+        const predH = (isTbd(match.home_team) && predictedHome) ? predictedHome : displayHome
+        const predA = (isTbd(match.away_team) && predictedAway) ? predictedAway : displayAway
+        return (
+          <div className="mt-3 pt-3 border-t border-ink/20 text-center text-xs text-ink/60 space-y-1">
             <div>
-              {t('pronosticos.advanced')}{' '}
-              <span className="font-medium text-ink/70">
-                {match.winner === 'home' ? teamName(displayHome) : teamName(displayAway)}
+              {t('pronosticos.myPrediction')}{' '}
+              <span className="text-ink/80 font-medium">
+                {teamName(predH)} {prediction.home_score} – {prediction.away_score} {teamName(predA)}
               </span>
-              {prediction.tiebreaker && (
-                <span className={`ml-1.5 font-medium ${prediction.tiebreaker === match.winner ? 'text-green-600' : 'text-red-500'}`}>
-                  {`(${t('pronosticos.youPredicted', { team: prediction.tiebreaker === 'home' ? teamName(displayHome) : teamName(displayAway) })} `}
-                  {prediction.tiebreaker === match.winner ? '✓)' : '✗)'}
-                </span>
-              )}
             </div>
-          )}
-        </div>
-      )}
+            {isKnockout && match.home_score === match.away_score && match.winner && (
+              <div>
+                {t('pronosticos.advanced')}{' '}
+                <span className="font-medium text-ink/70">
+                  {match.winner === 'home' ? teamName(displayHome) : teamName(displayAway)}
+                </span>
+                {prediction.tiebreaker && (
+                  <span className={`ml-1.5 font-medium ${prediction.tiebreaker === match.winner ? 'text-green-600' : 'text-red-500'}`}>
+                    {`(${t('pronosticos.youPredicted', { team: prediction.tiebreaker === 'home' ? teamName(predH) : teamName(predA) })} `}
+                    {prediction.tiebreaker === match.winner ? '✓)' : '✗)'}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Auto-save status row (only while the card is editable) */}
       {!isLocked && !isFinished && (
@@ -855,6 +869,18 @@ export default function Pronosticos() {
     return computePredictedKnockout(matches, predMap)
   }, [matches, predictions, drafts])
 
+  // ── Cascade real: resultados reales → equipos reales en cada cruce ──────────
+  const realKnockoutOverlay = useMemo(() => {
+    if (!matches.length) return {}
+    const realPredMap = {}
+    for (const m of matches) {
+      if (m.home_score != null && m.away_score != null) {
+        realPredMap[m.id] = { home_score: m.home_score, away_score: m.away_score, tiebreaker: m.winner ?? null }
+      }
+    }
+    return computePredictedKnockout(matches, realPredMap)
+  }, [matches])
+
   // ── Save a single draft ─────────────────────────────────────────────────────
   const handleSave = useCallback(async (matchId, home, away, tiebreaker = null) => {
     setError('')
@@ -994,10 +1020,13 @@ export default function Pronosticos() {
       const c = consensus[m.id]
       if (!c) return false
       // Solo rellenamos partidos cuyos equipos conocemos: en eliminatorias eso
-      // exige que el waterfall de mis picks de grupos haya determinado ambos.
-      // No tiene sentido poner un marcador en un cruce que sigue TBD vs TBD.
-      const dh = isTbd(m.home_team) ? (predictedOverlay[m.id]?.homeTeam ?? m.home_team) : m.home_team
-      const da = isTbd(m.away_team) ? (predictedOverlay[m.id]?.awayTeam ?? m.away_team) : m.away_team
+      // exige tener los equipos reales (o el cascade del usuario como fallback).
+      const dh = isTbd(m.home_team)
+        ? (realKnockoutOverlay[m.id]?.homeTeam ?? predictedOverlay[m.id]?.homeTeam ?? m.home_team)
+        : m.home_team
+      const da = isTbd(m.away_team)
+        ? (realKnockoutOverlay[m.id]?.awayTeam ?? predictedOverlay[m.id]?.awayTeam ?? m.away_team)
+        : m.away_team
       if (isTbd(dh) || isTbd(da)) return false
       // Skip knockout matches where consensus is a draw — those need a
       // tiebreaker the user has to pick manually.
@@ -1452,6 +1481,8 @@ export default function Pronosticos() {
                       onTiebreakerChange={handleTiebreakerChange}
                       predictedHome={predictedOverlay[m.id]?.homeTeam}
                       predictedAway={predictedOverlay[m.id]?.awayTeam}
+                      realHome={realKnockoutOverlay[m.id]?.homeTeam}
+                      realAway={realKnockoutOverlay[m.id]?.awayTeam}
                       isPastCutoff={isPastCutoff}
                       consensus={consensus[m.id]}
                       onPreview={activeLeague ? () => setPreviewMatch(m) : null}

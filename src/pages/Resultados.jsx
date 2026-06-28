@@ -11,6 +11,11 @@ import { MatchListSkeleton } from '../components/Skeleton'
 import MatchPostmortem from '../components/MatchPostmortem'
 import { EditorialBand, EditorialStats } from '../components/Editorial'
 import { Flag, teamName } from '../utils/teams'
+import { computePredictedKnockout } from '../utils/tournament'
+
+function isTbd(name) {
+  return !name || name === 'TBD' || name === 'TBA' || name === 'Por determinar'
+}
 
 function formatDate(dateStr, locale) {
   return new Date(dateStr).toLocaleDateString(locale, {
@@ -64,9 +69,11 @@ function PredRow({ entry, realHome, realAway }) {
 }
 
 // ── Tarjeta de partido finalizado ────────────────────────────────────────────
-function FinishedMatchCard({ match, myPrediction, league }) {
+function FinishedMatchCard({ match, myPrediction, league, realHome, realAway }) {
   const { user }   = useAuth()
   const { t, dateLocale } = useLang()
+  const effectiveHome = (isTbd(match.home_team) && realHome) ? realHome : match.home_team
+  const effectiveAway = (isTbd(match.away_team) && realAway) ? realAway : match.away_team
   const winner     = getWinner(match.home_score, match.away_score)
   const [expanded, setExpanded]     = useState(false)
   const [allPreds, setAllPreds]     = useState(null)
@@ -143,9 +150,9 @@ function FinishedMatchCard({ match, myPrediction, league }) {
         <div className="flex items-center gap-3">
           <div className={`flex-1 flex items-center justify-end gap-2 min-w-0 ${winner !== 'home' ? 'opacity-60' : ''}`}>
             <span className={`text-sm font-semibold truncate text-right ${winner === 'home' ? 'text-ink' : 'text-ink/50'}`}>
-              {teamName(match.home_team)}
+              {teamName(effectiveHome)}
             </span>
-            <Flag team={match.home_team} />
+            <Flag team={effectiveHome} />
           </div>
 
           <div className="flex-shrink-0 flex items-center gap-2 bg-paper rounded-none px-4 py-2 border border-ink/30">
@@ -155,9 +162,9 @@ function FinishedMatchCard({ match, myPrediction, league }) {
           </div>
 
           <div className={`flex-1 flex items-center justify-start gap-2 min-w-0 ${winner !== 'away' ? 'opacity-60' : ''}`}>
-            <Flag team={match.away_team} />
+            <Flag team={effectiveAway} />
             <span className={`text-sm font-semibold truncate ${winner === 'away' ? 'text-ink' : 'text-ink/50'}`}>
-              {teamName(match.away_team)}
+              {teamName(effectiveAway)}
             </span>
           </div>
         </div>
@@ -255,6 +262,7 @@ export default function Resultados() {
     final:         t('stages.final'),
   }), [t])
 
+  const [allMatches, setAllMatches]   = useState(() => getMatchCache() ?? [])
   const [matches, setMatches]         = useState(() => {
     const cached = getMatchCache()
     // Cache canónico = ascendente. En esta página presentamos los partidos
@@ -264,6 +272,17 @@ export default function Resultados() {
   const [predictions, setPredictions] = useState({})
   const [loading, setLoading]         = useState(() => !getMatchCache())
   const [filter, setFilter]           = useState('all')
+
+  const realKnockoutOverlay = useMemo(() => {
+    if (!allMatches.length) return {}
+    const realPredMap = {}
+    for (const m of allMatches) {
+      if (m.home_score != null && m.away_score != null) {
+        realPredMap[m.id] = { home_score: m.home_score, away_score: m.away_score, tiebreaker: m.winner ?? null }
+      }
+    }
+    return computePredictedKnockout(allMatches, realPredMap)
+  }, [allMatches])
 
   const load = useCallback(async ({ force = false } = {}) => {
     const predictionMode = activeLeague?.prediction_mode ?? 'global'
@@ -291,6 +310,7 @@ export default function Resultados() {
       ])
       if (allMatchData) {
         setMatchCache(allMatchData)
+        setAllMatches(allMatchData)
         // Mostrar los finalizados de más reciente a más antiguo.
         setMatches(allMatchData.filter(m => m.status === 'finished').slice().reverse())
       }
@@ -422,6 +442,8 @@ export default function Resultados() {
                     match={m}
                     myPrediction={predictions[m.id]}
                     league={activeLeague ?? null}
+                    realHome={realKnockoutOverlay[m.id]?.homeTeam ?? null}
+                    realAway={realKnockoutOverlay[m.id]?.awayTeam ?? null}
                   />
                 ))}
               </div>
