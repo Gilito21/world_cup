@@ -1041,12 +1041,13 @@ export function computePredictedKnockout(dbMatches, userPredMap) {
     if (m.stage === 'group') continue
     ;(dbByStage[m.stage] = dbByStage[m.stage] ?? []).push(m)
   }
+  // Orden por fecha = fallback posicional para rondas cuyos equipos reales aún
+  // no se conocen (R16+). Coincide con el orden con el que los usuarios metieron
+  // sus picks (la app siempre mostró los cruces ordenados por fecha), así que
+  // leer sus predicciones por fecha las interpreta en el hueco correcto. Las
+  // rondas con equipos reales (R32) se emparejan por equipos, no por aquí.
   for (const stage of Object.keys(dbByStage)) {
-    dbByStage[stage].sort((a, b) =>
-      (a.external_id != null && b.external_id != null)
-        ? a.external_id - b.external_id
-        : new Date(a.match_date) - new Date(b.match_date)
-    )
+    dbByStage[stage].sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
   }
 
   // Real R32 occupants (from actual results) → identify each real fixture's slot.
