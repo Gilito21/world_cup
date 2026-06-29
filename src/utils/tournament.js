@@ -1029,22 +1029,59 @@ export function computePredictedKnockout(dbMatches, userPredMap) {
   // ── Step 2: build predicted R32 bracket ───────────────────────────────────
   const r32Bracket = buildRoundOf32(resolvedStandings)  // 16 items in template order
 
-  // ── Step 3: pair DB knockout matches with bracket positions ───────────────
-  // For each knockout stage, sort DB matches by date → index = bracket position
+  // ── Step 3: link each DB knockout match to its bracket slot ───────────────
+  // The robust key is the REAL teams: once a fixture has actual teams, we know
+  // which template slot it is (e.g. España–Austria = 1H vs 2J = R32_M12) by
+  // matching against the bracket built from the REAL standings. football-data
+  // does NOT order knockout fixtures by bracket/date, so positional pairing
+  // pinned the wrong slot onto each match. Positional (by external_id) is kept
+  // only as a fallback for fixtures whose real teams aren't known yet (TBD).
   const dbByStage = {}
   for (const m of dbMatches) {
     if (m.stage === 'group') continue
     ;(dbByStage[m.stage] = dbByStage[m.stage] ?? []).push(m)
   }
   for (const stage of Object.keys(dbByStage)) {
-    // Order by external_id (football-data fixture id = FIFA match number =
-    // bracket/template order). Fall back to match_date only when an id is
-    // missing, so legacy/manually-seeded rows still resolve deterministically.
     dbByStage[stage].sort((a, b) =>
       (a.external_id != null && b.external_id != null)
         ? a.external_id - b.external_id
         : new Date(a.match_date) - new Date(b.match_date)
     )
+  }
+
+  // Real R32 occupants (from actual results) → identify each real fixture's slot.
+  const realStandings = filterCompleteGroups(computeAllStandings(dbMatches), dbMatches)
+  const realR32       = buildRoundOf32(realStandings)
+
+  // slotToDb: bracketMatchId → { dbMatch, sameOrient }
+  // sameOrient = DB home_team is the slot's home seed (else home/away are flipped).
+  const slotToDb = {}
+  const matchedDbIds = new Set()
+  const r32Db = dbByStage['round_of_32'] ?? []
+  for (const slot of realR32) {
+    if (!slot.homeTeam || !slot.awayTeam) continue
+    const dbMatch = r32Db.find(m =>
+      !matchedDbIds.has(m.id) &&
+      ((m.home_team === slot.homeTeam && m.away_team === slot.awayTeam) ||
+       (m.home_team === slot.awayTeam && m.away_team === slot.homeTeam)))
+    if (dbMatch) {
+      matchedDbIds.add(dbMatch.id)
+      slotToDb[slot.id] = { dbMatch, sameOrient: dbMatch.home_team === slot.homeTeam }
+    }
+  }
+  // Fallback (positional) for every slot not resolved by real teams: R32 rows
+  // still TBD, and all later rounds (no real teams yet).
+  for (const stage of ['round_of_32','round_of_16','quarter_final','semi_final','third_place','final']) {
+    const ids   = STAGE_BRACKET_IDS[stage] ?? []
+    const dbs   = dbByStage[stage] ?? []
+    ids.forEach((bracketId, idx) => {
+      if (slotToDb[bracketId]) return
+      const dbMatch = dbs[idx]
+      if (dbMatch && !matchedDbIds.has(dbMatch.id)) {
+        matchedDbIds.add(dbMatch.id)
+        slotToDb[bracketId] = { dbMatch, sameOrient: true }
+      }
+    })
   }
 
   const result = {}  // dbMatchId → { homeTeam, awayTeam }
@@ -1053,45 +1090,45 @@ export function computePredictedKnockout(dbMatches, userPredMap) {
   // bracketSlots: bracketMatchId → { home: teamName, away: teamName }
   const bracketSlots = {}
 
-  // Seed R32 from the template
+  // Seed R32 from the template (PREDICTED occupants)
   for (const bm of r32Bracket) {
     bracketSlots[bm.id] = { home: bm.homeTeam, away: bm.awayTeam }
   }
 
-  // Process stages in order
+  // Process stages in order so each round's winners seed the next round's slots.
   const KNOCKOUT_STAGES = ['round_of_32','round_of_16','quarter_final','semi_final','third_place','final']
 
   for (const stage of KNOCKOUT_STAGES) {
-    const bracketIds = STAGE_BRACKET_IDS[stage] ?? []
-    const dbMatches_ = dbByStage[stage] ?? []
-
-    // Pair DB match ↔ bracket position by index
-    bracketIds.forEach((bracketId, idx) => {
-      const dbMatch = dbMatches_[idx]
-      if (!dbMatch) return
+    for (const bracketId of (STAGE_BRACKET_IDS[stage] ?? [])) {
+      const link = slotToDb[bracketId]
+      if (!link) continue
+      const { dbMatch, sameOrient } = link
 
       const teams = bracketSlots[bracketId] ?? { home: null, away: null }
-      result[dbMatch.id] = { homeTeam: teams.home ?? null, awayTeam: teams.away ?? null }
+      // Orient predicted teams to match the DB row's home/away so "Tu cuadro"
+      // lines up with the real fixture shown above it.
+      const dbHomeTeam = sameOrient ? teams.home : teams.away
+      const dbAwayTeam = sameOrient ? teams.away : teams.home
+      result[dbMatch.id] = { homeTeam: dbHomeTeam ?? null, awayTeam: dbAwayTeam ?? null }
 
-      // Now resolve the winner of this DB match (from user's prediction)
-      // and push it into the next bracket slot
-      const pred   = userPredMap[dbMatch.id]
-      const prog   = BRACKET_PROGRESSION[bracketId]
-      if (!pred || !prog || teams.home == null || teams.away == null) return
+      // Resolve the winner of this DB match (from the user's prediction, in DB
+      // orientation) and push it into the next bracket slot.
+      const pred = userPredMap[dbMatch.id]
+      const prog = BRACKET_PROGRESSION[bracketId]
+      if (!pred || !prog || teams.home == null || teams.away == null) continue
 
-      // For knockout draws, use the user's tiebreaker to determine who advances.
       const winner =
-        pred.home_score > pred.away_score ? teams.home :
-        pred.away_score > pred.home_score ? teams.away :
-        pred.tiebreaker === 'home'        ? teams.home :
-        pred.tiebreaker === 'away'        ? teams.away :
+        pred.home_score > pred.away_score ? dbHomeTeam :
+        pred.away_score > pred.home_score ? dbAwayTeam :
+        pred.tiebreaker === 'home'        ? dbHomeTeam :
+        pred.tiebreaker === 'away'        ? dbAwayTeam :
         null
 
       const loser =
-        pred.home_score > pred.away_score ? teams.away :
-        pred.away_score > pred.home_score ? teams.home :
-        pred.tiebreaker === 'home'        ? teams.away :
-        pred.tiebreaker === 'away'        ? teams.home :
+        pred.home_score > pred.away_score ? dbAwayTeam :
+        pred.away_score > pred.home_score ? dbHomeTeam :
+        pred.tiebreaker === 'home'        ? dbAwayTeam :
+        pred.tiebreaker === 'away'        ? dbHomeTeam :
         null
 
       if (winner) {
@@ -1102,7 +1139,7 @@ export function computePredictedKnockout(dbMatches, userPredMap) {
         if (!bracketSlots[prog.loserMatch]) bracketSlots[prog.loserMatch] = {}
         bracketSlots[prog.loserMatch][prog.loserSlot] = loser
       }
-    })
+    }
   }
 
   return result
