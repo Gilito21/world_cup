@@ -1,6 +1,12 @@
 name: Seed partidos WC2026
 
 on:
+  # Diario a las 05:00 UTC: trae equipos/horas reales de la siguiente ronda en
+  # cuanto football-data los publica y reconcilia el cuadro (bracket_match_id +
+  # remapeo de esa ronda) automáticamente. Idempotente: lo ya asignado no se
+  # re-toca. Hora de baja actividad (pocos partidos en juego).
+  schedule:
+    - cron: '0 5 * * *'
   workflow_dispatch:
 
 jobs:

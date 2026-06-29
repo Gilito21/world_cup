@@ -51,7 +51,8 @@ Para no tener que inspeccionar Supabase cada sesión, aquí está el estado de l
 **GitHub Actions** (`.github/workflows/`):
 - `update-results.yml` — **cada hora**, solo de backup y para recalcular `advance_points` (bonus de avance de ronda; la edge function no los toca).
 - `send-daily-digest.yml` — resumen diario, `06:30 UTC`. Idempotente vía tabla `daily_digests` (PK `user_id+digest_date`).
-- `send-reminders.yml`, `send-league-intent-reminders.yml`, `seed-matches.yml`, `resolve-prizes.yml`, `test-email.yml` — el resto de jobs.
+- `seed-matches.yml` — **diario `05:00 UTC`** (+ manual). Upsert idempotente de partidos desde football-data y, al traer los equipos reales de una ronda KO, reconcilia el cuadro: `scripts/reconcile-bracket.js` fija `matches.bracket_match_id` y recoloca las predicciones de esa ronda (vía SQL `apply_bracket_round_remap`), y recalcula `advance_points`. Solo toca rondas sin `bracket_match_id`; aborta una ronda sin escribir si los equipos no cuadran con la plantilla. `bracket_match_id` es la fuente de verdad del mapeo partido↔hueco del bracket (no se deriva en runtime).
+- `send-reminders.yml`, `send-league-intent-reminders.yml`, `resolve-prizes.yml`, `test-email.yml` — el resto de jobs.
 
 ## Setup de sesiones (Claude Code on the web)
 
