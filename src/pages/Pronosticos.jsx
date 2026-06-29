@@ -500,10 +500,12 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
         </div>
       </div>
 
-      {/* Tu cuadro: equipos predichos cuando difieren de los reales */}
-      {isKnockout && !isFinished && realHome && predictedHome && predictedHome !== realHome && (
+      {/* Tu cuadro: equipos predichos cuando difieren de los reales (en
+          cualquiera de los dos lados, no solo el local). */}
+      {isKnockout && !isFinished && (predictedHome || predictedAway) &&
+        ((predictedHome && predictedHome !== displayHome) || (predictedAway && predictedAway !== displayAway)) && (
         <p className="text-[10px] text-ink/50 text-center mt-1.5">
-          Tu cuadro: {teamName(predictedHome)} – {teamName(predictedAway ?? '')}
+          Tu cuadro: {teamName(predictedHome ?? displayHome)} – {teamName(predictedAway ?? displayAway)}
         </p>
       )}
 
