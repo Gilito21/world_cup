@@ -11,6 +11,8 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
+import { reconcileBracketSlots } from './reconcile-bracket.js'
+import { computeAndStoreAdvancePoints } from './compute-advance-points.js'
 config()
 
 const FOOTBALL_API_KEY = process.env.FOOTBALL_API_KEY
@@ -90,9 +92,7 @@ async function fetchMatches() {
   return matches
 }
 
-async function seedToSupabase(matches) {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-
+async function seedToSupabase(supabase, matches) {
   const rows = matches.map(m => ({
     external_id: m.id,
     home_team:   m.homeTeam.name ?? m.homeTeam.shortName ?? 'TBD',
@@ -132,8 +132,25 @@ async function main() {
   }
 
   try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
     const matches = await fetchMatches()
-    await seedToSupabase(matches)
+    await seedToSupabase(supabase, matches)
+
+    // Tras traer los equipos reales: asignar bracket_match_id y recolocar las
+    // predicciones de cualquier ronda recién resuelta, y recalcular puntos.
+    // No críticos: si fallan, el seed ya está hecho.
+    try {
+      await reconcileBracketSlots(supabase)
+    } catch (e) {
+      console.error('⚠️ reconcile-bracket falló (no crítico):', e.message)
+    }
+    try {
+      const r = await computeAndStoreAdvancePoints(supabase)
+      console.log(`🏅 advance_points: ${r.rows} filas · ${r.predOk} KO preds`)
+    } catch (e) {
+      console.error('⚠️ advance_points falló (no crítico):', e.message)
+    }
+
     console.log('🎉 Seed completado. ¡Los partidos están listos!')
   } catch (err) {
     console.error('❌ Error:', err.message)
