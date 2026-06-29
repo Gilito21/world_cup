@@ -8,7 +8,7 @@ import { LeagueFeedSkeleton } from './Skeleton'
 // Avatar reused from Clasificacion's style — kept local to avoid coupling.
 function Avatar({ url, username }) {
   if (url) {
-    return <img src={url} alt={username} className="w-8 h-8 rounded-full object-cover border border-ink/20 flex-shrink-0" />
+    return <img src={url} alt={username} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-ink/20 flex-shrink-0" />
   }
   return (
     <div className="w-8 h-8 rounded-full bg-paper border border-ink/30 text-ink/80 flex items-center justify-center text-xs font-bold flex-shrink-0">

@@ -7,9 +7,10 @@ import { EditorialBand, EditorialStats } from '../components/Editorial'
 
 // Los avatares se servían en crudo (fotos de móvil de 2–4 MB) y se cargan
 // repetidamente en Clasificación/Feed, lo que disparaba el cached egress del
-// CDN de Supabase. Redimensionamos a 256px y reencodeamos a WebP en el cliente
-// antes de subir: el archivo baja a ~20–50 KB sin tocar el backend.
-const AVATAR_MAX_PX = 256
+// CDN de Supabase. Redimensionamos y reencodeamos a WebP en el cliente antes de
+// subir. 128px: el display más grande es 64px (w-16), así cubre 2x DPI de sobra
+// y el archivo baja a ~8–15 KB sin tocar el backend.
+const AVATAR_MAX_PX = 128
 
 async function compressAvatar(file) {
   const dataUrl = URL.createObjectURL(file)
@@ -31,7 +32,7 @@ async function compressAvatar(file) {
     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
 
     const blob = await new Promise(resolve =>
-      canvas.toBlob(resolve, 'image/webp', 0.85)
+      canvas.toBlob(resolve, 'image/webp', 0.8)
     )
     return { blob }
   } finally {

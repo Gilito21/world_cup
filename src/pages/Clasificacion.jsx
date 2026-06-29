@@ -59,6 +59,8 @@ function Avatar({ url, username, size = 'md', isMe = false }) {
       <img
         src={url}
         alt={username}
+        loading="lazy"
+        decoding="async"
         className={`${sz} rounded-full object-cover flex-shrink-0 ${
           isMe ? 'border-2 border-ink/60' : 'border border-ink/20'
         }`}
