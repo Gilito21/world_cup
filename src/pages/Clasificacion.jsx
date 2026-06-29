@@ -268,8 +268,8 @@ export default function Clasificacion() {
           // Desempate estable: dos usuarios con los mismos puntos no
           // deben intercambiar posiciones entre realtime refreshes.
           .order('username', { ascending: true })),
-        // Bonus de avance del ámbito GLOBAL (league_id NULL). Se suman al
-        // total mostrado y obligan a re-ordenar el array por el nuevo total.
+        // Bonus de avance del ámbito GLOBAL (league_id NULL). Ya está incluido
+        // en total_points; lo traemos solo para el desglose por equipo (myAdvance).
         sq(supabase.from('advance_points')
           .select('user_id, team, stage, points')
           .is('league_id', null)),
@@ -279,11 +279,10 @@ export default function Clasificacion() {
       ])
 
       if (profiles) {
-        const advanceByUser = {}
-        ;(advanceRows ?? []).forEach(r => {
-          advanceByUser[r.user_id] = (advanceByUser[r.user_id] ?? 0) + (r.points ?? 0)
-        })
-
+        // El bonus de avance ya está incluido en profiles.total_points (lo mete
+        // recalc_total_points_for_users / on_match_finished). NO lo volvemos a
+        // sumar aquí para no contarlo doble. advanceRows se sigue usando solo
+        // para el desglose por equipo del usuario logueado (myAdvance).
         const statsByUser = Object.fromEntries(
           (statsRows ?? []).map(s => [s.user_id, s])
         )
@@ -301,7 +300,7 @@ export default function Clasificacion() {
 
         const next = profiles
           .map(p => {
-            const total = (p.total_points ?? 0) + (advanceByUser[p.id] ?? 0)
+            const total = (p.total_points ?? 0)
             const st    = statsByUser[p.id] ?? { exact: 0, correct: 0, total: 0 }
             return {
               ...p,

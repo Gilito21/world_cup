@@ -378,6 +378,7 @@ export default {
     tiebreakerRequired: 'Select who advances',
     myPrediction: 'Your prediction:',
     advanced: 'Advanced:',
+    advanceBadge: 'advance',
     youPredicted: 'you predicted {{team}}',
     lockNote: 'Prediction submitted:',
     advancesNote: 'Advances:',

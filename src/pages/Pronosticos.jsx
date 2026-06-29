@@ -16,7 +16,7 @@ import LeagueModal from '../components/LeagueModal'
 import PaymentModal from '../components/PaymentModal'
 import LeagueCreatedModal from '../components/LeagueCreatedModal'
 import { Flag, teamName } from '../utils/teams'
-import { computePredictedKnockout } from '../utils/tournament'
+import { computePredictedKnockout, computeAdvanceRows } from '../utils/tournament'
 import { EditorialBand } from '../components/Editorial'
 
 const STAGE_ORDER = ['group', 'round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
@@ -263,7 +263,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
 
 // ─── MATCH CARD ───────────────────────────────────────────────────────────────
 
-function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, realHome, realAway, isPastCutoff, onPreview, consensus }) {
+function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, realHome, realAway, advanceByTeam, isPastCutoff, onPreview, consensus }) {
   const { t, dateLocale } = useLang()
   const STAGE_INFO = buildStageInfo(t)
   const STATUS_BADGE = useMemo(() => ({
@@ -410,13 +410,20 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 
       {/* Teams + score */}
       <div className="flex items-center gap-2 sm:gap-3">
-        <div className="flex-1 flex items-center justify-end gap-1.5 sm:gap-2 min-w-0">
-          <span className={`text-sm font-semibold truncate text-right ${
-            isTbd(match.home_team) && !realHome && predictedHome ? 'text-violet-600' : 'text-ink'
-          }`}>
-            {teamName(displayHome)}
-          </span>
-          <Flag team={displayHome} />
+        <div className="flex-1 flex flex-col items-end gap-0.5 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <span className={`text-sm font-semibold truncate text-right ${
+              isTbd(match.home_team) && !realHome && predictedHome ? 'text-violet-600' : 'text-ink'
+            }`}>
+              {teamName(displayHome)}
+            </span>
+            <Flag team={displayHome} />
+          </div>
+          {isKnockout && advanceByTeam?.[displayHome] > 0 && (
+            <span className="text-[10px] leading-none font-semibold text-green-600">
+              +{advanceByTeam[displayHome]} · {t('pronosticos.advanceBadge')}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
@@ -462,13 +469,20 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           )}
         </div>
 
-        <div className="flex-1 flex items-center justify-start gap-1.5 sm:gap-2 min-w-0">
-          <Flag team={displayAway} />
-          <span className={`text-sm font-semibold truncate ${
-            isTbd(match.away_team) && !realAway && predictedAway ? 'text-violet-600' : 'text-ink'
-          }`}>
-            {teamName(displayAway)}
-          </span>
+        <div className="flex-1 flex flex-col items-start gap-0.5 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Flag team={displayAway} />
+            <span className={`text-sm font-semibold truncate ${
+              isTbd(match.away_team) && !realAway && predictedAway ? 'text-violet-600' : 'text-ink'
+            }`}>
+              {teamName(displayAway)}
+            </span>
+          </div>
+          {isKnockout && advanceByTeam?.[displayAway] > 0 && (
+            <span className="text-[10px] leading-none font-semibold text-green-600">
+              +{advanceByTeam[displayAway]} · {t('pronosticos.advanceBadge')}
+            </span>
+          )}
         </div>
       </div>
 
@@ -880,6 +894,21 @@ export default function Pronosticos() {
     }
     return computePredictedKnockout(matches, realPredMap)
   }, [matches])
+
+  // ── Bonus de avance por equipo (acumulado en este ámbito) ───────────────────
+  // Mismo motor que el job de scoring (computeAdvanceRows) pero al vuelo con tus
+  // predicciones guardadas, para pintar un "+N" bajo cada equipo que acertaste
+  // que pasaba de ronda. Coincide con la clasificación cuando corre el job.
+  const advanceByTeam = useMemo(() => {
+    if (!matches.length) return {}
+    const predMap = {}
+    for (const [matchId, p] of Object.entries(predictions)) {
+      predMap[matchId] = { home_score: p.home_score, away_score: p.away_score, tiebreaker: p.tiebreaker ?? null }
+    }
+    const byTeam = {}
+    for (const r of computeAdvanceRows(matches, predMap)) byTeam[r.team] = (byTeam[r.team] ?? 0) + r.points
+    return byTeam
+  }, [matches, predictions])
 
   // ── Save a single draft ─────────────────────────────────────────────────────
   const handleSave = useCallback(async (matchId, home, away, tiebreaker = null) => {
@@ -1483,6 +1512,7 @@ export default function Pronosticos() {
                       predictedAway={predictedOverlay[m.id]?.awayTeam}
                       realHome={realKnockoutOverlay[m.id]?.homeTeam}
                       realAway={realKnockoutOverlay[m.id]?.awayTeam}
+                      advanceByTeam={advanceByTeam}
                       isPastCutoff={isPastCutoff}
                       consensus={consensus[m.id]}
                       onPreview={activeLeague ? () => setPreviewMatch(m) : null}
