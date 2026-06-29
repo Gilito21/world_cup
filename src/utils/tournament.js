@@ -1059,7 +1059,19 @@ export function computePredictedKnockout(dbMatches, userPredMap) {
   const slotToDb = {}
   const matchedDbIds = new Set()
   const r32Db = dbByStage['round_of_32'] ?? []
+
+  // 0) Autoridad explícita: si el partido ya tiene bracket_match_id fijado en BD
+  // (migración 049 en adelante), ese es su hueco y manda sobre cualquier
+  // heurístico. Inmune a que cambie el orden de fechas o los nombres de equipo.
+  for (const m of dbMatches) {
+    if (m.stage === 'group' || !m.bracket_match_id || slotToDb[m.bracket_match_id]) continue
+    const rs = realR32.find(s => s.id === m.bracket_match_id)
+    slotToDb[m.bracket_match_id] = { dbMatch: m, sameOrient: rs ? m.home_team === rs.homeTeam : true }
+    matchedDbIds.add(m.id)
+  }
+
   for (const slot of realR32) {
+    if (slotToDb[slot.id]) continue
     if (!slot.homeTeam || !slot.awayTeam) continue
     const dbMatch = r32Db.find(m =>
       !matchedDbIds.has(m.id) &&
