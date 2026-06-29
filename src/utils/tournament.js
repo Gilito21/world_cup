@@ -983,8 +983,11 @@ export const STAGE_BRACKET_IDS = {
  *   … and so on through the Final / 3rd-place match.
  *
  * DB knockout matches are paired with bracket template positions by sorting
- * each stage's matches by match_date (earliest = position 0 = first template slot).
- * This assumes football-data.org returns knockout matches in bracket order.
+ * each stage's matches by external_id (the football-data fixture id, which is
+ * assigned in FIFA match-number order: R32 = M73…M88 → R32_M1…R32_M16, etc.).
+ * Sorting by match_date was wrong: the chronological kickoff order does NOT
+ * match the bracket/template order, so it pinned the wrong matchup onto each
+ * slot (e.g. showing "1E vs 3rd" as the next match instead of the real fixture).
  *
  * @param {object[]} dbMatches     – all matches from the DB (any stage, any status)
  * @param {{ [matchId: string]: { home_score: number, away_score: number } }} userPredMap
@@ -1034,7 +1037,14 @@ export function computePredictedKnockout(dbMatches, userPredMap) {
     ;(dbByStage[m.stage] = dbByStage[m.stage] ?? []).push(m)
   }
   for (const stage of Object.keys(dbByStage)) {
-    dbByStage[stage].sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
+    // Order by external_id (football-data fixture id = FIFA match number =
+    // bracket/template order). Fall back to match_date only when an id is
+    // missing, so legacy/manually-seeded rows still resolve deterministically.
+    dbByStage[stage].sort((a, b) =>
+      (a.external_id != null && b.external_id != null)
+        ? a.external_id - b.external_id
+        : new Date(a.match_date) - new Date(b.match_date)
+    )
   }
 
   const result = {}  // dbMatchId → { homeTeam, awayTeam }
