@@ -21,6 +21,20 @@ import { EditorialBand } from '../components/Editorial'
 
 const STAGE_ORDER = ['group', 'round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
 
+// "Ronda actual" = la primera fase (en orden) que aún tiene algún partido sin
+// terminar; es la pestaña que abrimos por defecto al entrar. Si todo está
+// jugado, la última fase con partidos.
+function currentRound(matches) {
+  for (const s of STAGE_ORDER) {
+    const ms = matches.filter(m => m.stage === s)
+    if (ms.length && ms.some(m => m.status !== 'finished')) return s
+  }
+  for (let i = STAGE_ORDER.length - 1; i >= 0; i--) {
+    if (matches.some(m => m.stage === STAGE_ORDER[i])) return STAGE_ORDER[i]
+  }
+  return STAGE_ORDER[0]
+}
+
 function buildStageInfo(t) {
   return {
     group:         { icon: '⚽', short: t('stages.groupShort'),         full: t('stages.group') },
@@ -531,9 +545,12 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 
       {/* Footer */}
       {isFinished && prediction && (() => {
-        // Para "Tu pronóstico:" usar equipos del cascade del usuario (lo que pensaba que jugaría)
-        const predH = (isTbd(match.home_team) && predictedHome) ? predictedHome : displayHome
-        const predA = (isTbd(match.away_team) && predictedAway) ? predictedAway : displayAway
+        // Para "Tu pronóstico:" usar SIEMPRE los equipos del cascade del usuario
+        // (lo que él pensaba que jugaría ese cruce), no los reales. En KO tu
+        // marcador va ligado a esos equipos; si la BD ya tiene los reales
+        // (p.ej. Sudáfrica-Canadá) seguimos mostrando tu cuadro (Chequia-Suiza).
+        const predH = predictedHome ?? displayHome
+        const predA = predictedAway ?? displayAway
         return (
           <div className="mt-3 pt-3 border-t border-ink/20 text-center text-xs text-ink/60 space-y-1">
             <div>
@@ -658,6 +675,9 @@ export default function Pronosticos() {
   // refrescamos en background — nunca pantalla vacía tras un deploy.
   const [loading,     setLoading]     = useState(() => !(getMatchCache() ?? getMatchCacheStale()))
   const [activeStage, setActiveStage] = useState('group')
+  // Al entrar, abrimos la ronda actual (1ª vez); luego respetamos la pestaña
+  // que el usuario haya seleccionado a mano.
+  const stageInitedRef = useRef(false)
   const [error,       setError]       = useState('')
   const [copying,     setCopying]     = useState(false)
   const [scrollTarget, setScrollTarget] = useState(null)
@@ -784,7 +804,16 @@ export default function Pronosticos() {
           setCutoffTime(new Date(firstGroup.match_date).getTime() - 30 * 60 * 1000)
         }
         const available = [...new Set(effectiveMatches.map(m => m.stage))]
-        setActiveStage(prev => available.includes(prev) ? prev : (STAGE_ORDER.find(s => available.includes(s)) ?? available[0]))
+        const cur = currentRound(effectiveMatches)
+        setActiveStage(prev => {
+          // Primera carga: saltar a la ronda actual. Después: conservar la
+          // pestaña que el usuario tenga abierta (si sigue existiendo).
+          if (!stageInitedRef.current) {
+            stageInitedRef.current = true
+            return available.includes(cur) ? cur : (STAGE_ORDER.find(s => available.includes(s)) ?? available[0])
+          }
+          return available.includes(prev) ? prev : (available.includes(cur) ? cur : available[0])
+        })
       }
 
       if (predData) {
