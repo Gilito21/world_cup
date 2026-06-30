@@ -61,8 +61,9 @@ Deno.serve(async (req: Request) => {
   for (const m of matches as Record<string, unknown>[]) {
     const newStatus    = mapStatus(m.status as string)
     const score        = m.score as Record<string, Record<string, number | null>> | null
-    const newHomeScore = score?.fullTime?.home ?? null
-    const newAwayScore = score?.fullTime?.away ?? null
+    // For ET/penalty matches, regularTime holds the 90-min score; fullTime is post-ET.
+    const newHomeScore = score?.regularTime?.home ?? score?.fullTime?.home ?? null
+    const newAwayScore = score?.regularTime?.away ?? score?.fullTime?.away ?? null
     const rawWinner    = score?.winner as string | null | undefined
     const newWinner    = rawWinner === 'HOME_TEAM' ? 'home' : rawWinner === 'AWAY_TEAM' ? 'away' : null
 

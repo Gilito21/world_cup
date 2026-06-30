@@ -58,8 +58,10 @@ async function updateMatches(matches) {
   for (const m of matches) {
     const newStatus    = mapStatus(m.status)
     // Scores are always the 90-minute result; predictions are based on regulation time.
-    const newHomeScore = m.score?.fullTime?.home ?? null
-    const newAwayScore = m.score?.fullTime?.away ?? null
+    // For ET/penalty matches, football-data.org puts the 90-min score in `regularTime`
+    // and the cumulative ET score in `fullTime`. Fall back to fullTime for regular matches.
+    const newHomeScore = m.score?.regularTime?.home ?? m.score?.fullTime?.home ?? null
+    const newAwayScore = m.score?.regularTime?.away ?? m.score?.fullTime?.away ?? null
     // winner reflects who actually advanced (including ET and penalties for knockout matches).
     const rawWinner    = m.score?.winner  // 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW' | null
     const newWinner    = rawWinner === 'HOME_TEAM' ? 'home' : rawWinner === 'AWAY_TEAM' ? 'away' : null
