@@ -61,11 +61,13 @@ Deno.serve(async (req: Request) => {
   for (const m of matches as Record<string, unknown>[]) {
     const newStatus    = mapStatus(m.status as string)
     const score        = m.score as Record<string, Record<string, number | null> | string | null | undefined> | null
-    // fullTime = result at end of 120 min (regular + extra time); use for home_score / away_score.
+    // football-data mete los penaltis DENTRO de fullTime (120' 1-1 + penaltis
+    // 2-3 → fullTime 3-4). El marcador de los 120' (con el que se puntúa) es
+    // fullTime − penaltis; el shootout se guarda aparte y quién pasa en winner.
     const ft           = score?.fullTime as Record<string, number | null> | null | undefined
-    const newHomeScore = ft?.home ?? null
-    const newAwayScore = ft?.away ?? null
     const pen          = score?.penalties as Record<string, number | null> | null | undefined
+    const newHomeScore = ft?.home != null ? ft.home - (pen?.home ?? 0) : null
+    const newAwayScore = ft?.away != null ? ft.away - (pen?.away ?? 0) : null
     const newHomePen   = pen?.home ?? null
     const newAwayPen   = pen?.away ?? null
     const rawWinner    = score?.winner as string | null | undefined

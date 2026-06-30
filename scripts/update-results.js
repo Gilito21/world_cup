@@ -57,11 +57,14 @@ async function updateMatches(matches) {
 
   for (const m of matches) {
     const newStatus    = mapStatus(m.status)
-    // Score at 120 min (regular + extra time). For penalty matches this is still a draw;
-    // the penalty shootout result is stored separately in home_score_penalties/away_score_penalties.
-    const newHomeScore = m.score?.fullTime?.home ?? null
-    const newAwayScore = m.score?.fullTime?.away ?? null
-    const pen = m.score?.penalties
+    // football-data mete los penaltis DENTRO de fullTime (120' 1-1 + penaltis
+    // 2-3 → fullTime 3-4). El marcador de los 120' (con el que se puntúa) es
+    // fullTime − penaltis; el shootout se guarda aparte y quién pasa en winner.
+    const pen          = m.score?.penalties
+    const ftHome       = m.score?.fullTime?.home ?? null
+    const ftAway       = m.score?.fullTime?.away ?? null
+    const newHomeScore = ftHome != null ? ftHome - (pen?.home ?? 0) : null
+    const newAwayScore = ftAway != null ? ftAway - (pen?.away ?? 0) : null
     const newHomePen  = pen?.home ?? null
     const newAwayPen  = pen?.away ?? null
     // winner reflects who actually advanced (including ET and penalties for knockout matches).

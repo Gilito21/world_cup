@@ -104,8 +104,14 @@ async function seedToSupabase(supabase, matches) {
     group_name:  m.group?.replace('GROUP_', '') ?? null,
     venue:       m.venue ?? null,
     status:      mapStatus(m.status),
-    home_score:  m.score?.fullTime?.home ?? null,
-    away_score:  m.score?.fullTime?.away ?? null,
+    // football-data mete los penaltis DENTRO de fullTime (120' 1-1 + penaltis 2-3
+    // → fullTime 3-4). Guardamos el marcador de los 120' (fullTime − penaltis),
+    // que es con el que se puntúa; el shootout va aparte y quién pasa en winner.
+    home_score:           m.score?.fullTime?.home != null ? m.score.fullTime.home - (m.score?.penalties?.home ?? 0) : null,
+    away_score:           m.score?.fullTime?.away != null ? m.score.fullTime.away - (m.score?.penalties?.away ?? 0) : null,
+    home_score_penalties: m.score?.penalties?.home ?? null,
+    away_score_penalties: m.score?.penalties?.away ?? null,
+    winner:               m.score?.winner === 'HOME_TEAM' ? 'home' : m.score?.winner === 'AWAY_TEAM' ? 'away' : null,
   }))
 
   console.log(`💾 Insertando ${rows.length} partidos en Supabase...`)
