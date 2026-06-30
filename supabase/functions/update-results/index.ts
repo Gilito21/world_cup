@@ -60,10 +60,14 @@ Deno.serve(async (req: Request) => {
 
   for (const m of matches as Record<string, unknown>[]) {
     const newStatus    = mapStatus(m.status as string)
-    const score        = m.score as Record<string, Record<string, number | null>> | null
-    // For ET/penalty matches, regularTime holds the 90-min score; fullTime is post-ET.
-    const newHomeScore = score?.regularTime?.home ?? score?.fullTime?.home ?? null
-    const newAwayScore = score?.regularTime?.away ?? score?.fullTime?.away ?? null
+    const score        = m.score as Record<string, Record<string, number | null> | string | null | undefined> | null
+    // fullTime = result at end of 120 min (regular + extra time); use for home_score / away_score.
+    const ft           = score?.fullTime as Record<string, number | null> | null | undefined
+    const newHomeScore = ft?.home ?? null
+    const newAwayScore = ft?.away ?? null
+    const pen          = score?.penalties as Record<string, number | null> | null | undefined
+    const newHomePen   = pen?.home ?? null
+    const newAwayPen   = pen?.away ?? null
     const rawWinner    = score?.winner as string | null | undefined
     const newWinner    = rawWinner === 'HOME_TEAM' ? 'home' : rawWinner === 'AWAY_TEAM' ? 'away' : null
 
@@ -71,7 +75,7 @@ Deno.serve(async (req: Request) => {
 
     const { error } = await supabase
       .from('matches')
-      .update({ status: newStatus, home_score: newHomeScore, away_score: newAwayScore, winner: newWinner, updated_at: now.toISOString() })
+      .update({ status: newStatus, home_score: newHomeScore, away_score: newAwayScore, home_score_penalties: newHomePen, away_score_penalties: newAwayPen, winner: newWinner, updated_at: now.toISOString() })
       .eq('external_id', m.id)
 
     if (error) { console.error(`match ${m.id}:`, error.message); errors++ }

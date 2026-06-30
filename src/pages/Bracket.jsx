@@ -113,7 +113,11 @@ function KnockoutMatchCard({ matchId, homeTeam, awayTeam, dbMatch, homeSlot, awa
       </div>
 
       {finished && winHome === false && winAway === false && hs != null && (
-        <p className="text-xs text-center text-ink/60 italic">{t('bracket.overtime')}</p>
+        <p className="text-xs text-center text-ink/60 italic">
+          {dbMatch?.home_score_penalties != null
+            ? `pen: ${dbMatch.home_score_penalties}-${dbMatch.away_score_penalties}`
+            : t('bracket.overtime')}
+        </p>
       )}
     </div>
   )

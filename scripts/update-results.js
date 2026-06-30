@@ -57,11 +57,13 @@ async function updateMatches(matches) {
 
   for (const m of matches) {
     const newStatus    = mapStatus(m.status)
-    // Scores are always the 90-minute result; predictions are based on regulation time.
-    // For ET/penalty matches, football-data.org puts the 90-min score in `regularTime`
-    // and the cumulative ET score in `fullTime`. Fall back to fullTime for regular matches.
-    const newHomeScore = m.score?.regularTime?.home ?? m.score?.fullTime?.home ?? null
-    const newAwayScore = m.score?.regularTime?.away ?? m.score?.fullTime?.away ?? null
+    // Score at 120 min (regular + extra time). For penalty matches this is still a draw;
+    // the penalty shootout result is stored separately in home_score_penalties/away_score_penalties.
+    const newHomeScore = m.score?.fullTime?.home ?? null
+    const newAwayScore = m.score?.fullTime?.away ?? null
+    const pen = m.score?.penalties
+    const newHomePen  = pen?.home ?? null
+    const newAwayPen  = pen?.away ?? null
     // winner reflects who actually advanced (including ET and penalties for knockout matches).
     const rawWinner    = m.score?.winner  // 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW' | null
     const newWinner    = rawWinner === 'HOME_TEAM' ? 'home' : rawWinner === 'AWAY_TEAM' ? 'away' : null
@@ -72,11 +74,13 @@ async function updateMatches(matches) {
     const { error } = await supabase
       .from('matches')
       .update({
-        status:     newStatus,
-        home_score: newHomeScore,
-        away_score: newAwayScore,
-        winner:     newWinner,
-        updated_at: new Date().toISOString(),
+        status:               newStatus,
+        home_score:           newHomeScore,
+        away_score:           newAwayScore,
+        home_score_penalties: newHomePen,
+        away_score_penalties: newAwayPen,
+        winner:               newWinner,
+        updated_at:           new Date().toISOString(),
       })
       .eq('external_id', m.id)
 

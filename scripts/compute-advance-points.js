@@ -17,6 +17,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { computeAdvanceRows, computePredictedKnockout } from '../src/utils/tournament.js'
 
+const isTbd = t => !t || t === 'TBD' || t === 'TBA' || t === 'Por determinar'
+
 function calculatePoints(predHome, predAway, realHome, realAway) {
   if (predHome == null || predAway == null) return 0
   if (predHome === realHome && predAway === realAway) return 3
@@ -93,14 +95,21 @@ export async function computeAndStoreAdvancePoints(supabase) {
     for (const m of finishedKnockout) {
       const pred = s.predMap[m.id]
       if (!pred) continue
-      const real = realKOOverlay[m.id]
-      const user = userKO[m.id]
-      // Solo puntúa si los equipos predichos coinciden con los reales.
-      const teamsMatch = real?.homeTeam && user?.homeTeam &&
-        real.homeTeam === user.homeTeam && real.awayTeam === user.awayTeam
-      const pts = teamsMatch
-        ? calculatePoints(pred.home_score, pred.away_score, m.home_score, m.away_score)
-        : 0
+      // If real teams are assigned (not TBD), score directly: every prediction for this
+      // match_id was explicitly made for these teams (reconciliation already remapped them).
+      // Cascade check (teamsMatch) is only needed for slots still showing TBD at prediction time.
+      let pts
+      if (!isTbd(m.home_team) && !isTbd(m.away_team)) {
+        pts = calculatePoints(pred.home_score, pred.away_score, m.home_score, m.away_score)
+      } else {
+        const real = realKOOverlay[m.id]
+        const user = userKO[m.id]
+        const teamsMatch = real?.homeTeam && user?.homeTeam &&
+          real.homeTeam === user.homeTeam && real.awayTeam === user.awayTeam
+        pts = teamsMatch
+          ? calculatePoints(pred.home_score, pred.away_score, m.home_score, m.away_score)
+          : 0
+      }
       predUpdates.push({ match_id: m.id, user_id: s.user_id, league_id: s.league_id, pts })
       if (s.league_id === null) affectedGlobalUsers.add(s.user_id)
     }

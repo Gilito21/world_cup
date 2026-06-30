@@ -442,10 +442,17 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {isFinished ? (
-            <div className="flex items-center gap-2 bg-paper rounded-none px-3 py-1.5">
-              <span className="text-xl font-bold text-ink">{match.home_score}</span>
-              <span className="text-ink/60">-</span>
-              <span className="text-xl font-bold text-ink">{match.away_score}</span>
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-2 bg-paper rounded-none px-3 py-1.5">
+                <span className="text-xl font-bold text-ink">{match.home_score}</span>
+                <span className="text-ink/60">-</span>
+                <span className="text-xl font-bold text-ink">{match.away_score}</span>
+              </div>
+              {match.home_score_penalties != null && (
+                <span className="text-[10px] text-ink/50 leading-none mt-0.5">
+                  pen: {match.home_score_penalties}-{match.away_score_penalties}
+                </span>
+              )}
             </div>
           ) : match.status === 'live' ? (
             <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-none px-3 py-1.5">
