@@ -28,6 +28,7 @@ import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { brandShell, brandButton, brandHeadline, brandKicker, brandStatTile, escHtml, BRAND } from './_brand-email.js'
 import { getTriggerInfo } from '../src/utils/prizeRules.js'
+import { computePredictedKnockout } from '../src/utils/tournament.js'
 config()
 
 const SUPABASE_URL = process.env.SUPABASE_URL
@@ -80,8 +81,17 @@ export function buildEmail({ username, yesterdayMatches, todayMatches, yesterday
     const badgeFg = pts === 0 ? BRAND.ink : BRAND.cream
     const badgeTx = pts === 3 ? '+3' : pts === 1 ? '+1' : '0'
     const badgeBd = pts === 0 ? `1px solid ${BRAND.ink}` : 'none'
+    // En eliminatorias el pronóstico puede tener el mismo marcador pero OTROS
+    // equipos (otro cruce del cuadro), y entonces no puntúa. Si los equipos
+    // pronosticados difieren del cruce real, los mostramos junto al marcador
+    // para que se vea por qué un "empate acertado" puede dar 0.
+    const ph = m.my_pred?.home_team
+    const pa = m.my_pred?.away_team
+    const teamsDiffer = ph && pa && (ph !== m.home_team || pa !== m.away_team)
     const predStr = m.my_pred
-      ? `${m.my_pred.home_score} – ${m.my_pred.away_score}`
+      ? (teamsDiffer
+          ? `${escHtml(ph)} ${m.my_pred.home_score} – ${m.my_pred.away_score} ${escHtml(pa)}`
+          : `${m.my_pred.home_score} – ${m.my_pred.away_score}`)
       : `<em style="color:${BRAND.ink};opacity:.5;">sin pronóstico</em>`
     return `
       <tr>
@@ -229,7 +239,11 @@ export function sampleEmailArgs() {
   const yesterdayMatches = [
     { home_team: 'España',    away_team: 'Alemania', home_score: 2, away_score: 1, my_pred: { home_score: 2, away_score: 1 }, points: 3 },
     { home_team: 'Brasil',    away_team: 'Francia',  home_score: 0, away_score: 0, my_pred: { home_score: 1, away_score: 1 }, points: 1 },
-    { home_team: 'Argentina', away_team: 'México',   home_score: 3, away_score: 1, my_pred: { home_score: 0, away_score: 2 }, points: 0 },
+    // Caso eliminatoria: acertó el empate del resultado pero su cruce era otro
+    // (Suiza–Marruecos, no Países Bajos–Marruecos) → 0 puntos. Se muestran los
+    // equipos pronosticados junto al marcador para que se entienda.
+    { home_team: 'Países Bajos', away_team: 'Marruecos', home_score: 1, away_score: 1, stage: 'round_of_32',
+      my_pred: { home_score: 1, away_score: 1, home_team: 'Suiza', away_team: 'Marruecos' }, points: 0 },
   ]
   // Avance de muestra: dos equipos que ayer pasaron a semis (+4 cada uno).
   // Por equipo y día suele decidirse una sola ronda, así que es el incremento.
@@ -521,6 +535,37 @@ async function main() {
     }
   }
 
+  // ── Equipos pronosticados por usuario para los cruces KO recientes ──────
+  // En eliminatorias el marcador puede coincidir con el real pero con OTROS
+  // equipos (otro cruce del cuadro): no puntúa. Para mostrarlo, reconstruimos
+  // el cascade de cada usuario (igual que la página de pronósticos) y sacamos
+  // qué equipos puso en ese hueco. Solo hace falta en fase eliminatoria; en
+  // grupos el pronóstico es siempre sobre los mismos equipos del partido.
+  const predTeamsByUser = new Map()  // user_id -> { [match_id]: {homeTeam, awayTeam} }
+  const koRecentIds = new Set((yesterdayMatches ?? []).filter(m => m.stage && m.stage !== 'group').map(m => m.id))
+  if (koRecentIds.size > 0) {
+    const [allMatches, allGlobalPreds] = await Promise.all([
+      fetchAllPages(supabase, s => s.from('matches')
+        .select('id, stage, group_name, home_team, away_team, home_score, away_score, status, winner, match_date, bracket_match_id')),
+      fetchAllPages(supabase, s => s.from('predictions')
+        .select('user_id, match_id, home_score, away_score, tiebreaker')
+        .is('league_id', null)),
+    ])
+    const predMapByUser = new Map()
+    for (const p of allGlobalPreds) {
+      if (!predMapByUser.has(p.user_id)) predMapByUser.set(p.user_id, {})
+      predMapByUser.get(p.user_id)[p.match_id] = { home_score: p.home_score, away_score: p.away_score, tiebreaker: p.tiebreaker ?? null }
+    }
+    for (const profile of optInProfiles) {
+      const predMap = predMapByUser.get(profile.id)
+      if (!predMap) continue
+      const overlay = computePredictedKnockout(allMatches, predMap)
+      const slim = {}
+      for (const id of koRecentIds) if (overlay[id]) slim[id] = overlay[id]
+      predTeamsByUser.set(profile.id, slim)
+    }
+  }
+
   // ── Bonus de avance decidido ayer (ámbito global) ──────────────────────
   // advance_points con league_id NULL y decided_on dentro de la ventana de
   // ayer. Agrupamos por usuario: puntos del día + desglose por equipo.
@@ -552,15 +597,22 @@ async function main() {
     if (!email) { skipped++; continue }
 
     // Compone la sección "ayer" con la predicción del usuario y puntos.
-    const userPreds = predsByUser.get(profile.id) ?? new Map()
+    const userPreds     = predsByUser.get(profile.id) ?? new Map()
+    const userPredTeams = predTeamsByUser.get(profile.id) ?? {}
     const yMatches  = (yesterdayMatches ?? []).map(m => {
-      const p = userPreds.get(m.id) ?? null
+      const p  = userPreds.get(m.id) ?? null
+      const pt = userPredTeams[m.id] ?? null
       return {
         home_team:  m.home_team,
         away_team:  m.away_team,
         home_score: m.home_score,
         away_score: m.away_score,
-        my_pred:    p ? { home_score: p.home_score, away_score: p.away_score } : null,
+        my_pred:    p ? {
+          home_score: p.home_score,
+          away_score: p.away_score,
+          home_team:  pt?.homeTeam ?? null,
+          away_team:  pt?.awayTeam ?? null,
+        } : null,
         points:     p?.points_earned ?? 0,
       }
     })
