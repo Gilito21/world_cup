@@ -1082,19 +1082,63 @@ export function computePredictedKnockout(dbMatches, userPredMap) {
       slotToDb[slot.id] = { dbMatch, sameOrient: dbMatch.home_team === slot.homeTeam }
     }
   }
-  // Fallback (positional) for every slot not resolved by real teams: R32 rows
-  // still TBD, and all later rounds (no real teams yet).
-  for (const stage of ['round_of_32','round_of_16','quarter_final','semi_final','third_place','final']) {
-    const ids   = STAGE_BRACKET_IDS[stage] ?? []
-    const dbs   = dbByStage[stage] ?? []
-    ids.forEach((bracketId, idx) => {
-      if (slotToDb[bracketId]) return
-      const dbMatch = dbs[idx]
-      if (dbMatch && !matchedDbIds.has(dbMatch.id)) {
-        matchedDbIds.add(dbMatch.id)
-        slotToDb[bracketId] = { dbMatch, sameOrient: true }
+  // Rondas posteriores (R16+) por equipos reales, antes del fallback posicional.
+  // football-data va rellenando los equipos reales de cada cruce según se
+  // resuelve la ronda anterior, PERO el orden por fecha de esos partidos NO
+  // coincide con el orden de huecos del cuadro (p.ej. Canadá-Marruecos es R16_M2
+  // aunque sea el primer octavo por fecha). Propagamos los resultados reales por
+  // el árbol y casamos cada partido de BD con el hueco cuyos equipos coinciden.
+  // Soporta emparejado parcial (un equipo conocido + un TBD); el fallback
+  // posicional de abajo solo cubre los cruces aún totalmente TBD. Cuando la ronda
+  // se resuelve del todo, reconcile-bracket fija bracket_match_id y manda el paso 0.
+  const realFinishedAssigned = dbMatches
+    .filter(m => m.stage !== 'group' && m.bracket_match_id && m.home_score != null && m.away_score != null)
+    .map(m => ({ ...m, id: m.bracket_match_id }))
+  const realLaterSlots = advanceKnockoutRound(realFinishedAssigned)  // { R16_M2:{home,away}, … }
+
+  const slotIsTbd = t => !t || t === 'TBD' || t === 'TBA' || t === 'Por determinar'
+  for (const stage of ['round_of_16','quarter_final','semi_final','third_place','final']) {
+    for (const bracketId of (STAGE_BRACKET_IDS[stage] ?? [])) {
+      if (slotToDb[bracketId]) continue
+      const occ = realLaterSlots[bracketId]
+      if (!occ || (slotIsTbd(occ.home) && slotIsTbd(occ.away))) continue
+      const sh = occ.home, sa = occ.away
+      let best = null
+      for (const m of (dbByStage[stage] ?? [])) {
+        if (matchedDbIds.has(m.id)) continue
+        const h = m.home_team, a = m.away_team
+        // Misma orientación: home↔home, away↔away (al menos un equipo conocido coincide).
+        const sameOk = (slotIsTbd(h) || slotIsTbd(sh) || h === sh) &&
+                       (slotIsTbd(a) || slotIsTbd(sa) || a === sa) &&
+                       ((!slotIsTbd(h) && h === sh) || (!slotIsTbd(a) && a === sa))
+        // Orientación invertida: home↔away.
+        const flipOk = (slotIsTbd(h) || slotIsTbd(sa) || h === sa) &&
+                       (slotIsTbd(a) || slotIsTbd(sh) || a === sh) &&
+                       ((!slotIsTbd(h) && h === sa) || (!slotIsTbd(a) && a === sh))
+        if (sameOk) { best = { dbMatch: m, sameOrient: true };  break }
+        if (flipOk) { best = { dbMatch: m, sameOrient: false }; break }
       }
-    })
+      if (best) {
+        matchedDbIds.add(best.dbMatch.id)
+        slotToDb[bracketId] = best
+      }
+    }
+  }
+
+  // Fallback (posicional, por fecha) para huecos sin resolver: filas aún TBD.
+  // Reparte los partidos no emparejados a los huecos libres en orden de fecha
+  // (saltando ya emparejados, para no desalinear los índices).
+  for (const stage of ['round_of_32','round_of_16','quarter_final','semi_final','third_place','final']) {
+    const ids       = STAGE_BRACKET_IDS[stage] ?? []
+    const remaining = (dbByStage[stage] ?? []).filter(m => !matchedDbIds.has(m.id))
+    let qi = 0
+    for (const bracketId of ids) {
+      if (slotToDb[bracketId]) continue
+      const dbMatch = remaining[qi++]
+      if (!dbMatch) break
+      matchedDbIds.add(dbMatch.id)
+      slotToDb[bracketId] = { dbMatch, sameOrient: true }
+    }
   }
 
   const result = {}  // dbMatchId → { homeTeam, awayTeam }
