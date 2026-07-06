@@ -42,7 +42,7 @@ async function fetchAll(query) {
 
 export async function computeAndStoreAdvancePoints(supabase) {
   const matches = await fetchAll(
-    supabase.from('matches').select('id, stage, group_name, home_team, away_team, home_score, away_score, status, winner, match_date')
+    supabase.from('matches').select('id, stage, group_name, home_team, away_team, home_score, away_score, status, winner, match_date, bracket_match_id')
   )
   const preds = await fetchAll(
     supabase.from('predictions').select('user_id, match_id, home_score, away_score, tiebreaker, league_id')
