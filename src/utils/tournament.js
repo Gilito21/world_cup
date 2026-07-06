@@ -1125,12 +1125,17 @@ export function computePredictedKnockout(dbMatches, userPredMap) {
     }
   }
 
-  // Fallback (posicional, por fecha) para huecos sin resolver: filas aún TBD.
-  // Reparte los partidos no emparejados a los huecos libres en orden de fecha
-  // (saltando ya emparejados, para no desalinear los índices).
+  // Fallback (posicional, por fecha) SOLO para cruces aún con algún TBD. Un
+  // partido con AMBOS equipos reales debe casarse por equipos (arriba) o
+  // quedarse sin mapear; nunca por fecha, porque el orden por fecha no coincide
+  // con el del cuadro y cruzaría los huecos (bug de octavos: Canadá-Marruecos y
+  // Paraguay-Francia se intercambiaron al asignarlos por fecha). Preferimos no
+  // mapear (0 / lo resuelve la siguiente pasada) antes que mapear a un hueco
+  // equivocado.
   for (const stage of ['round_of_32','round_of_16','quarter_final','semi_final','third_place','final']) {
     const ids       = STAGE_BRACKET_IDS[stage] ?? []
-    const remaining = (dbByStage[stage] ?? []).filter(m => !matchedDbIds.has(m.id))
+    const remaining = (dbByStage[stage] ?? []).filter(m =>
+      !matchedDbIds.has(m.id) && (slotIsTbd(m.home_team) || slotIsTbd(m.away_team)))
     let qi = 0
     for (const bracketId of ids) {
       if (slotToDb[bracketId]) continue
