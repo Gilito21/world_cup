@@ -121,10 +121,14 @@ export async function computeAndStoreAdvancePoints(supabase) {
   }
 
   // ── Refresco completo de advance_points ───────────────────────────────────────
+  // upsert con ignoreDuplicates (ON CONFLICT DO NOTHING) sobre el índice único de
+  // ámbito: si esta pasada se solapa con otra (edge fn cada minuto + Action
+  // horaria), el segundo insert de la misma fila se ignora en vez de duplicar.
   const { error: delErr } = await supabase.from('advance_points').delete().not('id', 'is', null)
   if (delErr) throw delErr
   for (let i = 0; i < apRows.length; i += 500) {
-    const { error } = await supabase.from('advance_points').insert(apRows.slice(i, i + 500))
+    const { error } = await supabase.from('advance_points')
+      .upsert(apRows.slice(i, i + 500), { onConflict: 'user_id,league_id,team,stage', ignoreDuplicates: true })
     if (error) throw error
   }
 
@@ -132,7 +136,8 @@ export async function computeAndStoreAdvancePoints(supabase) {
   const { error: delCruceErr } = await supabase.from('predicted_ko_cruces').delete().not('match_id', 'is', null)
   if (delCruceErr) throw delCruceErr
   for (let i = 0; i < cruceRows.length; i += 500) {
-    const { error } = await supabase.from('predicted_ko_cruces').insert(cruceRows.slice(i, i + 500))
+    const { error } = await supabase.from('predicted_ko_cruces')
+      .upsert(cruceRows.slice(i, i + 500), { onConflict: 'user_id,match_id,league_id', ignoreDuplicates: true })
     if (error) throw error
   }
 
