@@ -21,22 +21,22 @@ import { EditorialBand } from '../components/Editorial'
 
 const STAGE_ORDER = ['group', 'round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
 
-// Override cosmético del cuadro de UNA usuaria (Ptamarit). Rellenó sus KO cuando
-// los cruces aún se emparejaban por fecha (antes de bracket_match_id), y su
-// cascada le mostraba una final España–Francia. El cuadro corregido ya no puede
-// reproducirla: en la realidad Francia y España se cruzan en la MISMA semifinal
-// (SF_M1), así que es estructuralmente imposible que ambos lleguen a la final.
-// Sus marcadores guardados están intactos; esto SOLO repinta los equipos que ve
-// en semis+final para que el relato le cuadre (con sus mismos resultados), y no
-// perciba el cambio de cuadro. No toca datos, puntuación ni a nadie más.
-//   match_id -> { home, away }  (orientado a su marcador guardado: home=izq)
+// Override del cuadro PRONOSTICADO de UNA usuaria (Ptamarit). Rellenó sus KO
+// durante un remapeo temprano de cruces y recuerda haber pronosticado una final
+// Francia–España; su cascada actual (que sale de sus picks de grupos) ya no la
+// reproduce. Esto inyecta su cuadro en el overlay de pronóstico — NO fuerza el
+// display: se pinta en morado como cualquier pronóstico mientras el cruce siga
+// TBD y, cuando llegan los equipos reales (tras las semis), pasa a la línea
+// "Tu cuadro" bajo el cruce real. Las semis se fijan a los equipos reales para
+// no arrastrar el cascade ruidoso de grupos. No toca datos ni a nadie más.
+//   match_id -> { home, away }  (home=izquierda; su marcador guardado decide quién gana)
 const BRACKET_DISPLAY_OVERRIDE = {
   // Ptamarit
   '9b9fc3c0-e18b-4ca1-9a6b-27edf9db756b': {
-    '0e95d87a-da79-4e77-b2e0-7f473913874b': { home: 'England',   away: 'Spain'     }, // SF · 1-2 → España a la final
-    '27c73c8d-72c5-49e6-9ce9-7a3004585dbc': { home: 'France',    away: 'Argentina' }, // SF · 2-1 → Francia a la final
-    'b12f57f3-c370-4725-842f-26feceb252ed': { home: 'England',   away: 'Argentina' }, // 3.º puesto · 2-1 → perdedores de sus semis
-    '27c8c4a2-812d-40c9-9b35-becfec192e19': { home: 'Spain',     away: 'France'    }, // Final · 2-1 → campeona España
+    '0e95d87a-da79-4e77-b2e0-7f473913874b': { home: 'France',  away: 'Spain'     }, // SF1 real (su pick 1-2 → gana España)
+    '27c73c8d-72c5-49e6-9ce9-7a3004585dbc': { home: 'England', away: 'Argentina' }, // SF2 real (su pick 2-1 → gana Inglaterra)
+    'b12f57f3-c370-4725-842f-26feceb252ed': { home: 'France',  away: 'Argentina' }, // 3.º puesto: perdedores de sus semis
+    '27c8c4a2-812d-40c9-9b35-becfec192e19': { home: 'Spain',   away: 'France'    }, // Final: su pronóstico (2-1 → campeona España)
   },
 }
 
@@ -296,7 +296,7 @@ function ConfirmModal({ onConfirm, onCancel, submitting, totalCount }) {
 
 // ─── MATCH CARD ───────────────────────────────────────────────────────────────
 
-function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, realHome, realAway, overrideHome, overrideAway, advanceByTeam, isPastCutoff, onPreview, consensus }) {
+function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreakerChange, predictedHome, predictedAway, realHome, realAway, advanceByTeam, isPastCutoff, onPreview, consensus }) {
   const { t, dateLocale } = useLang()
   const STAGE_INFO = buildStageInfo(t)
   const STATUS_BADGE = useMemo(() => ({
@@ -312,14 +312,11 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
                       match.status !== 'scheduled' ||
                       Date.now() >= new Date(match.match_date).getTime() - 30 * 60 * 1000
 
-  // Para display: override cosmético por-usuario (si lo hay) > equipos reales del
-  // bracket > cascade del usuario > TBD. El override se pinta como pronóstico
-  // (morado) y silencia la línea "Tu cuadro" porque él YA es su cuadro.
-  const displayHome = overrideHome ?? (isTbd(match.home_team) ? (realHome ?? predictedHome ?? match.home_team) : match.home_team)
-  const displayAway = overrideAway ?? (isTbd(match.away_team) ? (realAway ?? predictedAway ?? match.away_team) : match.away_team)
+  // Para display: equipos reales del bracket (si disponibles) > cascade del usuario > TBD
+  const displayHome = isTbd(match.home_team) ? (realHome ?? predictedHome ?? match.home_team) : match.home_team
+  const displayAway = isTbd(match.away_team) ? (realAway ?? predictedAway ?? match.away_team) : match.away_team
   // 🔮 solo cuando mostramos el cascade del usuario (los equipos reales aún no están disponibles)
-  const hasPredictedTeams = !overrideHome && !overrideAway &&
-                            (isTbd(match.home_team) || isTbd(match.away_team)) &&
+  const hasPredictedTeams = (isTbd(match.home_team) || isTbd(match.away_team)) &&
                             !realHome && !realAway && (predictedHome || predictedAway)
 
   // El consenso global solo tiene sentido si sabemos quiénes juegan. En
@@ -449,7 +446,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
         <div className="flex-1 flex flex-col items-end gap-0.5 min-w-0">
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <span className={`text-sm font-semibold truncate text-right ${
-              overrideHome || (isTbd(match.home_team) && !realHome && predictedHome) ? 'text-violet-600' : 'text-ink'
+              isTbd(match.home_team) && !realHome && predictedHome ? 'text-violet-600' : 'text-ink'
             }`}>
               {teamName(displayHome)}
             </span>
@@ -516,7 +513,7 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <Flag team={displayAway} />
             <span className={`text-sm font-semibold truncate ${
-              overrideAway || (isTbd(match.away_team) && !realAway && predictedAway) ? 'text-violet-600' : 'text-ink'
+              isTbd(match.away_team) && !realAway && predictedAway ? 'text-violet-600' : 'text-ink'
             }`}>
               {teamName(displayAway)}
             </span>
@@ -530,9 +527,8 @@ function MatchCard({ match, prediction, onSave, draft, onDraftChange, onTiebreak
       </div>
 
       {/* Tu cuadro: equipos predichos cuando difieren de los reales (en
-          cualquiera de los dos lados, no solo el local). Con override cosmético
-          no se muestra: el override YA es el cuadro que ve el usuario. */}
-      {isKnockout && !isFinished && !overrideHome && !overrideAway && (predictedHome || predictedAway) &&
+          cualquiera de los dos lados, no solo el local). */}
+      {isKnockout && !isFinished && (predictedHome || predictedAway) &&
         ((predictedHome && predictedHome !== displayHome) || (predictedAway && predictedAway !== displayAway)) && (
         <p className="text-[10px] text-ink/50 text-center mt-1.5">
           Tu cuadro: {teamName(predictedHome ?? displayHome)} – {teamName(predictedAway ?? displayAway)}
@@ -695,7 +691,7 @@ export default function Pronosticos() {
   const { activeLeague, leagues, loading: leagueLoading, leaguesReady, onLeagueCreated, joinNotice, clearJoinNotice } = useLeague()
   const { t, dateLocale }         = useLang()
   const predictionMode = activeLeague?.prediction_mode ?? 'global'
-  const bracketOverride = BRACKET_DISPLAY_OVERRIDE[user.id] ?? {}
+  const bracketOverride = BRACKET_DISPLAY_OVERRIDE[user.id]  // undefined salvo la usuaria con override
 
   const STAGE_INFO = useMemo(() => buildStageInfo(t), [t])
 
@@ -942,8 +938,16 @@ export default function Pronosticos() {
         predMap[matchId] = { home_score: Number(draft.home), away_score: Number(draft.away), tiebreaker: draft.tiebreaker ?? null }
       }
     }
-    return computePredictedKnockout(matches, predMap)
-  }, [matches, predictions, drafts])
+    const overlay = computePredictedKnockout(matches, predMap)
+    // Override cosmético por-usuario del cuadro pronosticado (ver nota en
+    // BRACKET_DISPLAY_OVERRIDE). Se inyecta como pronóstico normal: se pinta en
+    // morado mientras el partido siga TBD y, cuando llegan los equipos reales,
+    // pasa a la línea "Tu cuadro" debajo del cruce real. No fuerza el display.
+    if (bracketOverride) for (const [mid, teams] of Object.entries(bracketOverride)) {
+      overlay[mid] = { homeTeam: teams.home, awayTeam: teams.away }
+    }
+    return overlay
+  }, [matches, predictions, drafts, bracketOverride])
 
   // ── Cascade real: resultados reales → equipos reales en cada cruce ──────────
   const realKnockoutOverlay = useMemo(() => {
@@ -1574,8 +1578,6 @@ export default function Pronosticos() {
                       predictedAway={predictedOverlay[m.id]?.awayTeam}
                       realHome={realKnockoutOverlay[m.id]?.homeTeam}
                       realAway={realKnockoutOverlay[m.id]?.awayTeam}
-                      overrideHome={bracketOverride[m.id]?.home}
-                      overrideAway={bracketOverride[m.id]?.away}
                       advanceByTeam={advanceByTeam}
                       isPastCutoff={isPastCutoff}
                       consensus={consensus[m.id]}
