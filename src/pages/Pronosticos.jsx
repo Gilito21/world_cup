@@ -35,6 +35,7 @@ const BRACKET_DISPLAY_OVERRIDE = {
   '9b9fc3c0-e18b-4ca1-9a6b-27edf9db756b': {
     '0e95d87a-da79-4e77-b2e0-7f473913874b': { home: 'England',   away: 'Spain'     }, // SF · 1-2 → España a la final
     '27c73c8d-72c5-49e6-9ce9-7a3004585dbc': { home: 'France',    away: 'Argentina' }, // SF · 2-1 → Francia a la final
+    'b12f57f3-c370-4725-842f-26feceb252ed': { home: 'England',   away: 'Argentina' }, // 3.º puesto · 2-1 → perdedores de sus semis
     '27c8c4a2-812d-40c9-9b35-becfec192e19': { home: 'Spain',     away: 'France'    }, // Final · 2-1 → campeona España
   },
 }
