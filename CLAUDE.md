@@ -67,7 +67,7 @@ Para no tener que inspeccionar Supabase cada sesión, aquí está el estado de l
 - **Migraciones SQL son append-only**: nunca editar una migración ya aplicada; crear una nueva con el siguiente número.
 - **Service role key solo en backend / scripts / Actions**, jamás en código cliente. Anon key en cliente.
 - Tabla nueva → RLS sí o sí. Ante la duda, `get_advisors`.
-- Tras schema change: avisar para regenerar tipos TS (no autogenerar sin pedir).
+- **Este repo es JavaScript puro (JSX), sin tipos generados de Supabase.** No hay `tsconfig.json`, ningún `database.types.ts`, y `createClient` se usa sin tipar. Un schema change NO requiere regenerar tipos: el acceso a datos es dinámico (nombres de columna como strings, resueltos en runtime). No ofrezcas "regenerar tipos TS" salvo que en el futuro se migre a TypeScript con tipos generados.
 - No crear PR salvo petición explícita.
 
 ## Antes de cambios de scoring o schema
