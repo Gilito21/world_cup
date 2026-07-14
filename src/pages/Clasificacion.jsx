@@ -445,14 +445,17 @@ export default function Clasificacion() {
       if (activeLeague.entry_fee || activeLeague.prize_rules?.length > 0) {
         const { data: prizeData } = await supabase
           .from('league_prize_results')
-          .select('rule_id, winner_id, locked')
+          .select('rule_id, winner_id, winner_ids, locked')
           .eq('league_id', activeLeague.id)
         if (prizeData?.length) {
           const usernameById = Object.fromEntries(result.map(r => [r.id, r.username]))
-          setPrizeResults(prizeData.map(r => ({
-            ...r,
-            winner_username: usernameById[r.winner_id] ?? null,
-          })))
+          setPrizeResults(prizeData.map(r => {
+            const ids = (r.winner_ids?.length ? r.winner_ids : (r.winner_id ? [r.winner_id] : []))
+            return {
+              ...r,
+              winner_usernames: ids.map(id => usernameById[id]).filter(Boolean),
+            }
+          }))
         } else {
           setPrizeResults([])
         }

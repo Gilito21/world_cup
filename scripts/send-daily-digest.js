@@ -144,11 +144,11 @@ export function buildEmail({ username, yesterdayMatches, todayMatches, yesterday
   const prizeRows = prizes.map(p => `
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid ${BRAND.rule};font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;font-size:14px;color:${BRAND.ink};font-weight:600;">
-          ${p.emoji ? `${p.emoji} ` : ''}${escHtml(p.label)}
+          ${p.emoji ? `${p.emoji} ` : ''}${escHtml(p.label)}${p.shared ? ' <span style="font-weight:400;opacity:.55;">(a medias)</span>' : ''}
           <div style="font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:${BRAND.ink};opacity:.55;margin-top:3px;">${escHtml(p.league)}</div>
         </td>
         <td style="padding:10px 0 10px 16px;border-bottom:1px solid ${BRAND.rule};text-align:right;white-space:nowrap;vertical-align:middle;">
-          ${p.amount != null ? `<span style="display:inline-block;background:${BRAND.green};color:${BRAND.cream};font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:12px;letter-spacing:.04em;padding:4px 10px;">€${p.amount}</span>` : ''}
+          ${p.amount != null ? `<span style="display:inline-block;background:${BRAND.green};color:${BRAND.cream};font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:12px;letter-spacing:.04em;padding:4px 10px;">€${Number.isInteger(p.amount) ? p.amount : p.amount.toFixed(2)}</span>` : ''}
         </td>
       </tr>`).join('')
 
@@ -268,8 +268,8 @@ export function sampleEmailArgs() {
       { name: 'Amigos del fútbol', position: 5, total: 11 },
     ],
     prizes: [
-      { league: 'Oficina Madrid', label: '1º clasificado al final del torneo', emoji: '🥇', amount: 358, locked: false },
-      { league: 'Oficina Madrid', label: 'Más resultados exactos predichos',   emoji: '🎯', amount: 65,  locked: false },
+      { league: 'Oficina Madrid', label: '1º clasificado al final del torneo', emoji: '🥇', amount: 358,  locked: false },
+      { league: 'Oficina Madrid', label: 'Más resultados exactos predichos',   emoji: '🎯', amount: 32.5, locked: false, shared: true },
     ],
   }
 }
@@ -454,7 +454,7 @@ async function main() {
     fetchAllPages(supabase, s => s.from('special_predictions')
       .select('user_id, league_id, points_earned').not('league_id', 'is', null)),
     fetchAllPages(supabase, s => s.from('league_prize_results')
-      .select('league_id, rule_id, trigger_key, winner_id, locked')),
+      .select('league_id, rule_id, trigger_key, winner_id, winner_ids, locked')),
   ])
 
   const leagueNameById = new Map(leagueList.map(l => [l.id, l.name]))
@@ -505,7 +505,10 @@ async function main() {
   // resultados huérfanos de reglas borradas.
   const prizesByUser = new Map()  // user_id -> [{ league, label, emoji, amount, locked }]
   for (const pr of prizeResults) {
-    if (!pr.winner_id) continue
+    // winner_ids lista a todos los ganadores (reparto a medias en empates);
+    // winner_id se mantiene por compatibilidad para resultados antiguos.
+    const winnerIds = pr.winner_ids?.length ? pr.winner_ids : (pr.winner_id ? [pr.winner_id] : [])
+    if (!winnerIds.length) continue
     const league = leagueById.get(pr.league_id)
     if (!league) continue
     const rules = Array.isArray(league.prize_rules) ? league.prize_rules : []
@@ -514,9 +517,14 @@ async function main() {
     const info        = getTriggerInfo(rule.trigger)
     const memberCount = (membersByLeague.get(pr.league_id) ?? []).length
     const pot         = league.entry_fee && memberCount > 0 ? league.entry_fee * memberCount : null
-    const amount      = pot ? Math.round(pot * Number(rule.pct) / 100) : null
-    if (!prizesByUser.has(pr.winner_id)) prizesByUser.set(pr.winner_id, [])
-    prizesByUser.get(pr.winner_id).push({ league: league.name, label: info.label, emoji: info.emoji, amount, locked: pr.locked })
+    const full        = pot ? Math.round(pot * Number(rule.pct) / 100) : null
+    // El importe se reparte a partes iguales entre los ganadores empatados.
+    const amount      = full != null ? full / winnerIds.length : null
+    const shared      = winnerIds.length > 1
+    for (const winnerId of winnerIds) {
+      if (!prizesByUser.has(winnerId)) prizesByUser.set(winnerId, [])
+      prizesByUser.get(winnerId).push({ league: league.name, label: info.label, emoji: info.emoji, amount, locked: pr.locked, shared })
+    }
   }
 
   // ── Predicciones globales de ayer (paginadas) ──────────────────────────

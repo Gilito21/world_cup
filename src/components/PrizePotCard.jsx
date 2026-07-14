@@ -49,17 +49,27 @@ export default function PrizePotCard({ activeLeague, memberCount, prizeResults =
           {prizeRules.length > 0 ? (
             <div className="space-y-2 pt-2 border-t border-ink/10">
               {prizeRules.map((rule, i) => {
-                const info   = getTriggerInfo(rule.trigger)
-                const amount = totalPot ? Math.round(totalPot * Number(rule.pct) / 100) : null
-                const result = resultByRule[rule.id]
+                const info    = getTriggerInfo(rule.trigger)
+                const amount  = totalPot ? Math.round(totalPot * Number(rule.pct) / 100) : null
+                const result  = resultByRule[rule.id]
+                const winners = result?.winner_usernames ?? []
+                // Empate real: el importe se reparte a partes iguales.
+                const perWinner = amount != null && winners.length > 1
+                  ? amount / winners.length
+                  : amount
                 return (
                   <div key={rule.id ?? i} className="flex items-start gap-2">
                     <span className="text-sm w-5 text-center flex-shrink-0 leading-none mt-0.5">{info.emoji}</span>
                     <div className="flex-1 min-w-0">
                       <span className="text-xs text-ink">{rule.label}</span>
-                      {result?.winner_username && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-[11px] font-semibold text-emerald-700">→ {result.winner_username}</span>
+                      {winners.length > 0 && (
+                        <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                          <span className="text-[11px] font-semibold text-emerald-700">
+                            → {winners.join(', ')}
+                          </span>
+                          {winners.length > 1 && (
+                            <span className="text-[10px] text-ink/40">(a medias)</span>
+                          )}
                           {result.locked && <span className="text-[10px] text-ink/30">🔒</span>}
                         </div>
                       )}
@@ -68,6 +78,9 @@ export default function PrizePotCard({ activeLeague, memberCount, prizeResults =
                       <span className="text-[11px] font-bold text-ink/50 tabular-nums">{rule.pct}%</span>
                       {amount != null && (
                         <p className="text-xs font-bold text-ink tabular-nums">{fmtEur(amount)}</p>
+                      )}
+                      {perWinner != null && winners.length > 1 && (
+                        <p className="text-[10px] text-ink/40 tabular-nums">{fmtEur(perWinner)} c/u</p>
                       )}
                     </div>
                   </div>
