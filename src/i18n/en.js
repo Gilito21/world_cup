@@ -480,6 +480,17 @@ export default {
     noLeagueCta: 'Join a league',
     errSend: 'Error submitting answers.',
     referenceNote: '💡 Reference: Qatar 2022 had ~227 yellow cards and 4 red cards (≈ 235 total). With more matches in 2026, the typical range is 300–500.',
+    resultOptionCorrect: 'Correct',
+    resultYourPick: 'Your pick',
+    resultCorrect: 'You nailed it!',
+    resultWrong: 'Not quite',
+    resultFinalLabel: 'Result',
+    resultPoints: '+{{pts}} pts',
+    resultCorrectAnswer: 'Correct answer:',
+    resultFinal: 'Final result:',
+    resultYourAnswer: 'Your answer:',
+    resultNoAnswer: 'No answer',
+    resultClosestNote: 'Closest guess in each league wins.',
   },
 
   resultados: {

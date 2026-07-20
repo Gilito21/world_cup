@@ -12,7 +12,10 @@ import LeagueCreatedModal from '../components/LeagueCreatedModal'
 import { EditorialBand } from '../components/Editorial'
 
 // ── Questions cache (localStorage, 2 h) — static per tournament ───────────
-const QS_LS_KEY = 'porra-extras-questions'
+// v2: al resolverse el torneo las preguntas ganan correct_*/resolved_at, así
+// que subimos la versión de la clave para invalidar cachés previas a la
+// resolución (si no, el resultado tardaría hasta 2 h en aparecer).
+const QS_LS_KEY = 'porra-extras-questions-v2'
 const QS_TTL    = 2 * 60 * 60 * 1000
 function readCachedQuestions() {
   try {
@@ -28,7 +31,8 @@ function writeCachedQuestions(qs) {
 
 // ── Personalized predictions cache (localStorage, 5 min) ──────────────────
 const PREDS_TTL = 5 * 60 * 1000
-function predsCacheKey(userId, leagueKey) { return `porra-extras-preds:${userId}:${leagueKey}` }
+// v2: ahora cacheamos también points_earned por respuesta (para el resultado).
+function predsCacheKey(userId, leagueKey) { return `porra-extras-preds:v2:${userId}:${leagueKey}` }
 function readCachedExtrasPreds(userId, leagueKey) {
   try {
     const raw = localStorage.getItem(predsCacheKey(userId, leagueKey))
@@ -205,22 +209,32 @@ function ConfirmModal({ onConfirm, onCancel, submitting }) {
 }
 
 // ─── Pregunta tipo "choice" ────────────────────────────────────────────────
-function ChoiceQuestion({ question, value, onSelect, locked }) {
+function ChoiceQuestion({ question, value, onSelect, locked, resolved = false, correctValue = null }) {
+  const { t } = useLang()
   const opts = question.options ?? []
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-3">
       {opts.map(opt => {
-        const isActive = value === opt.value
+        const isActive    = value === opt.value
+        const isCorrect   = resolved && correctValue != null && correctValue === opt.value
+        const isWrongPick = resolved && isActive && !isCorrect
+
+        // Resuelto: verde la correcta, rojo la elección fallida. Sin resolver:
+        // comportamiento original (ink en la seleccionada).
+        const style = isCorrect
+          ? 'border-grass-500 bg-grass-500/10'
+          : isWrongPick
+            ? 'border-red-400 bg-red-50'
+            : isActive
+              ? 'border-ink bg-paper shadow-md shadow-ink/15'
+              : 'border-ink/20 bg-paper hover:border-ink/30'
+
         return (
           <button
             key={opt.value}
             onClick={() => !locked && onSelect(opt.value)}
             disabled={locked}
-            className={`relative rounded-none sm:rounded-none border-2 p-2.5 sm:p-3.5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${
-              isActive
-                ? 'border-ink bg-paper shadow-md shadow-ink/15'
-                : 'border-ink/20 bg-paper hover:border-ink/30'
-            } ${locked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+            className={`relative rounded-none sm:rounded-none border-2 p-2.5 sm:p-3.5 text-left transition-all active:scale-[0.98] disabled:active:scale-100 ${style} ${locked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <div className="flex flex-col items-center gap-1 sm:gap-1.5">
               <EmojiImg emoji={opt.emoji} alt={opt.label} className="w-9 h-9 sm:w-12 sm:h-12" />
@@ -231,16 +245,75 @@ function ChoiceQuestion({ question, value, onSelect, locked }) {
                 {opt.team && (
                   <div className="text-[11px] sm:text-xs text-ink/60 mt-0.5">{opt.team}</div>
                 )}
+                {resolved && (isCorrect || isActive) && (
+                  <div className={`text-[10px] sm:text-xs font-semibold mt-1 ${isCorrect ? 'text-grass-600' : 'text-ink/50'}`}>
+                    {isCorrect ? t('extras.resultOptionCorrect') : t('extras.resultYourPick')}
+                  </div>
+                )}
               </div>
             </div>
-            {isActive && (
-              <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-ink text-cream flex items-center justify-center text-[10px] sm:text-xs font-bold">
-                ✓
+            {(isActive || isCorrect) && (
+              <span className={`absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold ${
+                isCorrect ? 'bg-grass-500 text-cream' : isWrongPick ? 'bg-red-400 text-cream' : 'bg-ink text-cream'
+              }`}>
+                {isWrongPick ? '✕' : '✓'}
               </span>
             )}
           </button>
         )
       })}
+    </div>
+  )
+}
+
+// ─── Banner de resultado (tras resolverse la pregunta) ─────────────────────
+function ResultBanner({ question, answer }) {
+  const { t } = useLang()
+  const pts     = answer?.points_earned ?? 0
+  const won     = pts > 0
+  const isExact = question.kind === 'choice' || question.kind === 'player'
+
+  // Etiqueta legible de la respuesta correcta y de la del usuario.
+  let correctLabel = null
+  let yourLabel    = null
+  if (question.kind === 'choice') {
+    const opts = question.options ?? []
+    correctLabel = opts.find(o => o.value === question.correct_choice)?.label ?? question.correct_choice
+    yourLabel    = opts.find(o => o.value === answer?.answer_choice)?.label ?? answer?.answer_choice
+  } else if (question.kind === 'player') {
+    correctLabel = question.correct_player
+    yourLabel    = answer?.answer_player
+  } else {
+    correctLabel = question.correct_number != null ? String(question.correct_number) : null
+    yourLabel    = answer?.answer_number != null ? String(answer.answer_number) : null
+  }
+
+  return (
+    <div className={`border p-2.5 sm:p-3 space-y-1.5 ${won ? 'border-grass-500/40 bg-grass-500/10' : 'border-ink/20 bg-paper'}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className={`text-xs sm:text-sm font-bold flex items-center gap-1.5 ${won ? 'text-grass-600' : 'text-ink/70'}`}>
+          <span aria-hidden="true">{won ? '✅' : (isExact ? '❌' : '📊')}</span>
+          {isExact
+            ? (won ? t('extras.resultCorrect') : t('extras.resultWrong'))
+            : t('extras.resultFinalLabel')}
+        </span>
+        <span className={`text-xs sm:text-sm font-bold tabular-nums px-2 py-0.5 border ${won ? 'text-grass-600 border-grass-500/40' : 'text-ink/60 border-ink/20'}`}>
+          {t('extras.resultPoints', { pts })}
+        </span>
+      </div>
+      <div className="text-[11px] sm:text-xs text-ink/70 space-y-0.5">
+        <div>
+          <span className="text-ink/50">{isExact ? t('extras.resultCorrectAnswer') : t('extras.resultFinal')} </span>
+          <span className="font-semibold text-ink">{correctLabel ?? '—'}</span>
+        </div>
+        <div>
+          <span className="text-ink/50">{t('extras.resultYourAnswer')} </span>
+          <span className="font-semibold text-ink">{yourLabel ?? t('extras.resultNoAnswer')}</span>
+        </div>
+        {!isExact && (
+          <p className="text-ink/50 pt-0.5">{t('extras.resultClosestNote')}</p>
+        )}
+      </div>
     </div>
   )
 }
@@ -350,6 +423,8 @@ function QuestionCard({ question, answer, draft, onDraft, onSelect, locked, stat
     : question.kind === 'player' ? answer?.answer_player
     : answer?.answer_number
 
+  const resolved = question.resolved_at != null
+
   return (
     <article className="card p-3 sm:p-5 space-y-3 sm:space-y-4">
       <header className="flex items-start gap-3">
@@ -371,7 +446,14 @@ function QuestionCard({ question, answer, draft, onDraft, onSelect, locked, stat
       </header>
 
       {question.kind === 'choice' && (
-        <ChoiceQuestion question={question} value={value} onSelect={onSelect} locked={locked} />
+        <ChoiceQuestion
+          question={question}
+          value={value}
+          onSelect={onSelect}
+          locked={locked}
+          resolved={resolved}
+          correctValue={question.correct_choice}
+        />
       )}
       {question.kind === 'player' && (
         <PlayerQuestion value={value} draft={draft} onDraft={onDraft} locked={locked} status={status} />
@@ -379,6 +461,8 @@ function QuestionCard({ question, answer, draft, onDraft, onSelect, locked, stat
       {question.kind === 'number' && (
         <NumberQuestion value={value} draft={draft} onDraft={onDraft} locked={locked} status={status} />
       )}
+
+      {resolved && <ResultBanner question={question} answer={answer} />}
     </article>
   )
 }
@@ -498,6 +582,7 @@ export default function Extras() {
             answer_choice: p.answer_choice,
             answer_player: p.answer_player,
             answer_number: p.answer_number,
+            points_earned: p.points_earned,
           }
           if (p.answer_player != null) initialDrafts[p.question_key] = p.answer_player
           if (p.answer_number != null) initialDrafts[p.question_key] = String(p.answer_number)

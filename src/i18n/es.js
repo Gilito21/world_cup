@@ -489,6 +489,17 @@ export default {
     noLeagueCta: 'Unirme a una liga',
     errSend: 'Error al enviar las respuestas.',
     referenceNote: '💡 Referencia: en Qatar 2022 hubo ~227 amarillas y 4 rojas (≈ 235 puntos). Con más partidos en 2026, el rango habitual está entre 300 y 500.',
+    resultOptionCorrect: 'Correcta',
+    resultYourPick: 'Tu elección',
+    resultCorrect: '¡Acertaste!',
+    resultWrong: 'No acertaste',
+    resultFinalLabel: 'Resultado',
+    resultPoints: '+{{pts}} pts',
+    resultCorrectAnswer: 'Respuesta correcta:',
+    resultFinal: 'Resultado final:',
+    resultYourAnswer: 'Tu respuesta:',
+    resultNoAnswer: 'Sin respuesta',
+    resultClosestNote: 'Gana quien más se acerque en cada liga.',
   },
 
   resultados: {
