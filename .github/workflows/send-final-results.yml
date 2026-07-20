@@ -1,0 +1,70 @@
+name: Correo final Mundial (manual)
+
+# Envío de cierre del Mundial 2026. Manual (workflow_dispatch), en tres modos:
+#   preview  → una muestra a la dirección indicada (--as opcional)
+#   dry-run  → lista la audiencia, no envía
+#   send-all → envío masivo (exige escribir SI en el input de confirmación)
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Modo de envío
+        required: true
+        default: preview
+        type: choice
+        options: [preview, dry-run, send-all]
+      to:
+        description: 'Destino del preview (solo modo preview)'
+        required: false
+        default: jpelaez@bluebullpartners.com
+      as:
+        description: 'Usuario de muestra para el preview (opcional)'
+        required: false
+        default: ''
+      confirm:
+        description: 'Escribe SI para confirmar el envío masivo (solo modo send-all)'
+        required: false
+        default: ''
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Enviar
+        run: |
+          set -e
+          MODE="${{ github.event.inputs.mode }}"
+          if [ "$MODE" = "preview" ]; then
+            AS_ARG=""
+            if [ -n "${{ github.event.inputs.as }}" ]; then AS_ARG="--as ${{ github.event.inputs.as }}"; fi
+            node scripts/send-final-results.js --preview "${{ github.event.inputs.to }}" $AS_ARG
+          elif [ "$MODE" = "dry-run" ]; then
+            node scripts/send-final-results.js --dry-run
+          elif [ "$MODE" = "send-all" ]; then
+            if [ "${{ github.event.inputs.confirm }}" != "SI" ]; then
+              echo "Envío masivo no confirmado (escribe SI en 'confirm'). Abortando."
+              exit 1
+            fi
+            node scripts/send-final-results.js --send-all --yes
+          else
+            echo "Modo desconocido: $MODE"; exit 1
+          fi
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BREVO_API_KEY:             ${{ secrets.BREVO_API_KEY }}
+          APP_URL:                   ${{ secrets.APP_URL }}
+          FROM_EMAIL:                ${{ secrets.FROM_EMAIL }}
+          FROM_NAME:                 ${{ secrets.FROM_NAME }}
