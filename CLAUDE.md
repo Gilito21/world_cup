@@ -58,6 +58,7 @@ Para no tener que inspeccionar Supabase cada sesión, aquí está el estado de l
 
 - Al abrir una sesión web, el hook `SessionStart` (`.claude/hooks/session-start.sh`, registrado en `.claude/settings.json`) corre `npm install` automáticamente. No hace falta pedir que instale dependencias.
 - El hook solo actúa en remoto (`CLAUDE_CODE_REMOTE=true`); en local hace early-return.
+- Además de `npm install`, el hook instala (idempotente) un hook global `Stop` en `~/.claude/settings.json` que auto-commitea+pushea el vault de Obsidian (`/home/user/Obsidian`) al terminar cada turno, para no depender de que la sesión esté rooteada en el repo Obsidian. Se recrea en cada arranque porque el contenedor es efímero, y entra en vigor a partir de la siguiente sesión (los hooks se cargan al inicio).
 - Es **síncrono**: la sesión arranca con las deps ya listas. Para cambiarlo a async (arranque más rápido, con riesgo de carrera), añadir `echo '{"async": true, "asyncTimeout": 300000}'` al principio del script.
 - El estado de Supabase (edge functions, cron) está documentado arriba; léelo antes de consultarlo por MCP.
 
